@@ -1,0 +1,44 @@
+{
+  "packet_info": {
+    "src_ip": "192.168.1.10",
+    "dst_ip": "192.168.1.20",
+    "src_mac": "00:11:22:33:44:55",
+    "dst_mac": "66:77:88:99:AA:BB",
+    "src_port": 12345,
+    "dst_port": 80,
+    "protocol": "TCP",
+    "vlan_id": 100,
+    "payload": "..."
+  },
+  "switch_info": {
+    "switch_id": "switch1",
+    "port_id": 1,
+    "timestamp": "2025-03-07T12:34:56.789Z"
+  },
+  "flow_info": {
+    "flow_id": "flow123",
+    "flow_table": {
+      "match_fields": {
+        "eth_type": "0x0800",
+        "ip_proto": "6",
+        "ipv4_src": "192.168.1.10",
+        "ipv4_dst": "192.168.1.20",
+        "tcp_src": 12345,
+        "tcp_dst": 80
+      },
+      "actions": [
+        "output:2"
+      ]
+    }
+  },
+  "controller_info": {
+    "controller_id": "controller1",
+    "domain_id": "domain1"
+  },
+  "statistics": {
+    "packet_count": 1000,
+    "byte_count": 500000,
+    "duration_sec": 3600,
+    "duration_nsec": 0
+  }
+}
