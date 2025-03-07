@@ -20,14 +20,16 @@ First, remove any old versions of CMake, use the following command:
 
 Run the following commands to update the apt-list, install the necessary dependencies, download the latest version of CMake, and build it:
 
-`sudo apt update`
-`sudo apt install -y build-essential libssl-dev`
-`wget https://github.com/Kitware/CMake/releases/download/v3.25.0/cmake-3.25.0.tar.gz`
-`tar -zxvf cmake-3.25.0.tar.gz`
-`cd cmake-3.25.0`
-`./bootstrap`
-`make`
-`sudo make install`
+```
+sudo apt update
+sudo apt install -y build-essential libssl-dev
+wget https://github.com/Kitware/CMake/releases/download/v3.25.0/cmake-3.25.0.tar.gz
+tar -zxvf cmake-3.25.0.tar.gz
+cd cmake-3.25.0
+./bootstrap
+make
+sudo make install
+```
 
 Once the commands are finished (may take over an hour to fully complete), verify the installation of CMake is at least version 3.8 or higher with the command:
 
