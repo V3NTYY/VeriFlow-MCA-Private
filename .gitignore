@@ -2,3 +2,18 @@
 /.vs
 /MCA_VeriFlow/out
 /MCA_VeriFlow/.vs
+
+# Ignore CMake-generated files
+/MCA_VeriFlow/CMakeFiles
+/MCA_VeriFlow/CMakeCache.txt
+/MCA_VeriFlow/cmake_install.cmake
+/MCA_VeriFlow/Makefile
+
+# Ignore Makefile-generated files
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.out
+*.log
