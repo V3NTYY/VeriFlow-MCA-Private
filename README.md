@@ -5,9 +5,11 @@
 ### INSTALLING CMAKE ###
 Run the following set of commands to remove any old versions, update the apt-list and install the latest version of CMake:
 
-`sudo apt remove --purge cmake`
-`sudo apt update`
-`sudo apt install cmake`
+```
+sudo apt remove --purge cmake
+sudo apt update
+sudo apt install cmake
+```
 
 Verify the installation of CMake is at least version 3.8 or higher, if it is not, refer to the INSTALLING CMAKE ALTERNATIVE section.
 
