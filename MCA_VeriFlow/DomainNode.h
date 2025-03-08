@@ -1,4 +1,3 @@
-// Header file for DomainNode
 #include "MCA_VeriFlow.h"
 #include <iostream>
 #include <string>
@@ -7,7 +6,7 @@ class DomainNode
 {
 	public:
 		// Constructors and destructors
-		DomainNode(std::string IP, std::string Port);
+		DomainNode(std::string Node_IP, std::string Node_Port);
 		~DomainNode();
 
 		// Functions
@@ -17,6 +16,6 @@ class DomainNode
 		// Debugging functions
 		void print();
 	private:
-		std::string dNodeIP;
-		std::string dNodePort;
+		std::string nodeIP;
+		std::string nodePort;
 };

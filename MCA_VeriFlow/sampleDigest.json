@@ -25,7 +25,9 @@
         "ipv4_dst": "192.168.1.20",
         "tcp_src": 12345,
         "tcp_dst": 80
-      }
+      },
+	  "actions": {
+		  "output:2"
     }
   },
   "controller_info": {

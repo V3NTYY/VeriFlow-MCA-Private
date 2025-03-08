@@ -1,12 +1,10 @@
 #include "DomainNode.h"
 
-// Constructor
-DomainNode::DomainNode(std::string IP, std::string Port)
+DomainNode::DomainNode(std::string Node_IP, std::string Node_Port)
 {
 	// Initialize the domain node
 }
 
-// Destructor
 DomainNode::~DomainNode()
 {
 	// Clean up the domain node
@@ -14,16 +12,16 @@ DomainNode::~DomainNode()
 
 std::string DomainNode::getIP()
 {
-	return IP;
+	return nodeIP;
 }
 
 std::string DomainNode::getPort()
 {
-	return Port;
+	return nodePort;
 }
 
 void DomainNode::print()
 {
 	// Print the domain node
-	std::cout << "DOMAIN NODE --> IP: " << IP << ":" << Port << std::endl;	
+	std::cout << "DOMAIN NODE --> IP: " << nodeIP << ":" << nodePort << std::endl;	
 }
