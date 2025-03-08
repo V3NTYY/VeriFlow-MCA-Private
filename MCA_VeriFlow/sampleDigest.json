@@ -39,5 +39,9 @@
     "byte_count": 500000,
     "duration_sec": 3600,
     "duration_nsec": 0
+  },
+  "domain_node": {
+	  "DN": 0,
+	  "Synch": 0
   }
 }

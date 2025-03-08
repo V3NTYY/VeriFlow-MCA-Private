@@ -43,13 +43,25 @@ bool Controller::linkDomainNode(DomainNode d)
 	return false;
 }
 
-void Controller::parseDigest(std::string digest)
+bool Controller::parseDigest(std::string digest)
 {
-	// TODO: Break down JSON format digest, and issue the appropriate commands
+	// TODO: Break down JSON format digest, and issue the appropriate commands.
+	// Only returns true if a command was issued as result of digest
 
 	// Example: Digest contained the DN bit, so we will link it as a domain node
 	//	DomainNode d("parseIP", "parsePort");
 	//	linkDomainNode(d);
+
+	// Example 2: Digest containe the Synch bit, so we will issue a synchronization command 
+	//	synchronize();
+
+	return false;
+}
+
+bool Controller::synchronize()
+{
+	// TODO: Issue command to POX controller to ask all neighboring controllers for topology data
+	// May require direct connection to controller. We can change the method as we need
 }
 
 // Print the controller information

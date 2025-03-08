@@ -14,12 +14,13 @@ class Controller {
 		// Functions
 		bool linkController(std::string Controller_IP, std::string Controller_Port);
 		bool freeLink();
-		void parseDigest(std::string digest);
+		bool parseDigest(std::string digest);
 
 		// Command functions (for controller)
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
 		bool linkDomainNode(DomainNode d);
+		bool synchronize();
 
 		// Debugging functions
 		void print();
