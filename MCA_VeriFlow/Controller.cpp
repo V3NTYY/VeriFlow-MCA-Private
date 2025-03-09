@@ -1,6 +1,12 @@
 #include "Controller.h"
 
 // Constructor
+Controller::Controller() {
+	controllerIP = "";
+	controllerPort = "";
+	sockfd = -1;
+}
+
 Controller::Controller(std::string Controller_IP, std::string Controller_Port)
 {
 	controllerIP = Controller_IP;
@@ -16,27 +22,57 @@ Controller::~Controller()
 	#endif
 }
 
-#ifdef __unix__
+void Controller::setControllerIP(std::string Controller_IP, std::string Controller_Port)
+{
+	controllerIP = Controller_IP;
+	controllerPort = Controller_Port;
+}
+
 bool Controller::linkController() {
 
-	// Setup socket
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
-		std::cout << "Error creating socket" << std::endl;
-		return false;
-	}
+	#ifdef __unix__
+		// Setup socket
+		sockfd = socket(AF_INET, SOCK_STREAM, 0);
+		if (sockfd < 0) {
+			std::cout << "Error creating socket" << std::endl;
+			return false;
+		}
 
-	// Setup the address to connect to
+		// Setup the address to connect to
+		struct sockaddr_in server_address;
+		server_address.sin_family = AF_INET;
+		server_address.sin_port = htons(std::stoi(controllerPort));
+		inet_pton(AF_INET, controllerIP.c_str(), &server_address.sin_addr);
 
+		// Connect to the controller
+		if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			std::cout << "Error connecting to controller" << std::endl;
+			return false;
+		}
+	#endif
 
 	return true;
 }
-#endif
+
+bool Controller::start()
+{
+	if (linkController()) {
+		openFlowHandshake();
+		return true;
+	}
+	return false;
+}
 
 // Free the link to the domain node
 bool Controller::freeLink()
 {
-	// TODO: Free the currently linked controller
+	if (sockfd != -1) {
+		#ifdef __unix__
+			close(sockfd);
+		#endif
+		sockfd = -1;
+		return true;
+	}
 	return false;
 }
 
@@ -88,14 +124,26 @@ void Controller::print()
 }
 void Controller::openFlowHandshake()
 {
+	sendHello();
+	receiveHello();
 }
 
 void Controller::sendHello()
 {
+	const char* msg = "OFPT_HELLO";
+	std::cout << "[CCPDN-REQUEST-POX]: " << msg << std::endl;
+	#ifdef __unix__
+		send(sockfd, msg, strlen(msg), 0);
+	#endif
 }
 
 void Controller::receiveHello()
 {
+	char buf[1024];
+	#ifdef __unix__
+		recv(sockfd, buf, 1024, 0);
+	#endif
+	std::cout << "[POX-RESPONSE-CCPDN]: " << buf << std::endl;
 }
 
 void Controller::listenerOpenFlow()

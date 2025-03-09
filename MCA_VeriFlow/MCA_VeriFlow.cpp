@@ -1,4 +1,5 @@
 ﻿#include "MCA_VeriFlow.h"
+#include "Controller.h"
 
 // Function to split a string into a vector of words
 std::vector<std::string> splitInput(std::string input) {
@@ -44,6 +45,7 @@ void MCA_VeriFlow::stop() {
 
 int main() {
     MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
+    Controller* c = new Controller();
 
     #ifdef _WIN32
     std::cout << "This app only runs on UNIX systems due to specific socket libraries. Exiting..." << std::endl;
@@ -68,20 +70,27 @@ int main() {
         if (args.size() == 0) {
 			std::cout << "Invalid command" << std::endl;
 		}
+
+        // Help command
         else if (args.at(0) == "help") {
             std::cout << "Help command -- needs more info" << std::endl;
         }
 
+        // link-controller command
         else if (args.at(0) == "link-controller") {
-            if (controller_linked) {
-				std::cout << "Controller already linked" << std::endl;
+            if (args.size() < 2) {
+				std::cout << "Not enough arguments. Usage: link-controller [ip-address] [port]" << std::endl;
 			}
+            else if (controller_linked) {
+                std::cout << "Controller already linked. Try unlink-controller first" << std::endl;
+            }
             else {
-				std::cout << "Linking controller..." << std::endl;
-				controller_linked = true;
+				c->setControllerIP(args.at(1), args.at(2));
+				controller_linked = c->start();
 			}
         }
 
+        // init-top command
         else if (args.at(0) == "init-top") {
             if (!controller_linked) {
                 std::cout << "Controller not linked. Try link-controller first" << std::endl;
@@ -92,12 +101,10 @@ int main() {
 			}
         }
 
+        // Invalid response
         else {
             std::cout << "Invalid command" << std::endl;
         }
-
-        // EXAMPLE: Start the CCPDN App
-        // mca_veriflow->run();
     }
 
     return 0;

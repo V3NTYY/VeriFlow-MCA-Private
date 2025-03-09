@@ -17,11 +17,15 @@
 class Controller {
 	public:
 		// Constructors and destructors
+		Controller();
 		Controller(std::string Controller_IP, std::string Controller_Port);
 		~Controller();
 
+		// Setters
+		void setControllerIP(std::string Controller_IP, std::string Controller_Port);
+
 		// Functions
-		bool linkController();
+		bool start();
 		bool freeLink();
 		bool parseDigest(std::string digest);
 
@@ -40,6 +44,7 @@ class Controller {
 		std::vector<DomainNode> domainNodes;
 
 		// Functions
+		bool linkController();
 		void openFlowHandshake();
 		void sendHello();
 		void receiveHello();
