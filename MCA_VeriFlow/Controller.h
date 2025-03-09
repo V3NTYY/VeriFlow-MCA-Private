@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cstring>
 
 #ifdef __unix__
 	#include <sys/socket.h>
