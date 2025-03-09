@@ -143,7 +143,8 @@ void Controller::sendHello()
 	
 	std::cout << "[CCPDN-REQUEST-POX]: " << msg << std::endl;
 	#ifdef __unix__
-		send(sockfd, msg, strlen(msg), 0);
+		// Recast message as char array and send it
+		send(sockfd, reinterpret_cast<const char*>(msg), sizeof(msg), 0);
 	#endif
 }
 
