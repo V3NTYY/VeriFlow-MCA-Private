@@ -29,14 +29,24 @@
                 "controllerProtocol": "tcp",
                 "controllerType": "remote",
                 "hostname": "c0",
-                "remoteIP": "10.0.0.4",
-                "remotePort": 6633
+                "remoteIP": "127.0.0.1",
+                "remotePort": 6634
             },
             "x": "209.0",
             "y": "88.0"
         }
     ],
     "hosts": [
+        {
+            "number": "2",
+            "opts": {
+                "hostname": "h2",
+                "nodeNum": 2,
+                "sched": "host"
+            },
+            "x": "163.0",
+            "y": "249.0"
+        },
         {
             "number": "1",
             "opts": {
@@ -56,16 +66,6 @@
             },
             "x": "358.0",
             "y": "256.0"
-        },
-        {
-            "number": "2",
-            "opts": {
-                "hostname": "h2",
-                "nodeNum": 2,
-                "sched": "host"
-            },
-            "x": "163.0",
-            "y": "249.0"
         }
     ],
     "links": [
