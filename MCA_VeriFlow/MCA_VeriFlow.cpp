@@ -29,17 +29,24 @@ void MCA_VeriFlow::stop() {
 
 
 int main(int argc, char* argv[]) {
-	MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
-	// TODO: Implement command-line args handler
+    MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
+   
+    if (argc == 1) {
+        std::cout << "No arguments provided. Exiting... " << std::endl;
+        return 1;
+    }
 
-	// EXAMPLE: Start the CCPDN App
-	// mca_veriflow->run();
-	return 0;
-}
+    // Display given args
+    std::cout << "Args [";
+    for (int i = 1; i < argc; ++i) {
+        std::cout << argv[i];
+        if (i < argc - 1) {
+			std::cout << ", ";
+		}
+    }
+    std::cout << "]" << std::endl;
 
-// Empty Constructor and Destructor
-MCA_VeriFlow::MCA_VeriFlow() {
-}
-
-MCA_VeriFlow::~MCA_VeriFlow() {
+    // EXAMPLE: Start the CCPDN App
+    // mca_veriflow->run();
+    return 0;
 }

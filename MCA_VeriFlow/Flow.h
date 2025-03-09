@@ -1,3 +1,6 @@
+#ifndef FLOW_H
+#define FLOW_H
+
 #include <string>
 
 class Flow {
@@ -35,3 +38,5 @@ class Flow {
 		std::string dstPort;
 		std::string action;
 };
+
+#endif

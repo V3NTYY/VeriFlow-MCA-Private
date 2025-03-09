@@ -62,6 +62,7 @@ bool Controller::synchronize()
 {
 	// TODO: Issue command to POX controller to ask all neighboring controllers for topology data
 	// May require direct connection to controller. We can change the method as we need
+	return false;
 }
 
 // Print the controller information

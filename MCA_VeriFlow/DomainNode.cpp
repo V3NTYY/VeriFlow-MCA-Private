@@ -5,11 +5,6 @@ DomainNode::DomainNode(std::string Node_IP, std::string Node_Port)
 	// Initialize the domain node
 }
 
-DomainNode::~DomainNode()
-{
-	// Clean up the domain node
-}
-
 std::string DomainNode::getIP()
 {
 	return nodeIP;

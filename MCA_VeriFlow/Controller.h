@@ -1,3 +1,6 @@
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
+
 #include "MCA_VeriFlow.h"
 #include "DomainNode.h"
 #include "Flow.h"
@@ -29,3 +32,5 @@ class Controller {
 		std::string				controllerPort;
 		std::vector<DomainNode> domainNodes;
 };
+
+#endif
