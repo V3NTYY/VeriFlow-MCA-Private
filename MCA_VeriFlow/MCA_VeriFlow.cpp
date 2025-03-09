@@ -48,8 +48,7 @@ int main() {
     Controller* c = new Controller();
 
     #ifdef _WIN32
-    std::cout << "This app only runs on UNIX systems due to specific socket libraries. Exiting..." << std::endl;
-    return 0;
+    std::cout << "This app only runs on UNIX systems due to specific socket libraries. Most things won't work." << std::endl;
     #endif
 
     bool controller_linked = false;

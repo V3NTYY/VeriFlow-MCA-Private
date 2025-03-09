@@ -159,8 +159,8 @@ void Controller::receiveHello()
 	char buf[1024];
 	#ifdef __unix__
 		ssize_t bytes_received = recv(sockfd, buf, sizeof(buf), 0);
-		std::cout << "[POX-RESPONSE-CCPDN]: Length:" << bytes_received << "bytes." << std::endl;
-		std::cout << "Response:";
+		std::cout << "[POX-RESPONSE-CCPDN]: Length:" << bytes_received << " bytes." << std::endl;
+		std::cout << "Response content: ";
 		for (int i = 0; i < bytes_received; ++i) {
 			std::cout << std::hex << static_cast<int>(buf[i]) << " ";
 		}
