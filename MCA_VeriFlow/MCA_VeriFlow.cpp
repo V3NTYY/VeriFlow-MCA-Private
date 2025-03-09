@@ -1,5 +1,16 @@
 ﻿#include "MCA_VeriFlow.h"
 
+// Function to split a string into a vector of words
+std::vector<std::string> splitInput(std::string input) {
+    std::vector<std::string> words;
+    std::istringstream stream(input);
+    std::string word;
+    while (stream >> word) {
+        words.push_back(word);
+    }
+    return words;
+}
+
 void MCA_VeriFlow::run() {
 
 }
@@ -13,8 +24,11 @@ void MCA_VeriFlow::stop() {
 * 
 * help: Display the all commands and their descriptions
 * link-controller: Link a currently running Pox Controller to this app
+* init-top: Identifys all local domain nodes, have them transmit a handshake to neighboring controllers.
 * 
-* The following commands should only work when a controller is linked to the app
+* The following commands should only work when:
+* A controller is linked to the app, and the topology is initialized with init-top.
+* 
 * They should be able to be utilized while the service is running (use a thread!):
 * 
 * run: Start the CCPDN App.
@@ -28,25 +42,40 @@ void MCA_VeriFlow::stop() {
 */
 
 
-int main(int argc, char* argv[]) {
+int main() {
     MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
    
-    if (argc == 1) {
-        std::cout << "No arguments provided. Exiting... " << std::endl;
-        return 1;
-    }
+    while (true) {
 
-    // Display given args
-    std::cout << "Args [";
-    for (int i = 1; i < argc; ++i) {
-        std::cout << argv[i];
-        if (i < argc - 1) {
-			std::cout << ", ";
+        std::string input;
+        std::cout << ">>> ";
+        std::getline(std::cin, input);
+        std::cout << std::endl;
+        if (input == "exit") {
+			break;
 		}
-    }
-    std::cout << "]" << std::endl;
 
-    // EXAMPLE: Start the CCPDN App
-    // mca_veriflow->run();
+        // Parse args
+        std::vector<std::string> args = splitInput(input);
+        if (args.size() == 0) {
+			std::cout << "Invalid command" << std::endl;
+		}
+        else if (args.at(0) == "help") {
+            std::cout << "Help command -- needs more info." << std::endl;
+        }
+        else if (args.at(0) == "link-controller") {
+            std::cout << "link-controller" << std::endl;
+        }
+        else if (args.at(0) == "init-top") {
+            std::cout << "init-topology" << std::endl;
+        }
+        else {
+            std::cout << "Invalid command" << std::endl;
+        }
+
+        // EXAMPLE: Start the CCPDN App
+        // mca_veriflow->run();
+    }
+
     return 0;
 }
