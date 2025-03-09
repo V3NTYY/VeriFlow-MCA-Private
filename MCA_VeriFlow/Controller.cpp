@@ -5,18 +5,33 @@ Controller::Controller(std::string Controller_IP, std::string Controller_Port)
 {
 	controllerIP = Controller_IP;
 	controllerPort = Controller_Port;
+	sockfd = -1;
 }
 
 // Destructor
 Controller::~Controller()
 {
-	// TODO: Implement the destructor
+	#ifdef __unix__
+		close(sockfd);
+	#endif
 }
 
-bool Controller::linkController(std::string Controller_IP, std::string Controller_port) {
-	// TODO: Connect to the running POX controller
-	return false;
+#ifdef __unix__
+bool Controller::linkController() {
+
+	// Setup socket
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		std::cout << "Error creating socket" << std::endl;
+		return false;
+	}
+
+	// Setup the address to connect to
+
+
+	return true;
 }
+#endif
 
 // Free the link to the domain node
 bool Controller::freeLink()
@@ -70,4 +85,23 @@ void Controller::print()
 {
 	// TODO: Add more POX controller statistics to print
 	std::cout << "CONTROLLER --> IP:" << controllerIP << ":" << controllerPort << std::endl;
-}	
+}
+void Controller::openFlowHandshake()
+{
+}
+
+void Controller::sendHello()
+{
+}
+
+void Controller::receiveHello()
+{
+}
+
+void Controller::listenerOpenFlow()
+{
+}
+
+void Controller::parseOpenFlowPacket(const std::vector<uint8_t>& packet)
+{
+}

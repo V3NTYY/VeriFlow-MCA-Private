@@ -44,6 +44,14 @@ void MCA_VeriFlow::stop() {
 
 int main() {
     MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
+
+    #ifdef _WIN32
+    std::cout << "This app only runs on UNIX systems due to specific socket libraries. Exiting..." << std::endl;
+    return 0;
+    #endif
+
+    bool controller_linked = false;
+    bool topology_initialized = false;
    
     while (true) {
 
@@ -61,14 +69,29 @@ int main() {
 			std::cout << "Invalid command" << std::endl;
 		}
         else if (args.at(0) == "help") {
-            std::cout << "Help command -- needs more info." << std::endl;
+            std::cout << "Help command -- needs more info" << std::endl;
         }
+
         else if (args.at(0) == "link-controller") {
-            std::cout << "link-controller" << std::endl;
+            if (controller_linked) {
+				std::cout << "Controller already linked" << std::endl;
+			}
+            else {
+				std::cout << "Linking controller..." << std::endl;
+				controller_linked = true;
+			}
         }
+
         else if (args.at(0) == "init-top") {
-            std::cout << "init-topology" << std::endl;
+            if (!controller_linked) {
+                std::cout << "Controller not linked. Try link-controller first" << std::endl;
+            }
+            else {
+				std::cout << "Initializing topology..." << std::endl;
+				topology_initialized = true;
+			}
         }
+
         else {
             std::cout << "Invalid command" << std::endl;
         }

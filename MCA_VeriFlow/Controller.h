@@ -8,6 +8,12 @@
 #include <vector>
 #include <string>
 
+#ifdef __unix__
+	#include <sys/socket.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+#endif
+
 class Controller {
 	public:
 		// Constructors and destructors
@@ -15,7 +21,7 @@ class Controller {
 		~Controller();
 
 		// Functions
-		bool linkController(std::string Controller_IP, std::string Controller_Port);
+		bool linkController();
 		bool freeLink();
 		bool parseDigest(std::string digest);
 
@@ -28,9 +34,17 @@ class Controller {
 		// Debugging functions
 		void print();
 	private:
+		int						sockfd;
 		std::string				controllerIP;
 		std::string				controllerPort;
 		std::vector<DomainNode> domainNodes;
+
+		// Functions
+		void openFlowHandshake();
+		void sendHello();
+		void receiveHello();
+		void listenerOpenFlow();
+		void parseOpenFlowPacket(const std::vector<uint8_t>& packet);
 };
 
 #endif
