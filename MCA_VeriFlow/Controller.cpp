@@ -130,7 +130,17 @@ void Controller::openFlowHandshake()
 
 void Controller::sendHello()
 {
-	const char* msg = "OFPT_HELLO";
+	// OpenFlow message format. Length is split into two bytes. XID, or transaction ID is split into 4 bytes.
+	uint8_t msg[8];
+	msg[0] = 0x01; // Version 1.0
+	msg[1] = 0x00; // Type (HELLO = 0x00)
+	msg[2] = 0x00; // Length (most significant byte in length value)
+	msg[3] = 0x08; // Length (least significant byte in length value)
+	msg[4] = 0x00; // XID (Most significant byte in XID)
+	msg[5] = 0x00; // XID (2nd most significant byte in XID)
+	msg[6] = 0x00; // XID (2nd least significant byte in XID)
+	msg[7] = 0x01; // XID (Least significant byte in XID)
+	
 	std::cout << "[CCPDN-REQUEST-POX]: " << msg << std::endl;
 	#ifdef __unix__
 		send(sockfd, msg, strlen(msg), 0);
