@@ -140,11 +140,14 @@ void Controller::sendHello()
 	msg[5] = 0x00; // XID (2nd most significant byte in XID)
 	msg[6] = 0x00; // XID (2nd least significant byte in XID)
 	msg[7] = 0x01; // XID (Least significant byte in XID)
+
+	std::string sendMsg = reinterpret_cast<const char*>(msg);
 	
 	std::cout << "[CCPDN-REQUEST-POX]: " << msg << std::endl;
 	#ifdef __unix__
 		// Recast message as char array and send it
-		send(sockfd, reinterpret_cast<const char*>(msg), sizeof(msg), 0);
+		ssize_t bytes_sent = send(sockfd, sendMsg, sizeof(msg), 0);
+		std::cout << "Bytes sent: " << bytes_sent << std::endl;
 	#endif
 }
 
