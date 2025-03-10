@@ -160,12 +160,23 @@ int main() {
 
         // Help command
         else if (args.at(0) == "help") {
-            std::cout << "Help command -- needs more info" << std::endl;
+            std::cout << "Commands:" << std::endl <<
+                " * help:                                   Display all commands and their parameters." << std::endl <<
+                " * run:                                    Start the CCPDN App. Controller must be linked, and topology initialized." << std::endl <<
+                " * stop:                                   Stop the CCPDN App." << std::endl <<
+                " * list-devices:                           List all the devices connected to the Pox Controller." << std::endl <<
+                " * list-flows:                             List all the flows in the flow table." << std::endl <<
+                " * link-controller [ip-address] [port]:    Link a currently running Pox Controller to this app." << std::endl <<
+                " * unlink-controller:                      Free the Pox Controller from this app." << std::endl <<
+                " * add-flow [flow_id] [eth_type], [protocol] [source-ip] [destination-ip] [source-port] [destination-port] [action]" << std::endl <<
+                "                                           Add a flow to the flow table." << std::endl <<
+                " * del-flow:                               Delete a flow from the flow table." << std::endl <<
+                "" << std::endl;
         }
 
         // link-controller command
         else if (args.at(0) == "link-controller") {
-            if (args.size() < 2) {
+            if (args.size() < 3) {
 				std::cout << "Not enough arguments. Usage: link-controller [ip-address] [port]" << std::endl;
 			}
             else if (controller_linked) {
@@ -185,6 +196,18 @@ int main() {
             else {
 				std::cout << "Initializing topology..." << std::endl;
 				topology_initialized = true;
+			}
+        }
+
+        else if (args.at(0) == "unlink-controller") {
+            if (!controller_linked) {
+				std::cout << "Controller not linked!" << std::endl;
+			}
+			else {
+                // TODO: Stop any services involving listening to the controller
+                // TODO: Destroy references with current controller
+				controller_linked = false;
+                topology_initialized = false;
 			}
         }
 
