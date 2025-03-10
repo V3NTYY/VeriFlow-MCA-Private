@@ -9,11 +9,13 @@
 #include <thread>
 #include <numeric>
 #include <cstring>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 
+#ifdef __unix__
+	#include <sys/socket.h>
+	#include <netdb.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+#endif
 
 class MCA_VeriFlow {
 	public:
