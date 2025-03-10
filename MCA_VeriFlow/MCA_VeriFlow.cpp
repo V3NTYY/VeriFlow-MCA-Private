@@ -20,6 +20,90 @@ void MCA_VeriFlow::stop() {
 
 }
 
+std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string& host, int port, int num_pings) {
+    std::vector<double> rtts;
+    for (int i = 0; i < num_pings; i++) {
+            int sockfd;
+            struct sockaddr_in server_addr;
+            struct hostent* server;
+            auto start_time = std::chrono::high_resolution_clock::now();
+            // create socket and text connection
+            sockfd = socket(AF_INET, SOCK_STREAM, 0);
+            if (sockfd < 0) {
+                std::cerr << "Socket creation failed.\n";
+                return {};
+            }
+
+            server = gethostbyname(host.c_str());
+            if (server == nullptr) {
+                std::cerr << "Error: No such host.\n";
+                close(sockfd);
+                return {};
+            }
+
+            memset(&server_addr, 0, sizeof(server_addr));
+            server_addr.sin_family = AF_INET;
+            memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+            server_addr.sin_port = htons(port);
+
+            if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+                std::cerr << "Connection failed.\n";
+                close(sockfd);
+                return {};
+            }
+
+            auto end_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> rtt = end_time - start_time;
+            rtts.push_back(rtt.count());
+
+            close(sockfd);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return rtts;
+}
+
+// Function to test TCP connection time
+double MCA_VeriFlow::test_tcp_connection_time(const std::string& host, int port, int timeout) {
+        int sockfd;
+        struct sockaddr_in server_addr;
+        struct hostent* server;
+        auto start_time = std::chrono::high_resolution_clock::now();
+        // create socket and text connection
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd < 0) {
+            std::cerr << "Socket creation failed.\n";
+            return -1;
+        }
+
+        server = gethostbyname(host.c_str());
+        if (server == nullptr) {
+            std::cerr << "Error: No such host.\n";
+            close(sockfd);
+            return -1;
+        }
+
+        memset(&server_addr, 0, sizeof(server_addr));
+        server_addr.sin_family = AF_INET;
+        memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+        server_addr.sin_port = htons(port);
+
+        struct timeval tv;
+        tv.tv_sec = timeout;
+        tv.tv_usec = 0;
+        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+
+        if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+            std::cerr << "Connection failed.\n";
+            close(sockfd);
+            return -1;
+        }
+        
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> connection_time = end_time - start_time;
+        close(sockfd);
+        return connection_time.count();
+}
+
 /*
 * Implement all below commands:
 * 
