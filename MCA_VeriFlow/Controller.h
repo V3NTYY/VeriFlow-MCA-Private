@@ -4,10 +4,12 @@
 #include "MCA_VeriFlow.h"
 #include "DomainNode.h"
 #include "Flow.h"
+#include "OpenFlowMessage.h"
 #include <iostream>
 #include <vector>
 #include <string>
 #include <cstring>
+#include <array>
 
 #ifdef __unix__
 	#include <sys/socket.h>
@@ -31,6 +33,7 @@ class Controller {
 		bool parseDigest(std::string digest);
 
 		// Command functions (for controller)
+		bool sendOpenFlowMessage(OpenFlowMessage Message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
 		bool linkDomainNode(DomainNode d);
@@ -47,8 +50,7 @@ class Controller {
 		// Functions
 		bool linkController();
 		void openFlowHandshake();
-		void sendHello();
-		void receiveHello();
+		void recvControllerMessages(bool thread);
 		void listenerOpenFlow();
 		void parseOpenFlowPacket(const std::vector<uint8_t>& packet);
 };

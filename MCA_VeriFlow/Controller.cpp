@@ -109,6 +109,23 @@ bool Controller::parseDigest(std::string digest)
 	return false;
 }
 
+bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
+{
+	std::array<char,8> Msg = msg.toChar();
+	#ifdef __unix__
+		// Recast message as char array and send it
+		ssize_t bytes_sent = send(sockfd, Msg, sizeof(Msg), 0);
+	#endif
+
+	std::cout << "[CCPDN-MESSAGE-POX]: ";
+	for (int i = 0; i < sizeof(msg); ++i) {
+		std::cout << std::hex << static_cast<int>(Msg[i]) << " ";
+	}
+	std::cout << std::dec << std::endl;
+
+	return false;
+}
+
 bool Controller::synchronize()
 {
 	// TODO: Issue command to POX controller to ask all neighboring controllers for topology data
@@ -124,48 +141,35 @@ void Controller::print()
 }
 void Controller::openFlowHandshake()
 {
-	sendHello();
-	receiveHello();
+	sendOpenFlowMessage(OpenFlowMessage::helloMessage());
+	recvControllerMessages(false);
 }
 
-void Controller::sendHello()
-{
-	// OpenFlow message format. Length is split into two bytes. XID, or transaction ID is split into 4 bytes.
-	char msg[8];
-	msg[0] = 0x01; // Version 1.0
-	msg[1] = 0x00; // Type (HELLO = 0x00)
-	msg[2] = 0x00; // Length (most significant byte in length value)
-	msg[3] = 0x08; // Length (least significant byte in length value)
-	msg[4] = 0x00; // XID (Most significant byte in XID)
-	msg[5] = 0x00; // XID (2nd most significant byte in XID)
-	msg[6] = 0x00; // XID (2nd least significant byte in XID)
-	msg[7] = 0x01; // XID (Least significant byte in XID)
-
-	#ifdef __unix__
-		// Recast message as char array and send it
-		ssize_t bytes_sent = send(sockfd, msg, sizeof(msg), 0);
-	#endif
-
-	std::cout << "[CCPDN-REQUEST-POX]: " << msg << std::endl;
-	std::cout << "Message content: ";
-	for (int i = 0; i < sizeof(msg); ++i) {
-		std::cout << std::hex << static_cast<int>(msg[i]) << " ";
-	}
-	std::cout << std::dec << std::endl;
-}
-
-void Controller::receiveHello()
+void Controller::recvControllerMessages(bool thread)
 {
 	char buf[1024];
-	#ifdef __unix__
-		ssize_t bytes_received = recv(sockfd, buf, sizeof(buf), 0);
-		std::cout << "[POX-RESPONSE-CCPDN]: Length:" << bytes_received << " bytes." << std::endl;
-		std::cout << "Response content: ";
-		for (int i = 0; i < bytes_received; ++i) {
-			std::cout << std::hex << static_cast<int>(buf[i]) << " ";
-		}
-		std::cout << std::dec << std::endl;
-	#endif
+	while (thread) {
+		#ifdef __unix__
+				ssize_t bytes_received = recv(sockfd, buf, sizeof(buf), 0);
+				std::cout << "[POX-MESSAGE-CCPDN]: ";
+				for (int i = 0; i < bytes_received; ++i) {
+					std::cout << std::hex << static_cast<int>(buf[i]) << " ";
+				}
+				std::cout << std::dec << std::endl;
+		#endif
+	}
+
+	// Receive a single message
+	if (!thread) {
+		#ifdef __unix__
+				ssize_t bytes_received = recv(sockfd, buf, sizeof(buf), 0);
+				std::cout << "[POX-MESSAGE-CCPDN]: ";
+				for (int i = 0; i < bytes_received; ++i) {
+					std::cout << std::hex << static_cast<int>(buf[i]) << " ";
+				}
+				std::cout << std::dec << std::endl;
+		#endif
+	}
 }
 
 void Controller::listenerOpenFlow()
