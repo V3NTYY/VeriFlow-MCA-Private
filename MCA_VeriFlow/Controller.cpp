@@ -114,7 +114,7 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	std::array<char,8> Msg = msg.toChar();
 	#ifdef __unix__
 		// Recast message as char array and send it
-		ssize_t bytes_sent = send(sockfd, Msg, sizeof(Msg), 0);
+		ssize_t bytes_sent = send(sockfd, Msg, Msg.size(), 0);
 	#endif
 
 	std::cout << "[CCPDN-MESSAGE-POX]: ";
