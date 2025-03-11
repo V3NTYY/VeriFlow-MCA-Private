@@ -20,8 +20,8 @@ std::vector<uint8_t> OpenFlowMessage::toBytes()
 	// Ensure correct vector size
 	std::vector<uint8_t> output(8 + payload.size());
 
-	output[0] = type;
-	output[1] = version;
+	output[0] = version;
+	output[1] = type;
 	output[2] = length >> 8;
 	output[3] = length & 0xFF;
 	output[4] = ((xid >> 24) & 0xFF);
