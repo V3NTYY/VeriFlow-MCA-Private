@@ -111,7 +111,7 @@ bool Controller::parseDigest(std::string digest)
 
 bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 {
-	std::array<char,8> Msg = msg.toChar();
+	std::vector<uint8_t> Msg = msg.toBytes();
 	#ifdef __unix__
 		// Recast message as char array and send it
 		ssize_t bytes_sent = send(sockfd, Msg.data(), Msg.size(), 0);

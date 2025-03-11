@@ -2,22 +2,22 @@
 
 OpenFlowMessage OpenFlowMessage::helloMessage() {
 
-	OpenFlowMessage msg(OFPT_HELLO, OFP_10, 8, 0, "");
+	OpenFlowMessage msg(OFPT_HELLO, OFP_10, 0, "");
 	return msg;
 }
 
-OpenFlowMessage::OpenFlowMessage(uint8_t Type, uint8_t Version, uint16_t Length, uint32_t Xid, std::string Payload)
+OpenFlowMessage::OpenFlowMessage(uint8_t Type, uint8_t Version, uint32_t Xid, std::string Payload)
 {
 	type = Type;
 	version = Version;
-	length = Length;
 	xid = Xid;
 	payload = Payload;
+	length = 8 + static_cast<uint16_t>(payload.size());
 }
 
-std::array<char, 8> OpenFlowMessage::toChar()
+std::vector<uint8_t> OpenFlowMessage::toBytes()
 {
-	std::array<char, 8> output;
+	std::vector<uint8_t> output;
 	output[0] = type;
 	output[1] = version;
 	output[2] = length >> 8;

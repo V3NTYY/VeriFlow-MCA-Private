@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <string>
-#include <array>
+#include <vector>
 
 // OpenFlow enum pulled from https://opennetworking.org/wp-content/uploads/2014/10/openflow-switch-v1.5.1.pdf
 enum ofp_type {
@@ -85,15 +85,14 @@ enum ofp_version {
 
 class OpenFlowMessage {
 	public:
-		OpenFlowMessage(uint8_t type, uint8_t version, uint16_t length, uint32_t xid, std::string payload);
-		std::array<char,8> toChar();
+		OpenFlowMessage(uint8_t type, uint8_t version, uint32_t xid, std::string payload);
+		std::vector<uint8_t> toBytes();
 		static OpenFlowMessage helloMessage();
-
+	private:
 		// Header data
 		uint8_t		version;	// 0x01 = 1.0
 		uint8_t		type;		// One of the OFPT constants
 		uint16_t	length;		// Length of this header
 		uint32_t	xid;		// Transaction id associated with this packet
 		std::string	payload;	// Payload of the message
-	private:
 };

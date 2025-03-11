@@ -9,7 +9,6 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include <array>
 
 #ifdef __unix__
 	#include <sys/socket.h>
