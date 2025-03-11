@@ -118,7 +118,7 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	#endif
 
 	std::cout << "[CCPDN-MESSAGE-POX]: ";
-	for (int i = 0; i < sizeof(msg); ++i) {
+	for (int i = 0; i < Msg.size(); ++i) {
 		std::cout << std::hex << static_cast<int>(Msg[i]) << " ";
 	}
 	std::cout << std::dec << std::endl;
