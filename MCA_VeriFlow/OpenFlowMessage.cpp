@@ -2,7 +2,7 @@
 
 OpenFlowMessage OpenFlowMessage::helloMessage() {
 
-	OpenFlowMessage msg(0, 1, 8, 0, "");
+	OpenFlowMessage msg(OFPT_HELLO, OFP_10, 8, 0, "");
 	return msg;
 }
 
@@ -21,10 +21,10 @@ std::array<char, 8> OpenFlowMessage::toChar()
 	output[0] = type;
 	output[1] = version;
 	output[2] = length >> 8;
-	output[3] = length & 0xFF;
-	output[4] = xid >> 24;
-	output[5] = xid >> 16;
-	output[6] = xid >> 8;
+	output[3] = length >> 0xFF;
+	output[4] = ((xid >> 24) & 0xFF);
+	output[5] = ((xid >> 16) & 0xFF);
+	output[6] = ((xid >> 8) & 0xFF);
 	output[7] = xid & 0xFF;
 
 	return output;

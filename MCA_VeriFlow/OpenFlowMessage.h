@@ -54,6 +54,35 @@ enum ofp_type {
 	OFPT_CONTROLLER_STATUS = 35, /* Async message */
 };
 
+enum ofp_version {
+	OFP_10 = 0x01,
+	OFP_11 = 0x02,
+	OFP_12 = 0x03,
+	OFP_13 = 0x04,
+	OFP_14 = 0x05,
+	OFP_15 = 0x06,
+	OFP_16 = 0x07,
+	OFP_17 = 0x08,
+	OFP_18 = 0x09,
+	OFP_19 = 0x0A,
+	OFP_20 = 0x0B,
+	OFP_21 = 0x0C,
+	OFP_22 = 0x0D,
+	OFP_23 = 0x0E,
+	OFP_24 = 0x0F,
+	OFP_25 = 0x10,
+	OFP_26 = 0x11,
+	OFP_27 = 0x12,
+	OFP_28 = 0x13,
+	OFP_29 = 0x14,
+	OFP_30 = 0x15,
+	OFP_31 = 0x16,
+	OFP_32 = 0x17,
+	OFP_33 = 0x18,
+	OFP_34 = 0x19,
+	OFP_35 = 0x1A,
+};
+
 class OpenFlowMessage {
 	public:
 		OpenFlowMessage(uint8_t type, uint8_t version, uint16_t length, uint32_t xid, std::string payload);
