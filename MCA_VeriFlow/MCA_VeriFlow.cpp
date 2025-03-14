@@ -171,6 +171,7 @@ int main() {
                 " * add-flow [flow_id] [eth_type], [protocol] [source-ip] [destination-ip] [source-port] [destination-port] [action]" << std::endl <<
                 "                                           Add a flow to the flow table." << std::endl <<
                 " * del-flow:                               Delete a flow from the flow table." << std::endl <<
+                " * run-tcp-test                            Run's the TCP connection setup latency test." << std::endl <<
                 "" << std::endl;
         }
 
@@ -209,6 +210,13 @@ int main() {
 				controller_linked = false;
                 topology_initialized = false;
 			}
+        }
+
+        else if (args.at(0) == "run-tcp-test") {
+            std::cout << "Running TCP test..." << std::endl;
+            #ifdef __unix__
+                mca_veriflow.measure_tcp_connection("google.com", 80, 10));
+            #endif
         }
 
         // Invalid response
