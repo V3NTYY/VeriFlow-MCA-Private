@@ -215,7 +215,11 @@ int main() {
         else if (args.at(0) == "run-tcp-test") {
             std::cout << "Running TCP test..." << std::endl;
             #ifdef __unix__
-                mca_veriflow->measure_tcp_connection("google.com", 80, 10);
+                std::vector<double> measured_rtts;
+                measured_rtts = mca_veriflow->measure_tcp_connection("google.com", 80, 10);
+                for (int i = 0; i < measured_rtts.size(); i++) {
+					std::cout << "RTT " << i << ": " << measured_rtts.at(i) << std::endl;
+				}
             #endif
         }
 
