@@ -30,13 +30,23 @@
                 "controllerType": "remote",
                 "hostname": "c0",
                 "remoteIP": "127.0.0.1",
-                "remotePort": 6634
+                "remotePort": 6653
             },
             "x": "209.0",
             "y": "88.0"
         }
     ],
     "hosts": [
+        {
+            "number": "3",
+            "opts": {
+                "hostname": "h3",
+                "nodeNum": 3,
+                "sched": "host"
+            },
+            "x": "358.0",
+            "y": "256.0"
+        },
         {
             "number": "2",
             "opts": {
@@ -56,16 +66,6 @@
             },
             "x": "72.0",
             "y": "247.0"
-        },
-        {
-            "number": "3",
-            "opts": {
-                "hostname": "h3",
-                "nodeNum": 3,
-                "sched": "host"
-            },
-            "x": "358.0",
-            "y": "256.0"
         }
     ],
     "links": [

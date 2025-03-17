@@ -21,7 +21,7 @@ def myNetwork():
                       controller=RemoteController,
                       ip='127.0.0.1',
                       protocol='tcp',
-                      port=6634)
+                      port=6653)
 
     info( '*** Add switches\n')
     s1 = net.addSwitch('s1', cls=OVSKernelSwitch)
@@ -48,7 +48,6 @@ def myNetwork():
     net.get('s2').start([c0])
 
     info( '*** Post configure switches and hosts\n')
-    addFlowRules(net)
 
     CLI(net)
     net.stop()
