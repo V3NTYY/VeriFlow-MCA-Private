@@ -200,6 +200,7 @@ int main() {
 			}
         }
 
+        // unlink-controller command
         else if (args.at(0) == "unlink-controller") {
             if (!controller_linked) {
 				std::cout << "Controller not linked!" << std::endl;
@@ -211,6 +212,27 @@ int main() {
                 topology_initialized = false;
 			}
         }
+
+        // run command
+        else if (args.at(0) == "run") {
+            if (!controller_linked || !topology_initialized) {
+                std::cout << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized." << std::endl;
+            } else {
+                mca_veriflow->run();
+                std::cout << "CCPDN App started." << std::endl;
+            }
+        }
+
+        // stop command
+        else if (args.at(0) == "stop") {
+            if (!controller_linked || !topology_initialized) {
+                std::cout << "CCPDN App is not running." << std::endl;
+            } else {
+                mca_veriflow->stop();
+                std::cout << "CCPDN App stopped." << std::endl;
+            }
+        }
+    
 
         else if (args.at(0) == "run-tcp-test") {
             std::cout << "Running TCP test..." << std::endl;
