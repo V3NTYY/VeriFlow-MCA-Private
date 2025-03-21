@@ -1,0 +1,12 @@
+# Format: id ipAddress endDevice(0=false,1=true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...
+# I'm not sure if this config works or is valid, VeriFlow constantly has 'segmentation fault'
+# this could be correct, could be incorrect. May also need to be in different format.
+
+0 c0 0 1 s1 2 s2
+
+1 s1 0 1 h1 2 h2
+2 s2 0 1 h3
+
+3 h1 1
+4 h2 1
+5 h3 1
