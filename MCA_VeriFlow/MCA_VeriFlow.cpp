@@ -20,6 +20,73 @@ void MCA_VeriFlow::stop() {
 
 }
 
+bool MCA_VeriFlow::registerTopologyFile(std::string file) {
+    std::ifstream topology_file(file);
+    if (!topology_file.is_open()) {
+        std::cerr << "Error opening file..." << std::endl;
+        return false;
+    }
+
+    std::string line;
+    int topology_index = 0;
+    while (std::getline(topology_file, line)) {
+        std::vector<std::string> args = splitInput(line);
+ 
+        // Skip non-complete lines
+        if (args.size() < 3) {
+            if (args.size() == 1 && args.at(0) == "#NEW") {
+				topology_index++;
+			}
+            continue;
+        }
+
+        // Treat # as a comment
+        if (args.at(0) == "#" || args.at(0) == "") {
+			continue;
+		}
+
+        /// Format: datapathId ipAddress endDevice(0 = false, 1 = true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...
+        /// Whenever a line only contains #NEW, the rest of the line is ignored and a new topology is created
+        /// All devices after #NEW are considered to be in a separate topology
+
+        /// Example:
+        /// 0 10.0.0.1 0 1 10.0.0.6 2 10.0.0.7
+        /// 1 10.0.0.6 1
+        /// 2 10.0.0.6 2
+        /// #NEW
+        /// 3 10.0.0.2 0 1 10.0.0.8 2 10.0.0.9
+        /// 4 10.0.0.8 1
+        /// 5 10.0.0.9 1
+        /// 
+        /// This creates two topologies, one with nodes 0, 1, 2 and the other with nodes 3, 4, 5
+
+        std::string datapathId = args.at(0);
+        std::string ipAddress = args.at(1);
+        bool endDevice = std::stoi(args.at(2));
+
+        // Handle extra parameters for links
+        std::vector<std::string> ports;
+        std::vector<std::string> nextHops;
+        for (int i = 3; i < args.size(); i++) {
+            if (i % 2 == 1) {
+                ports.push_back(args.at(i));
+            }
+            else {
+                nextHops.push_back(args.at(i));
+            }
+        }
+
+        // Create a new node
+        Node n = Node(topology_index, false, datapathId, ipAddress, endDevice, nextHops, ports);
+        topology.addNode(n);
+    }
+}
+
+bool MCA_VeriFlow::registerDomainNodes() {
+    
+    return false;
+}
+
 #ifdef __unix__
     std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string& host, int port, int num_pings) {
         std::vector<double> rtts;
@@ -108,29 +175,6 @@ void MCA_VeriFlow::stop() {
     }
 #endif
 
-/*
-* Implement all below commands:
-* 
-* help: Display the all commands and their descriptions
-* link-controller: Link a currently running Pox Controller to this app
-* init-top: Identifys all local domain nodes, have them transmit a handshake to neighboring controllers.
-* 
-* The following commands should only work when:
-* A controller is linked to the app, and the topology is initialized with init-top.
-* 
-* They should be able to be utilized while the service is running (use a thread!):
-* 
-* run: Start the CCPDN App.
-* stop: Stop the CCPDN App. This command should only work if the CCPDN App is running.
-* list-devices: List all the devices connected to the Pox Controller
-* list-flows: List all the flows in the flow table
-* link-controller: Link a currently running Pox Controller to this app
-* unlink-controller: Free the Pox Controller from this app
-* add-flow: Add a flow to the flow table
-* del-flow: Delete a flow from the flow table
-*/
-
-
 int main() {
     MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
     Controller* c = new Controller();
@@ -164,8 +208,9 @@ int main() {
                 " * help:                                   Display all commands and their parameters." << std::endl <<
                 " * run:                                    Start the CCPDN App. Controller must be linked, and topology initialized." << std::endl <<
                 " * stop:                                   Stop the CCPDN App." << std::endl <<
+                " * rdn [topology_file]:                    Identifies and links all candidates for domain nodes based on given topology file." << std::endl <<
                 " * list-devices:                           List all the devices connected to the Pox Controller." << std::endl <<
-                " * list-flows:                             List all the flows in the flow table." << std::endl <<
+                " * list-flows [switch-ip-address]:         List all the flows associated with a switch based on its IP." << std::endl <<
                 " * link-controller [ip-address] [port]:    Link a currently running Pox Controller to this app." << std::endl <<
                 " * unlink-controller:                      Free the Pox Controller from this app." << std::endl <<
                 " * add-flow [flow_id] [eth_type], [protocol] [source-ip] [destination-ip] [source-port] [destination-port] [action]" << std::endl <<
@@ -189,15 +234,24 @@ int main() {
 			}
         }
 
-        // init-top command
-        else if (args.at(0) == "init-top") {
+        // rdn command
+        else if (args.at(0) == "rdn") {
             if (!controller_linked) {
                 std::cout << "Controller not linked. Try link-controller first" << std::endl;
             }
-            else {
-				std::cout << "Initializing topology..." << std::endl;
-				topology_initialized = true;
+            else if (args.size() < 2) {
+                std::cout << "Not enough arguments. Usage: rdn [topology_file]" << std::endl;
 			}
+            else {
+                mca_veriflow->registerTopologyFile(args.at(1));
+
+                // Print the topology list
+                for (int i = 0; i < mca_veriflow->topology.getTopologyCount(); i++) {
+                    std::cout << "--- TOPOLOGY " << i << " ---" << std::endl;
+					std::cout << mca_veriflow->topology.printTopology(i) << std::endl;
+				}
+                topology_initialized = true;
+            }
         }
 
         // unlink-controller command
