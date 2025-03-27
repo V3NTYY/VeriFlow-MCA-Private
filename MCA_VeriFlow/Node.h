@@ -5,8 +5,8 @@
 #include <vector>
 
 class Node {
-	inline static int nodeCount = 0;
-	inline static int topologyID = 0;
+	static int nodeCount;
+	static int topologyID;
 	public:
 		Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::string ip,
 			bool Enddevice, std::vector<std::string> LinkList, std::vector<std::string> PortList);

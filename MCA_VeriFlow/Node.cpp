@@ -1,5 +1,9 @@
 #include "Node.h"
 
+// Initialize static vars (since inline doesn't work on unix)
+int Node::nodeCount = 0;
+int Node::topologyID = 0;
+
 Node::Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::string ip,
 	bool Enddevice, std::vector<std::string> LinkList, std::vector<std::string> PortList) {
 
