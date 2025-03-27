@@ -4,13 +4,10 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#ifdef __unix__
-	#include <nlohmann/json.hpp>
-#endif
+#include "json.hpp"
 
 class Flow {
 	public:
-
 		// Constructors & destructors
 		Flow(std::string flow_id, std::string eth_type, std::string protocol, 
 			std::string srcIP, std::string dstIP, std::string srcPort, 
