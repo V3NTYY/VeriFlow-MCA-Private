@@ -22,8 +22,6 @@ bool Topology::addNode(Node node)
 
 Node Topology::getNodeByIP(std::string IP)
 {
-	Node emptyNode(-1, false, "-1", "-1", false, std::vector<std::string>(), std::vector<std::string>());
-
 	// Iterate through all topologies
 	for (int i = 0; i < topologyList.size(); i++) {
 		// Iterate through all nodes in the topology
@@ -35,7 +33,7 @@ Node Topology::getNodeByIP(std::string IP)
 		}
 	}
 
-	return emptyNode;
+	return Node();
 }
 
 Node* Topology::getNodeReference(Node n)
@@ -72,6 +70,19 @@ int Topology::getTopologyCount()
 void Topology::clear()
 {
 	topologyList.clear();
+}
+
+Topology Topology::extractIndexTopology(int index)
+{
+	// Ensure index exists
+	if (index < 0 || index >= topologyList.size()) {
+		return Topology();
+	}
+
+	Topology returnTopology;
+	returnTopology.topologyList.push_back(topologyList[index]);
+
+	return returnTopology;
 }
 
 bool Topology::outputToFile(std::string filename)

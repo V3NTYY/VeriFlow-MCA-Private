@@ -23,9 +23,10 @@ class Node {
 		bool isDomainNode();
 		bool isMatchingDomain(Node node);
 		bool isEmptyNode();
-
+		bool removeLink(std::string IP);
 		bool hasAdjacentController();
 		void setControllerAdjacency(bool value);
+		void setEndDevice(bool value);
 
 		int getTopologyID();
 		std::string getDatapathID();

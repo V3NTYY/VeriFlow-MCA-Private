@@ -24,6 +24,7 @@ class Topology {
 		int getTopologyCount();
 
 		void clear();
+		Topology extractIndexTopology(int index);
 		bool outputToFile(std::string filename);
 
 		std::vector<std::vector<Node>> topologyList;

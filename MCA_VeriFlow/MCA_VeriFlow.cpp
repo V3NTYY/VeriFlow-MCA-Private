@@ -197,14 +197,42 @@ bool MCA_VeriFlow::createDomainNodes()
 Topology MCA_VeriFlow::partitionTopology()
 {
     bool success = true;
+	Topology t;
     if (topology.getTopologyCount() <= 1) {
 		std::cerr << "Not enough topologies to partition." << std::endl;
-		return Topology();
+		return t;
 	}
 
-    // Partitioning algorithm based on domain nodes goes here:
+    /// Partitioning algorithm -- partitioning no longer needed, instead this method mostly outputs separate files
+    t = topology;
 
-    return Topology();
+    // Iterate through each topologies node list and check the links
+    for (int i = 0; i < t.getTopologyCount(); i++) {
+        std::vector<Node> nodes = t.getTopology(i);
+        for (int j = 0; j < nodes.size(); j++) {
+            // If the nodes contains links that are out of topology, ONLY remove those links
+            Node* n = t.getNodeReference(nodes.at(j));
+            std::vector<std::string> currLinks = n->getLinkList();
+
+            if (currLinks.size() == 0) {
+				continue;
+			}
+
+            for (std::string link : currLinks) {
+				Node m = t.getNodeByIP(link);
+                if (!n->isMatchingDomain(m) && !m.isEmptyNode()) {
+					n->removeLink(link);
+
+                    // If we have no more links, this is now an end device
+                    if (n->getLinkList().size() == 0) {
+                        n->setEndDevice(true);
+                    }
+                }
+            }
+        }
+    }
+
+    return t;
 }
 
 bool MCA_VeriFlow::registerDomainNodes() {
@@ -391,12 +419,17 @@ int main() {
                 // Use partitioning algorithm to split the topology into multiple topologies
                 Topology partitioned_topologies = mca_veriflow->partitionTopology();
 
-                // Output new, partitioned topology file to give to VeriFlow
-				if (partitioned_topologies.outputToFile(args.at(1))) {
-					std::cout << "Partitioned topologies output to " << args.at(1) << std::endl << std::endl;
-				}
-				else {
-					std::cout << "Error outputting partitioned topologies to file." << std::endl << std::endl;
+                for (int i = 0; i < partitioned_topologies.getTopologyCount(); i++) {
+					std::cout << "--- PARTITIONED TOPOLOGY " << i << " ---" << std::endl;
+					std::cout << partitioned_topologies.printTopology(i) << std::endl;
+
+                    // Output new, partitioned topology file to give to VeriFlow
+                    if (partitioned_topologies.extractIndexTopology(i).outputToFile(args.at(1) + std::to_string(i))) {
+                        std::cout << "Topology " << std::to_string(i) << " output to " << args.at(1) + std::to_string(i) << std::endl << std::endl;
+                    }
+                    else {
+                        std::cout << "Error outputting topology " << args.at(1) + std::to_string(i) << " to file." << std::endl << std::endl;
+                    }
 				}
 			}
         }

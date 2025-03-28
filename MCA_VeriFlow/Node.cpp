@@ -40,9 +40,21 @@ Node::Node()
 	domainNode =			false;
 	controllerAdjacency =	false;
 	linkingTopologies =		"null";
+	privateNodeID =			-1;
 
 	// Assign topology identifier
 	topologyIndex =			-1;
+}
+
+bool Node::removeLink(std::string IP) {
+	for (int i = 0; i < linkList.size(); i++) {
+		if (linkList.at(i) == IP) {
+			linkList.erase(linkList.begin() + i);
+			portList.erase(portList.begin() + i);
+			return true;
+		}
+	}
+	return false;
 }
 
 void Node::setDomainNode(bool DomainNode, std::string topologies) {
@@ -181,6 +193,11 @@ std::string Node::print()
 std::vector<std::string> Node::getLinkedIPs()
 {
 	return linkList;
+}
+
+void Node::setEndDevice(bool value)
+{
+	endDevice = value;
 }
 
 std::string Node::filePrint()
