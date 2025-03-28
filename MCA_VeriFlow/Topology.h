@@ -20,6 +20,8 @@ class Topology {
 		std::string printTopology(int index);
 		int getTopologyCount();
 
+		void clear();
+
 		std::vector<std::vector<Node>> topologyList;
 
 		// Each node in the topology is stored as a vector of node objects

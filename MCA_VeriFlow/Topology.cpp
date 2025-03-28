@@ -35,6 +35,11 @@ int Topology::getTopologyCount()
 	return topologyList.size();
 }
 
+void Topology::clear()
+{
+	topologyList.clear();
+}
+
 std::string Topology::printTopology(int index)
 {
 	// Ensure index exists

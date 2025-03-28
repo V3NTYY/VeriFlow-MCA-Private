@@ -12,10 +12,17 @@ class Node {
 			bool Enddevice, std::vector<std::string> LinkList, std::vector<std::string> PortList);
 		~Node();
 
+		bool operator==(const Node& other) const {
+			return (this->datapathID == other.datapathID && this->IP == other.IP);
+		}
+
 		void setDomainNode(bool domainNode);
 		bool isSwitch();
 		bool isDomainNode();
 		bool isMatchingDomain(Node node);
+
+		bool hasAdjacentController();
+		void setControllerAdjacency(bool value);
 
 		int getTopologyID();
 		std::string getDatapathID();
@@ -30,6 +37,7 @@ class Node {
 		int							privateNodeID;
 		bool						switchNode;
 		bool						domainNode;
+		bool						controllerAdjacency;
 		std::string					datapathID;
 		std::string					IP;
 		bool						endDevice;

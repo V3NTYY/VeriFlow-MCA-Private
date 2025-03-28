@@ -2,9 +2,9 @@
 # I'm not sure if this config works or is valid, VeriFlow constantly has 'segmentation fault'
 # this could be correct, could be incorrect. May also need to be in different format.
 
-0 127.0.0.1 0 1 10.0.0.5 2 10.0.0.6
-
+#CA
 1 10.0.0.5 0 1 10.0.0.1 2 10.0.0.2
+#CA
 2 10.0.0.6 0 1 10.0.0.3
 
 501 10.0.0.1 1

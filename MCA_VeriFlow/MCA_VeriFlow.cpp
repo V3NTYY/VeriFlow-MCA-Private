@@ -21,6 +21,9 @@ void MCA_VeriFlow::stop() {
 }
 
 bool MCA_VeriFlow::registerTopologyFile(std::string file) {
+    // Clear the current topology since we're loading a new one
+    topology.clear();
+
     std::ifstream topology_file(file);
     if (!topology_file.is_open()) {
         std::cerr << "Error opening file..." << std::endl;
@@ -29,14 +32,20 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
 
     std::string line;
     int topology_index = 0;
+    bool next_node_ca = false;
     while (std::getline(topology_file, line)) {
         std::vector<std::string> args = splitInput(line);
  
         // Skip non-complete lines
         if (args.size() < 3) {
+            // If #NEW is encountered, we are looking at a new topology
             if (args.size() == 1 && args.at(0) == "#NEW") {
-				topology_index++;
-			}
+                topology_index++;
+            }
+            // If #CA is encountered, the next node is adjacent to the controller
+            if (args.size() == 1 && args.at(0) == "#CA") {
+                next_node_ca = true;
+            }
             continue;
         }
 
@@ -78,8 +87,83 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
 
         // Create a new node
         Node n = Node(topology_index, false, datapathId, ipAddress, endDevice, nextHops, ports);
+        n.setControllerAdjacency(next_node_ca);
+        next_node_ca = false;
         topology.addNode(n);
     }
+}
+
+bool MCA_VeriFlow::createDomainNodes()
+{
+    int expectedDomainNodes = topology.getTopologyCount() - 1;
+    if (topology.getTopologyCount() <= 1) {
+        std::cerr << "Not enough topologies for domain nodes." << std::endl;
+        return false;
+    }
+
+    // Use loop to shift scope to only two topologies at a time
+    for (int i = 0; i < expectedDomainNodes; i++) {
+        // Get the two topologies
+		std::vector<Node> topology1 = topology.getTopology(i);
+		std::vector<Node> topology2 = topology.getTopology(i + 1);
+
+        std::vector<Node> candidate_domain_nodes;
+        // Filter nodelist to only nodes that have links
+        for (int j = 0; j < topology1.size(); j++) {
+			if (topology1.at(j).getLinkList().size() > 0) {
+				candidate_domain_nodes.push_back(topology1.at(j));
+			}
+		}
+
+        for (int j = 0; j < topology2.size(); j++) {
+            if (topology2.at(j).getLinkList().size() > 0) {
+                candidate_domain_nodes.push_back(topology2.at(j));
+			}
+        }
+
+        // Filter nodelist so it only contains inter-topology links
+        for (Node n : candidate_domain_nodes) {
+            for (std::string link : n.getLinkList()) {
+				// Check if the current node is linked to any node in the other topology based on IP
+				bool found = false;
+                for (Node m : candidate_domain_nodes) {
+					if (m.getIP() == link) {
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					candidate_domain_nodes.erase(std::remove(candidate_domain_nodes.begin(), candidate_domain_nodes.end(), n), candidate_domain_nodes.end());
+					break;
+				}
+			}
+		}
+
+        // There are no domain node candidates if the list is empty now
+        if (candidate_domain_nodes.size() == 0) {
+            std::cerr << "No domain node candidates found. Do the topologies have links connecting them together?" << std::endl;
+            return false;
+        }
+        
+        // Create preference for nodes that are adjacent to the controller
+
+        // Create preference for nodes with the fewest links
+    }
+
+    return false;
+}
+
+std::vector<Topology> MCA_VeriFlow::partitionTopology()
+{
+    bool success = true;
+    if (topology.getTopologyCount() <= 1) {
+		std::cerr << "Not enough topologies to partition." << std::endl;
+		return std::vector<Topology>();
+	}
+
+    // Partitioning algorithm based on domain nodes goes here:
+
+    return std::vector<Topology>();
 }
 
 bool MCA_VeriFlow::registerDomainNodes() {
@@ -250,6 +334,20 @@ int main() {
                     std::cout << "--- TOPOLOGY " << i << " ---" << std::endl;
 					std::cout << mca_veriflow->topology.printTopology(i) << std::endl;
 				}
+
+                // TODO: Verify topology by pinging all nodes. Add func here
+
+                // TODO: Find the best candidates for domain nodes, create them.
+                mca_veriflow->createDomainNodes();
+
+                // TODO: Register domain nodes via handshake.
+                mca_veriflow->registerDomainNodes();
+
+                // TODO: Use partitioning algorithm to identify domain nodes.
+                std::vector<Topology> partitioned_topologies = mca_veriflow->partitionTopology();
+
+                // TODO: Output new, partitioned topology file to give to VeriFlow. Add func here
+
                 topology_initialized = true;
             }
         }

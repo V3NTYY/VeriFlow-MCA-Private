@@ -7,13 +7,14 @@ int Node::topologyID = 0;
 Node::Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::string ip,
 	bool Enddevice, std::vector<std::string> LinkList, std::vector<std::string> PortList) {
 
-	switchNode =	SwitchNode;
-	datapathID =	DatapathID;
-	IP =			ip;
-	endDevice =		Enddevice;
-	linkList =		LinkList;
-	portList =		PortList;
-	domainNode =	false;
+	switchNode =			SwitchNode;
+	datapathID =			DatapathID;
+	IP =					ip;
+	endDevice =				Enddevice;
+	linkList =				LinkList;
+	portList =				PortList;
+	domainNode =			false;
+	controllerAdjacency =	false;
 
 	// Assign node identifiers based on number of nodes
 	privateNodeID = nodeCount;
@@ -51,6 +52,18 @@ int Node::getTopologyID()
 {
 	return topologyIndex;
 }
+
+bool Node::hasAdjacentController()
+{
+	return controllerAdjacency;
+}
+
+void Node::setControllerAdjacency(bool value)
+{
+	controllerAdjacency = value;
+}
+
+
 
 std::string Node::getDatapathID()
 {
