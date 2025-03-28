@@ -256,7 +256,7 @@ bool MCA_VeriFlow::verifyTopology() {
 }
 
 bool MCA_VeriFlow::registerDomainNodes() {
-    
+    // Iterate through topology list, all nodes that are domain nodes will be added t
     return false;
 }
 
@@ -493,7 +493,7 @@ int main() {
                     std::cout << mca_veriflow->topology.printTopology(i);
                 }
 
-                // TODO: Register domain nodes via handshake. May need a separate thread, or to implement a listener for this
+                // Register domain nodes via handshake. May need a separate thread, or to implement a listener for this
                 mca_veriflow->registerDomainNodes();
 
                 topology_initialized = true;

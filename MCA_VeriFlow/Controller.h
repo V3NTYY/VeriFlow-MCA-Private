@@ -2,7 +2,6 @@
 #define CONTROLLER_H
 
 #include "MCA_VeriFlow.h"
-#include "DomainNode.h"
 #include "Flow.h"
 #include "OpenFlowMessage.h"
 #include <iostream>
@@ -35,8 +34,9 @@ class Controller {
 		bool sendOpenFlowMessage(OpenFlowMessage Message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
-		bool linkDomainNode(DomainNode d);
+		bool addDomainNode(Node n);
 		bool synchronize();
+		std::vector<Node> getGlobalDomainNodes();
 
 		// Debugging functions
 		void print();
@@ -44,7 +44,7 @@ class Controller {
 		int						sockfd;
 		std::string				controllerIP;
 		std::string				controllerPort;
-		std::vector<DomainNode> domainNodes;
+		std::vector<Node>		globalDomainNodes;
 
 		// Functions
 		bool linkController();

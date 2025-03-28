@@ -88,9 +88,12 @@ bool Controller::removeFlowFromTable(Flow f)
 	return false;
 }
 
-bool Controller::linkDomainNode(DomainNode d)
+bool Controller::addDomainNode(Node n)
 {
-	domainNodes.push_back(d);
+	if (n.isDomainNode()) {
+		globalDomainNodes.push_back(n);
+		return true;
+	}
 	return false;
 }
 
@@ -100,8 +103,8 @@ bool Controller::parseDigest(std::string digest)
 	// Only returns true if a command was issued as result of digest
 
 	// Example: Digest contained the DN bit, so we will link it as a domain node
-	//	DomainNode d("parseIP", "parsePort");
-	//	linkDomainNode(d);
+	//  Node d(nodeInfo from digest);
+	//	addDomainNode(d);
 
 	// Example 2: Digest containe the Synch bit, so we will issue a synchronization command 
 	//	synchronize();
@@ -131,6 +134,11 @@ bool Controller::synchronize()
 	// TODO: Issue command to POX controller to ask all neighboring controllers for topology data
 	// May require direct connection to controller. We can change the method as we need
 	return false;
+}
+
+std::vector<Node> Controller::getGlobalDomainNodes()
+{
+	return globalDomainNodes;
 }
 
 // Print the controller information
