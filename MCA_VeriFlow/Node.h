@@ -27,8 +27,10 @@ class Node {
 		bool hasAdjacentController();
 		void setControllerAdjacency(bool value);
 		void setEndDevice(bool value);
+		void setPingResult(bool value);
 
 		int getTopologyID();
+		bool getPingResult();
 		std::string getDatapathID();
 		std::string getIP();
 		bool isEndDevice();
@@ -48,6 +50,7 @@ class Node {
 		std::string					datapathID;
 		std::string					IP;
 		bool						endDevice;
+		bool						pingResult;
 		std::vector<std::string>	linkList;
 		std::vector<std::string>	portList;
 };

@@ -16,6 +16,7 @@ Node::Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::stri
 	domainNode =			false;
 	controllerAdjacency =	false;
 	linkingTopologies =		"null";
+	pingResult =			false;
 
 	// Assign node identifiers based on number of nodes
 	privateNodeID = nodeCount;
@@ -41,6 +42,7 @@ Node::Node()
 	controllerAdjacency =	false;
 	linkingTopologies =		"null";
 	privateNodeID =			-1;
+	pingResult =			false;
 
 	// Assign topology identifier
 	topologyIndex =			-1;
@@ -198,6 +200,14 @@ std::vector<std::string> Node::getLinkedIPs()
 void Node::setEndDevice(bool value)
 {
 	endDevice = value;
+}
+
+void Node::setPingResult(bool value) {
+	pingResult = value;
+}
+
+bool Node::getPingResult() {
+	return pingResult;
 }
 
 std::string Node::filePrint()

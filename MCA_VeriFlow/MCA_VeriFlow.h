@@ -27,6 +27,7 @@ class MCA_VeriFlow {
 		Topology partitionTopology();
 		bool verifyTopology();
 		bool registerDomainNodes();
+		bool pingTest(Node n);
 
 		std::vector<double> measure_tcp_connection(const std::string& host, int port, int num_pings);
 		double test_tcp_connection_time(const std::string& host, int port, int timeout);

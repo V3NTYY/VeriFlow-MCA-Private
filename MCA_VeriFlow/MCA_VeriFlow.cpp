@@ -236,12 +236,42 @@ Topology MCA_VeriFlow::partitionTopology()
 }
 
 bool MCA_VeriFlow::verifyTopology() {
-    return false;
+    // Iterate through topology list, run a ping test on each node
+    bool success = true;
+    for (int i = 0; i < topology.getTopologyCount(); i++) {
+        for (Node n : topology.getTopology(i)) {
+            Node* ref = topology.getNodeReference(n);
+            // If our node is pingable, set the ping result to true for each node
+            if (!pingTest(n)) {
+                ref->setPingResult(false);
+                success = false;
+			} else {
+				ref->setPingResult(true);
+			}
+        }
+    }
+    
+    // If a single node is not pingable, the topology is not completely validated
+    return success;
 }
 
 bool MCA_VeriFlow::registerDomainNodes() {
     
     return false;
+}
+
+bool MCA_VeriFlow::pingTest(Node n)
+{
+    // Ping on windows requires admin, we don't really need to do that since this is unix based.
+    #ifdef _WIN32
+    return false;
+    #endif
+
+    // If the node is reachable via ICMP ping, return true
+    std::string sysCommand = "ping -c 1" + n.getIP();
+    int result = system(sysCommand.c_str());
+
+    return result == 0;
 }
 
 #ifdef __unix__
@@ -337,7 +367,7 @@ int main() {
     Controller* c = new Controller();
 
     #ifdef _WIN32
-    std::cout << "This app only runs on UNIX systems due to specific socket libraries. Most things won't work." << std::endl;
+    std::cout << "WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work." << std::endl;
     #endif
 
     bool controller_linked = false;
@@ -449,12 +479,12 @@ int main() {
             else {
                 mca_veriflow->registerTopologyFile(args.at(1));
 
-                // TODO: Verify topology by pinging all nodes.
+                // Create a thread to handle this method
                 if (!mca_veriflow->verifyTopology()) {
                     std::cout << "Topology verification failed. Are all switches reachable?" << std::endl;
                 }
 
-                // TODO: Find the best candidates for domain nodes, create them.
+                // Find the best candidates for domain nodes, create them.
                 mca_veriflow->createDomainNodes();
 
                 // Print the topology list
