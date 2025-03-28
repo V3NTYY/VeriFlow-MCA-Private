@@ -235,6 +235,10 @@ Topology MCA_VeriFlow::partitionTopology()
     return t;
 }
 
+bool MCA_VeriFlow::verifyTopology() {
+    return false;
+}
+
 bool MCA_VeriFlow::registerDomainNodes() {
     
     return false;
@@ -445,7 +449,10 @@ int main() {
             else {
                 mca_veriflow->registerTopologyFile(args.at(1));
 
-                // TODO: Verify topology by pinging all nodes. Add func here
+                // TODO: Verify topology by pinging all nodes.
+                if (!mca_veriflow->verifyTopology()) {
+                    std::cout << "Topology verification failed. Are all switches reachable?" << std::endl;
+                }
 
                 // TODO: Find the best candidates for domain nodes, create them.
                 mca_veriflow->createDomainNodes();
@@ -456,7 +463,7 @@ int main() {
                     std::cout << mca_veriflow->topology.printTopology(i) << std::endl;
                 }
 
-                // TODO: Register domain nodes via handshake.
+                // TODO: Register domain nodes via handshake. May need a separate thread, or to implement a listener for this
                 mca_veriflow->registerDomainNodes();
 
                 topology_initialized = true;

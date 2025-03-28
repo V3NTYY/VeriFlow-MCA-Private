@@ -28,6 +28,7 @@ class Topology {
 		bool outputToFile(std::string filename);
 
 		std::vector<std::vector<Node>> topologyList;
+		bool verified;
 
 		// Each node in the topology is stored as a vector of node objects
 		// Each node knows its own links and information
