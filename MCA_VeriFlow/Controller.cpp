@@ -121,7 +121,7 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	for (int i = 0; i < Msg.size(); ++i) {
 		std::cout << std::hex << static_cast<int>(Msg[i]) << " ";
 	}
-	std::cout << std::dec << std::endl;
+	std::cout << std::dec << std::endl << std::endl;
 
 	return false;
 }
@@ -155,7 +155,7 @@ void Controller::recvControllerMessages(bool thread)
 				for (int i = 0; i < bytes_received; ++i) {
 					std::cout << std::hex << static_cast<int>(buf[i]) << " ";
 				}
-				std::cout << std::dec << std::endl;
+				std::cout << std::dec << std::endl << std::endl;
 		#endif
 	}
 
@@ -167,7 +167,7 @@ void Controller::recvControllerMessages(bool thread)
 				for (int i = 0; i < bytes_received; ++i) {
 					std::cout << std::hex << static_cast<int>(buf[i]) << " ";
 				}
-				std::cout << std::dec << std::endl;
+				std::cout << std::dec << std::endl << std::endl;
 		#endif
 	}
 }

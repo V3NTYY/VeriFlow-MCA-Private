@@ -367,7 +367,7 @@ int main() {
     Controller* c = new Controller();
 
     #ifdef _WIN32
-    std::cout << "WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work." << std::endl;
+    std::cout << "WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n" << std::endl;
     #endif
 
     bool controller_linked = false;
@@ -412,10 +412,10 @@ int main() {
         // link-controller command
         else if (args.at(0) == "link-controller") {
             if (args.size() < 3) {
-				std::cout << "Not enough arguments. Usage: link-controller [ip-address] [port]" << std::endl;
+				std::cout << "Not enough arguments. Usage: link-controller [ip-address] [port]\n" << std::endl;
 			}
             else if (controller_linked) {
-                std::cout << "Controller already linked. Try unlink-controller first" << std::endl;
+                std::cout << "Controller already linked. Try unlink-controller first\n" << std::endl;
             }
             else {
 				c->setControllerIP(args.at(1), args.at(2));
@@ -426,17 +426,17 @@ int main() {
         // output-top command
         else if (args.at(0) == "output-top") {
 			if (!topology_initialized) {
-				std::cout << "Topology not initialized. Try rdn first." << std::endl;
+				std::cout << "Topology not initialized. Try rdn first.\n" << std::endl;
 			}
 			else if (args.size() < 2) {
-				std::cout << "Not enough arguments. Usage: output-top [file-name]" << std::endl;
+				std::cout << "Not enough arguments. Usage: output-top [file-name]\n" << std::endl;
 			}
 			else {
                 if (mca_veriflow->topology.outputToFile(args.at(1))) {
                     std::cout << "Topology output to " << args.at(1) << std::endl << std::endl;
 				}
 				else {
-					std::cout << "Error outputting topology to file." << std::endl << std::endl;
+					std::cout << "Error outputting topology to file.\n" << std::endl;
                 }
 			}
 		}
@@ -444,10 +444,10 @@ int main() {
         // refactor-top command
         else if (args.at(0) == "refactor-top") {
             if (!topology_initialized) {
-                std::cout << "Topology not initialized. Try rdn first." << std::endl;
+                std::cout << "Topology not initialized. Try rdn first.\n" << std::endl;
             }
 			else if (args.size() < 2) {
-				std::cout << "Not enough arguments. Usage: refactor-top [file-name]" << std::endl;
+				std::cout << "Not enough arguments. Usage: refactor-top [file-name]\n" << std::endl;
 			}
 			else {
                 // Use partitioning algorithm to split the topology into multiple topologies
@@ -455,14 +455,14 @@ int main() {
 
                 for (int i = 0; i < partitioned_topologies.getTopologyCount(); i++) {
 					std::cout << "--- PARTITIONED TOPOLOGY " << i << " ---" << std::endl;
-					std::cout << partitioned_topologies.printTopology(i) << std::endl;
+					std::cout << partitioned_topologies.printTopology(i);
 
                     // Output new, partitioned topology file to give to VeriFlow
                     if (partitioned_topologies.extractIndexTopology(i).outputToFile(args.at(1) + std::to_string(i))) {
                         std::cout << "Topology " << std::to_string(i) << " output to " << args.at(1) + std::to_string(i) << std::endl << std::endl;
                     }
                     else {
-                        std::cout << "Error outputting topology " << args.at(1) + std::to_string(i) << " to file." << std::endl << std::endl;
+                        std::cout << "Error outputting topology " << args.at(1) + std::to_string(i) << " to file.\n" << std::endl;
                     }
 				}
 			}
@@ -471,17 +471,17 @@ int main() {
         // rdn command
         else if (args.at(0) == "rdn") {
             if (!controller_linked) {
-                std::cout << "Controller not linked. Try link-controller first" << std::endl;
+                std::cout << "Controller not linked. Try link-controller first\n" << std::endl;
             }
             else if (args.size() < 2) {
-                std::cout << "Not enough arguments. Usage: rdn [topology_file]" << std::endl;
+                std::cout << "Not enough arguments. Usage: rdn [topology_file]\n" << std::endl;
 			}
             else {
                 mca_veriflow->registerTopologyFile(args.at(1));
 
                 // Create a thread to handle this method
                 if (!mca_veriflow->verifyTopology()) {
-                    std::cout << "Topology verification failed. Are all switches reachable?" << std::endl;
+                    std::cout << "Topology verification failed. Are all switches reachable?\n" << std::endl;
                 }
 
                 // Find the best candidates for domain nodes, create them.
@@ -490,7 +490,7 @@ int main() {
                 // Print the topology list
                 for (int i = 0; i < mca_veriflow->topology.getTopologyCount(); i++) {
                     std::cout << "--- TOPOLOGY " << i << " ---" << std::endl;
-                    std::cout << mca_veriflow->topology.printTopology(i) << std::endl;
+                    std::cout << mca_veriflow->topology.printTopology(i);
                 }
 
                 // TODO: Register domain nodes via handshake. May need a separate thread, or to implement a listener for this
@@ -503,7 +503,7 @@ int main() {
         // unlink-controller command
         else if (args.at(0) == "unlink-controller") {
             if (!controller_linked) {
-				std::cout << "Controller not linked!" << std::endl;
+				std::cout << "Controller not linked. Try link-controller first.\n" << std::endl;
 			}
 			else {
                 // TODO: Stop any services involving listening to the controller
@@ -516,26 +516,26 @@ int main() {
         // run command
         else if (args.at(0) == "run") {
             if (!controller_linked || !topology_initialized) {
-                std::cout << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized." << std::endl;
+                std::cout << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized.\n" << std::endl;
             } else {
                 mca_veriflow->run();
-                std::cout << "CCPDN App started." << std::endl;
+                std::cout << "CCPDN App started.\n" << std::endl;
             }
         }
 
         // stop command
         else if (args.at(0) == "stop") {
             if (!controller_linked || !topology_initialized) {
-                std::cout << "CCPDN App is not running." << std::endl;
+                std::cout << "CCPDN App is not running.\n" << std::endl;
             } else {
                 mca_veriflow->stop();
-                std::cout << "CCPDN App stopped." << std::endl;
+                std::cout << "CCPDN App stopped.\n" << std::endl;
             }
         }
     
 
         else if (args.at(0) == "run-tcp-test") {
-            std::cout << "Running TCP test..." << std::endl;
+            std::cout << "Running TCP test...\n" << std::endl;
             #ifdef __unix__
                 std::vector<double> measured_rtts;
                 measured_rtts = mca_veriflow->measure_tcp_connection("google.com", 80, 10);
@@ -547,7 +547,7 @@ int main() {
 
         // Invalid response
         else {
-            std::cout << "Invalid command" << std::endl;
+            std::cout << "Invalid command\n" << std::endl;
         }
     }
 
