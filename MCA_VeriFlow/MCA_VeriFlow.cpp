@@ -1,5 +1,4 @@
 ﻿#include "MCA_VeriFlow.h"
-#include "Controller.h"
 
 // Function to split a string into a vector of words
 std::vector<std::string> splitInput(std::string input) {
@@ -256,7 +255,13 @@ bool MCA_VeriFlow::verifyTopology() {
 }
 
 bool MCA_VeriFlow::registerDomainNodes() {
-    // Iterate through topology list, all nodes that are domain nodes will be added t
+    // Iterate through topology list, all nodes that are domain nodes will be added to the controllers list
+    for (Node n : topology.localDomainNodes) {
+		if (!controller.addDomainNode(n)) {
+			std::cerr << "Error adding domain node to controller." << std::endl;
+			return false;
+		}
+	}
     return false;
 }
 
@@ -364,7 +369,6 @@ bool MCA_VeriFlow::pingTest(Node n)
 
 int main() {
     MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
-    Controller* c = new Controller();
 
     #ifdef _WIN32
     std::cout << "WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n" << std::endl;
@@ -418,8 +422,8 @@ int main() {
                 std::cout << "Controller already linked. Try unlink-controller first\n" << std::endl;
             }
             else {
-				c->setControllerIP(args.at(1), args.at(2));
-				controller_linked = c->start();
+				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
+				controller_linked = mca_veriflow->controller.start();
 			}
         }
 

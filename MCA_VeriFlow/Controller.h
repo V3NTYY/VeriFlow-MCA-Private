@@ -1,9 +1,9 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "MCA_VeriFlow.h"
 #include "Flow.h"
 #include "OpenFlowMessage.h"
+#include "Node.h"
 #include <iostream>
 #include <vector>
 #include <string>

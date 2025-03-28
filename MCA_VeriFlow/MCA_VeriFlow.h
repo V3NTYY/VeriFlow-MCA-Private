@@ -10,6 +10,7 @@
 #include <numeric>
 #include <cstring>
 #include "Topology.h"
+#include "Controller.h"
 
 #ifdef __unix__
 	#include <sys/socket.h>
@@ -33,6 +34,8 @@ class MCA_VeriFlow {
 		double test_tcp_connection_time(const std::string& host, int port, int timeout);
 
 		Topology topology;
+		Controller controller;
+
 	private:
 };
 
