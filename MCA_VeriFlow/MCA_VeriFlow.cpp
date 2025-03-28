@@ -267,8 +267,8 @@ bool MCA_VeriFlow::pingTest(Node n)
     return false;
     #endif
 
-    // If the node is reachable via ICMP ping, return true
-    std::string sysCommand = "ping -c 1" + n.getIP();
+    // If the node is reachable via ICMP ping, return true. Use /dev/null 2>&1 to hide output
+    std::string sysCommand = "ping -c 1 " + n.getIP() + " > /dev/null 2>&1";
     int result = system(sysCommand.c_str());
 
     return result == 0;
