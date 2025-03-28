@@ -35,6 +35,7 @@ class Node {
 		std::vector<std::string> getLinkedIPs();
 
 		std::string print();
+		std::string filePrint();
 
 	private:
 		int							topologyIndex;	// Which topology this node belongs to

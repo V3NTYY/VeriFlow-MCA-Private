@@ -24,7 +24,7 @@ class MCA_VeriFlow {
 		void stop();
 		bool registerTopologyFile(std::string filepath);
 		bool createDomainNodes();
-		std::vector<Topology> partitionTopology();
+		Topology partitionTopology();
 		bool registerDomainNodes();
 
 		std::vector<double> measure_tcp_connection(const std::string& host, int port, int num_pings);

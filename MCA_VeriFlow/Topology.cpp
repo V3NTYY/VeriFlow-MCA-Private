@@ -74,6 +74,35 @@ void Topology::clear()
 	topologyList.clear();
 }
 
+bool Topology::outputToFile(std::string filename)
+{
+	// Create the output file
+	std::ofstream outputFile;
+	outputFile.open(filename);
+
+	// Return false if the file couldn't be created
+	if (!outputFile.is_open()) {
+		return false;
+	}
+
+	outputFile << "# Format: id ipAddress endDevice(0=false,1=true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...\n";
+	outputFile << "# The line '#NEW' separates topologies, and creates a new one\n";
+	outputFile << "# The line '#CA' signifies that the next node is adjacent to the controller\n\n";
+
+	// Iterate through all topologies
+	for (int i = 0; i < topologyList.size(); i++) {
+		// Don't add the #NEW line if it's the first topology
+		outputFile << ((i == 0) ? "" : "#NEW\n");
+
+		// Iterate through all nodes in the topology
+		for (int j = 0; j < topologyList[i].size(); j++) {
+			outputFile << topologyList[i][j].filePrint() << std::endl;
+		}
+	}
+
+	return true;
+}
+
 std::string Topology::printTopology(int index)
 {
 	// Ensure index exists

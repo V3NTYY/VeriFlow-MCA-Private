@@ -182,3 +182,26 @@ std::vector<std::string> Node::getLinkedIPs()
 {
 	return linkList;
 }
+
+std::string Node::filePrint()
+{
+	/// Format: datapathId ipAddress endDevice(0 = false, 1 = true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...
+	/// #CA means controller adjacency
+
+	std::string output = "";
+	if (controllerAdjacency) {
+		output += "#CA\n";
+	}
+	std::string temp = datapathID + " " + IP + " " + (endDevice ? "1" : "0") + " ";
+	output += temp;
+	if (linkList.size() == portList.size()) {
+		for (int i = 0; i < linkList.size(); i++) {
+			output += portList.at(i) + " " + linkList.at(i) + " ";
+		}
+	}
+	else {
+		output = "# ERROR adding: " + temp;
+	}
+
+	return output;
+}

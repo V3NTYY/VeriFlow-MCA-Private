@@ -57,6 +57,7 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
         /// Format: datapathId ipAddress endDevice(0 = false, 1 = true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...
         /// Whenever a line only contains #NEW, the rest of the line is ignored and a new topology is created
         /// All devices after #NEW are considered to be in a separate topology
+        /// To designate a node as adjacent to the controller, use #CA
 
         /// Example:
         /// 0 10.0.0.1 0 1 10.0.0.6 2 10.0.0.7
@@ -193,17 +194,17 @@ bool MCA_VeriFlow::createDomainNodes()
     return success;
 }
 
-std::vector<Topology> MCA_VeriFlow::partitionTopology()
+Topology MCA_VeriFlow::partitionTopology()
 {
     bool success = true;
     if (topology.getTopologyCount() <= 1) {
 		std::cerr << "Not enough topologies to partition." << std::endl;
-		return std::vector<Topology>();
+		return Topology();
 	}
 
     // Partitioning algorithm based on domain nodes goes here:
 
-    return std::vector<Topology>();
+    return Topology();
 }
 
 bool MCA_VeriFlow::registerDomainNodes() {
@@ -333,6 +334,8 @@ int main() {
                 " * run:                                    Start the CCPDN App. Controller must be linked, and topology initialized." << std::endl <<
                 " * stop:                                   Stop the CCPDN App." << std::endl <<
                 " * rdn [topology_file]:                    Identifies and links all candidates for domain nodes based on given topology file." << std::endl <<
+                " * refactor-top [file-name]:               Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file." << std::endl <<
+                " * output-top [file-name]:                 Output the current topology list to a new file." << std::endl <<
                 " * list-devices:                           List all the devices connected to the Pox Controller." << std::endl <<
                 " * list-flows [switch-ip-address]:         List all the flows associated with a switch based on its IP." << std::endl <<
                 " * link-controller [ip-address] [port]:    Link a currently running Pox Controller to this app." << std::endl <<
@@ -355,6 +358,46 @@ int main() {
             else {
 				c->setControllerIP(args.at(1), args.at(2));
 				controller_linked = c->start();
+			}
+        }
+
+        // output-top command
+        else if (args.at(0) == "output-top") {
+			if (!topology_initialized) {
+				std::cout << "Topology not initialized. Try rdn first." << std::endl;
+			}
+			else if (args.size() < 2) {
+				std::cout << "Not enough arguments. Usage: output-top [file-name]" << std::endl;
+			}
+			else {
+                if (mca_veriflow->topology.outputToFile(args.at(1))) {
+                    std::cout << "Topology output to " << args.at(1) << std::endl << std::endl;
+				}
+				else {
+					std::cout << "Error outputting topology to file." << std::endl << std::endl;
+                }
+			}
+		}
+
+        // refactor-top command
+        else if (args.at(0) == "refactor-top") {
+            if (!topology_initialized) {
+                std::cout << "Topology not initialized. Try rdn first." << std::endl;
+            }
+			else if (args.size() < 2) {
+				std::cout << "Not enough arguments. Usage: refactor-top [file-name]" << std::endl;
+			}
+			else {
+                // Use partitioning algorithm to split the topology into multiple topologies
+                Topology partitioned_topologies = mca_veriflow->partitionTopology();
+
+                // Output new, partitioned topology file to give to VeriFlow
+				if (partitioned_topologies.outputToFile(args.at(1))) {
+					std::cout << "Partitioned topologies output to " << args.at(1) << std::endl << std::endl;
+				}
+				else {
+					std::cout << "Error outputting partitioned topologies to file." << std::endl << std::endl;
+				}
 			}
         }
 
@@ -382,11 +425,6 @@ int main() {
 
                 // TODO: Register domain nodes via handshake.
                 mca_veriflow->registerDomainNodes();
-
-                // TODO: Use partitioning algorithm to identify domain nodes.
-                std::vector<Topology> partitioned_topologies = mca_veriflow->partitionTopology();
-
-                // TODO: Output new, partitioned topology file to give to VeriFlow. Add func here
 
                 topology_initialized = true;
             }

@@ -2,6 +2,7 @@
 #define TOPOLOGY_H
 
 #include "Node.h"
+#include <fstream>
 
 /// This class is a little confusing.
 ///
@@ -23,6 +24,7 @@ class Topology {
 		int getTopologyCount();
 
 		void clear();
+		bool outputToFile(std::string filename);
 
 		std::vector<std::vector<Node>> topologyList;
 
