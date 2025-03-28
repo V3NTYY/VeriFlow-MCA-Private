@@ -481,9 +481,11 @@ int main() {
                 std::cout << "Not enough arguments. Usage: rdn [topology_file]\n" << std::endl;
 			}
             else {
+                // Read the topology file and register it
                 mca_veriflow->registerTopologyFile(args.at(1));
 
-                // Create a thread to handle this method
+                // Verify the nodes exist in the topology
+                std::cout << "Performing ping test on all nodes for verification...\n" << std::endl;
                 if (!mca_veriflow->verifyTopology()) {
                     std::cout << "Topology verification failed. Are all switches reachable?\n" << std::endl;
                 }
