@@ -188,6 +188,7 @@ bool MCA_VeriFlow::createDomainNodes()
         std::string connectingTopologies = std::to_string(i) + ":" + std::to_string(i + 1);
         Node* n = topology.getNodeReference(candidate_domain_nodes.at(domainNodeIndex));
         n->setDomainNode(true, connectingTopologies);
+        controller.addDomainNode(n);
     }
 
     return success;
@@ -252,17 +253,6 @@ bool MCA_VeriFlow::verifyTopology() {
     
     // If a single node is not pingable, the topology is not completely validated
     return success;
-}
-
-bool MCA_VeriFlow::registerDomainNodes() {
-    // Iterate through topology list, all nodes that are domain nodes will be added to the controllers list
-    for (Node n : topology.localDomainNodes) {
-		if (!controller.addDomainNode(n)) {
-			std::cerr << "Error adding domain node to controller." << std::endl;
-			return false;
-		}
-	}
-    return false;
 }
 
 bool MCA_VeriFlow::pingTest(Node n)
@@ -499,8 +489,7 @@ int main() {
                     std::cout << mca_veriflow->topology.printTopology(i);
                 }
 
-                // Register domain nodes via handshake. May need a separate thread, or to implement a listener for this
-                mca_veriflow->registerDomainNodes();
+                // Domain nodes registered already from static topology, no handshake required here.
 
                 topology_initialized = true;
             }

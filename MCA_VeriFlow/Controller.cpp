@@ -88,10 +88,10 @@ bool Controller::removeFlowFromTable(Flow f)
 	return false;
 }
 
-bool Controller::addDomainNode(Node n)
+bool Controller::addDomainNode(Node* n)
 {
-	if (n.isDomainNode()) {
-		globalDomainNodes.push_back(n);
+	if (n->isDomainNode()) {
+		domainNodes.push_back(n);
 		return true;
 	}
 	return false;
@@ -136,9 +136,9 @@ bool Controller::synchronize()
 	return false;
 }
 
-std::vector<Node> Controller::getGlobalDomainNodes()
+std::vector<Node*> Controller::getDomainNodes()
 {
-	return globalDomainNodes;
+	return domainNodes;
 }
 
 // Print the controller information

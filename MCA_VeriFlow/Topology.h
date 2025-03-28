@@ -28,7 +28,6 @@ class Topology {
 		bool outputToFile(std::string filename);
 
 		std::vector<std::vector<Node>> topologyList;
-		std::vector<Node> localDomainNodes;
 		bool verified;
 
 		// Each node in the topology is stored as a vector of node objects

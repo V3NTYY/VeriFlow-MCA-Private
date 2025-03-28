@@ -34,9 +34,9 @@ class Controller {
 		bool sendOpenFlowMessage(OpenFlowMessage Message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
-		bool addDomainNode(Node n);
+		bool addDomainNode(Node* n);
 		bool synchronize();
-		std::vector<Node> getGlobalDomainNodes();
+		std::vector<Node*> getDomainNodes();
 
 		// Debugging functions
 		void print();
@@ -44,7 +44,7 @@ class Controller {
 		int						sockfd;
 		std::string				controllerIP;
 		std::string				controllerPort;
-		std::vector<Node>		globalDomainNodes;
+		std::vector<Node*>		domainNodes;
 
 		// Functions
 		bool linkController();
