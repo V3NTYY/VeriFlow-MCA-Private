@@ -16,6 +16,8 @@
 class Topology {
 	public:
 		bool addNode(Node node);
+		Node getNodeByIP(std::string IP);
+		Node* getNodeReference(Node n);
 		std::vector<Node> getTopology(int index);
 		std::string printTopology(int index);
 		int getTopologyCount();

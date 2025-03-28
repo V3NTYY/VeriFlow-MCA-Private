@@ -86,7 +86,7 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
         }
 
         // Create a new node
-        Node n = Node(topology_index, false, datapathId, ipAddress, endDevice, nextHops, ports);
+        Node n = Node(topology_index, true, datapathId, ipAddress, endDevice, nextHops, ports);
         n.setControllerAdjacency(next_node_ca);
         next_node_ca = false;
         topology.addNode(n);
@@ -96,61 +96,101 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
 bool MCA_VeriFlow::createDomainNodes()
 {
     int expectedDomainNodes = topology.getTopologyCount() - 1;
+    bool success = true;
     if (topology.getTopologyCount() <= 1) {
         std::cerr << "Not enough topologies for domain nodes." << std::endl;
-        return false;
+        return !success;
     }
 
-    // Use loop to shift scope to only two topologies at a time
+    /// Use loop to shift scope to only two topologies at a time
     for (int i = 0; i < expectedDomainNodes; i++) {
-        // Get the two topologies
-		std::vector<Node> topology1 = topology.getTopology(i);
-		std::vector<Node> topology2 = topology.getTopology(i + 1);
 
+        std::vector<Node> topology1 = topology.getTopology(i);
+        std::vector<Node> topology2 = topology.getTopology(i + 1);
         std::vector<Node> candidate_domain_nodes;
-        // Filter nodelist to only nodes that have links
-        for (int j = 0; j < topology1.size(); j++) {
-			if (topology1.at(j).getLinkList().size() > 0) {
-				candidate_domain_nodes.push_back(topology1.at(j));
-			}
-		}
 
-        for (int j = 0; j < topology2.size(); j++) {
-            if (topology2.at(j).getLinkList().size() > 0) {
-                candidate_domain_nodes.push_back(topology2.at(j));
-			}
+        /// Filter nodelist to only nodes that have links and are switches
+        for (int j = 0; j < topology1.size(); j++) {
+            if (topology1.at(j).getLinkList().size() > 0 && topology1.at(j).isSwitch()) {
+                candidate_domain_nodes.push_back(topology1.at(j));
+            }
         }
 
-        // Filter nodelist so it only contains inter-topology links
+        for (int j = 0; j < topology2.size(); j++) {
+            if (topology2.at(j).getLinkList().size() > 0 && topology2.at(j).isSwitch()) {
+                candidate_domain_nodes.push_back(topology2.at(j));
+            }
+        }
+
+        /// Filter nodelist so it only contains inter-topology links
+        std::vector<int> mark_for_removal;
         for (Node n : candidate_domain_nodes) {
-            for (std::string link : n.getLinkList()) {
-				// Check if the current node is linked to any node in the other topology based on IP
-				bool found = false;
-                for (Node m : candidate_domain_nodes) {
-					if (m.getIP() == link) {
-						found = true;
-						break;
+            for (std::string link : n.getLinkedIPs()) {
+                // Check if the current node is linked to any node in the other topology based on IP
+                bool found = false;
+                Node m = topology.getNodeByIP(link);
+                if (!n.isMatchingDomain(m) && !m.isEmptyNode()) {
+					found = true;
+                    break;
+				}
+                
+                if (!found) {
+                    // Get index of current node n
+                    for (int k = 0; k < candidate_domain_nodes.size(); k++) {
+                        if (candidate_domain_nodes.at(k) == n) {
+							mark_for_removal.push_back(k);
+							break;
+						}
 					}
-				}
-				if (!found) {
-					candidate_domain_nodes.erase(std::remove(candidate_domain_nodes.begin(), candidate_domain_nodes.end(), n), candidate_domain_nodes.end());
-					break;
-				}
-			}
+                    break;
+                }
+            }
+        }
+
+        // Commit the removal of non-candidates
+        std::sort(mark_for_removal.rbegin(), mark_for_removal.rend());
+        for (int j = 0; j < mark_for_removal.size(); j++) {
+            candidate_domain_nodes.erase(candidate_domain_nodes.begin() + mark_for_removal.at(j));
 		}
 
         // There are no domain node candidates if the list is empty now
         if (candidate_domain_nodes.size() == 0) {
-            std::cerr << "No domain node candidates found. Do the topologies have links connecting them together?" << std::endl;
-            return false;
+            std::cerr << "Could not find domain node candidates between topology " << i << " and topology " << i + 1 << std::endl;
+            success = false;
+            continue;
         }
-        
-        // Create preference for nodes that are adjacent to the controller
 
-        // Create preference for nodes with the fewest links
+        /// Handle node preference
+        std::vector<int> preferencePoints;
+        for (Node n : candidate_domain_nodes) {
+            int points = 0;
+            // Create preference for nodes that are adjacent to the controller
+            if (n.hasAdjacentController()) {
+                points += 3;
+            }
+
+            // Create preference for nodes with the fewest links
+            points -= n.getLinkList().size();
+            preferencePoints.push_back(points);
+        }
+
+        /// Select the best domain node
+        int domainNodeIndex = 0;
+        int domainNodePoints = preferencePoints.at(0);
+        for (int j = 1; j < preferencePoints.size(); j++) {
+            if (preferencePoints.at(j) > domainNodePoints) {
+                domainNodeIndex = j;
+				domainNodePoints = preferencePoints.at(j);
+            }
+        }
+
+        // Create the domain node via node flag
+        std::string connectingTopologies = std::to_string(i) + ":" + std::to_string(i + 1);
+        Node* n = topology.getNodeReference(candidate_domain_nodes.at(domainNodeIndex));
+        n->setDomainNode(true, connectingTopologies);
     }
 
-    return false;
+    return success;
 }
 
 std::vector<Topology> MCA_VeriFlow::partitionTopology()
@@ -329,16 +369,16 @@ int main() {
             else {
                 mca_veriflow->registerTopologyFile(args.at(1));
 
-                // Print the topology list
-                for (int i = 0; i < mca_veriflow->topology.getTopologyCount(); i++) {
-                    std::cout << "--- TOPOLOGY " << i << " ---" << std::endl;
-					std::cout << mca_veriflow->topology.printTopology(i) << std::endl;
-				}
-
                 // TODO: Verify topology by pinging all nodes. Add func here
 
                 // TODO: Find the best candidates for domain nodes, create them.
                 mca_veriflow->createDomainNodes();
+
+                // Print the topology list
+                for (int i = 0; i < mca_veriflow->topology.getTopologyCount(); i++) {
+                    std::cout << "--- TOPOLOGY " << i << " ---" << std::endl;
+                    std::cout << mca_veriflow->topology.printTopology(i) << std::endl;
+                }
 
                 // TODO: Register domain nodes via handshake.
                 mca_veriflow->registerDomainNodes();

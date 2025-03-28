@@ -15,6 +15,7 @@ Node::Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::stri
 	portList =				PortList;
 	domainNode =			false;
 	controllerAdjacency =	false;
+	linkingTopologies =		"null";
 
 	// Assign node identifiers based on number of nodes
 	privateNodeID = nodeCount;
@@ -28,8 +29,68 @@ Node::~Node() {
 
 }
 
-void Node::setDomainNode(bool DomainNode) {
+Node::Node()
+{
+	switchNode =			false;
+	datapathID =			-1;
+	IP =					"-1";
+	endDevice =				false;
+	linkList =				std::vector<std::string>();
+	portList =				std::vector<std::string>();
+	domainNode =			false;
+	controllerAdjacency =	false;
+	linkingTopologies =		"null";
+
+	// Assign topology identifier
+	topologyIndex =			-1;
+}
+
+void Node::setDomainNode(bool DomainNode, std::string topologies) {
+	/// This method is very messy and terrible. But it works.
+
 	domainNode = DomainNode;
+	if (linkingTopologies == "null") {
+		linkingTopologies = topologies;
+	}
+	else {
+		// Splice the current list into its values (format is topindex1:topindex2:...)
+		std::vector<std::string> splitList;
+		std::string temp = "";
+		for (int i = 0; i < linkingTopologies.size(); i++) {
+			if (linkingTopologies.at(i) == ':') {
+				splitList.push_back(temp);
+				temp = "";
+			}
+			else {
+				temp += linkingTopologies.at(i);
+			}
+		}
+		splitList.push_back(temp);
+		temp = "";
+		for (int i = 0; i < topologies.size(); i++) {
+			if (topologies.at(i) == ':') {
+				splitList.push_back(temp);
+				temp = "";
+			}
+			else {
+				temp += topologies.at(i);
+			}
+		}
+		splitList.push_back(temp);
+
+		// Eliminate duplicate values in splitList
+		std::sort(splitList.begin(), splitList.end());
+		splitList.erase(std::unique(splitList.begin(), splitList.end()), splitList.end());
+
+		// Reappend splitList to linkingTopologies
+		linkingTopologies = "";
+		for (int i = 0; i < splitList.size(); i++) {
+			linkingTopologies += splitList.at(i);
+			if (i != splitList.size() - 1) {
+				linkingTopologies += ":";
+			}
+		}
+	}
 }
 
 bool Node::isSwitch() {
@@ -38,6 +99,13 @@ bool Node::isSwitch() {
 
 bool Node::isDomainNode() {
 	return domainNode;
+}
+
+bool Node::isEmptyNode() {
+	if (IP == "-1" || topologyIndex == -1) {
+		return true;
+	}
+	return false;
 }
 
 bool Node::isMatchingDomain(Node n)
@@ -105,5 +173,12 @@ std::string Node::print()
 		links = "";
 	}
 
-	return isSwitch + datapathID + "] " + IP + " " + isEndDevice + "\n" + links;
+	std::string domainNodeString = (domainNode ? ("Domains: [ " + linkingTopologies + " ]\n") : "");
+
+	return isSwitch + datapathID + "] " + IP + " " + isEndDevice + "\n" + links + domainNodeString;
+}
+
+std::vector<std::string> Node::getLinkedIPs()
+{
+	return linkList;
 }

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 class Node {
 	static int nodeCount;
@@ -10,16 +11,18 @@ class Node {
 	public:
 		Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::string ip,
 			bool Enddevice, std::vector<std::string> LinkList, std::vector<std::string> PortList);
+		Node();
 		~Node();
 
 		bool operator==(const Node& other) const {
-			return (this->datapathID == other.datapathID && this->IP == other.IP);
+			return (this->IP == other.IP);
 		}
 
-		void setDomainNode(bool domainNode);
+		void setDomainNode(bool domainNode, std::string topologies);
 		bool isSwitch();
 		bool isDomainNode();
 		bool isMatchingDomain(Node node);
+		bool isEmptyNode();
 
 		bool hasAdjacentController();
 		void setControllerAdjacency(bool value);
@@ -29,6 +32,7 @@ class Node {
 		std::string getIP();
 		bool isEndDevice();
 		std::vector<std::string> getLinkList();
+		std::vector<std::string> getLinkedIPs();
 
 		std::string print();
 
@@ -37,6 +41,7 @@ class Node {
 		int							privateNodeID;
 		bool						switchNode;
 		bool						domainNode;
+		std::string					linkingTopologies;
 		bool						controllerAdjacency;
 		std::string					datapathID;
 		std::string					IP;
