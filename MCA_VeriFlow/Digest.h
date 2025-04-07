@@ -11,7 +11,8 @@ private:
     bool synch_bit;
     bool update_bit;
     bool verification_bit;
-    int index;
+    int hostIndex;
+    int destinationIndex;
     std::string payload;
     std::string destination_ip;
 
@@ -19,7 +20,7 @@ private:
 
 public:
     Digest(bool synch = false, bool update = false, bool verification = false, 
-           int idx = 0, const std::string& data = "");
+           int hIndex = 0, int dIndex = 0, const std::string& data = "");
     ~Digest();
 
     std::string toJson();
@@ -31,7 +32,8 @@ public:
     bool getSynchBit();
     bool getUpdateBit();
     bool getVerificationBit();
-    int getIndex();
+    int getHostIndex();
+    int getDestinationIndex();
     std::string getPayload();
     std::string getDestinationIP();
 };

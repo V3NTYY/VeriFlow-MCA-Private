@@ -127,11 +127,14 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 		return false;
 	}
 
+	// Get the index that this CCPDN instance is located on
+	int hostIndex = referenceTopology->hostIndex;
+
 	// Grab string format of local topology
-	std::string topOutput = referenceTopology->topology_toString(0);
+	std::string topOutput = referenceTopology->topology_toString(hostIndex);
 
 	// Create a digest object with topOutput as payload
-	Digest d(false, true, false, destinationIndex, topOutput);
+	Digest d(false, true, false, hostIndex, destinationIndex, topOutput);
 
 	// Send the digest
 	return d.sendDigest();
