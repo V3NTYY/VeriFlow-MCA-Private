@@ -41,6 +41,7 @@ void Digest::setDestinationIP() {
 }
 
 bool Digest::sendDigest(Digest d) {
+    return true;
 }
 
 int Digest::readDigest(const std::string& data) {

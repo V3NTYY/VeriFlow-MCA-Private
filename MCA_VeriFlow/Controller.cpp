@@ -1,10 +1,17 @@
 #include "Controller.h"
 
+// MAIN THREAD LOOP
+void Controller::thread()
+{
+
+}
+
 // Constructor
 Controller::Controller() {
 	controllerIP = "";
 	controllerPort = "";
 	sockfd = -1;
+	activeThread = false;
 }
 
 Controller::Controller(std::string Controller_IP, std::string Controller_Port)
@@ -12,6 +19,7 @@ Controller::Controller(std::string Controller_IP, std::string Controller_Port)
 	controllerIP = Controller_IP;
 	controllerPort = Controller_Port;
 	sockfd = -1;
+	activeThread = false;
 }
 
 // Destructor
@@ -97,21 +105,6 @@ bool Controller::addDomainNode(Node* n)
 	return false;
 }
 
-bool Controller::parseDigest(std::string digest)
-{
-	// TODO: Break down JSON format digest, and issue the appropriate commands.
-	// Only returns true if a command was issued as result of digest
-
-	// Example: Digest contained the DN bit, so we will link it as a domain node
-	//  Node d(nodeInfo from digest);
-	//	addDomainNode(d);
-
-	// Example 2: Digest containe the Synch bit, so we will issue a synchronization command 
-	//	synchronize();
-
-	return false;
-}
-
 bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 {
 	std::vector<uint8_t> Msg = msg.toBytes();
@@ -129,10 +122,8 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	return false;
 }
 
-bool Controller::synchronize()
+bool Controller::synchTopology(std::string payload)
 {
-	// TODO: Issue command to POX controller to ask all neighboring controllers for topology data
-	// May require direct connection to controller. We can change the method as we need
 	return false;
 }
 

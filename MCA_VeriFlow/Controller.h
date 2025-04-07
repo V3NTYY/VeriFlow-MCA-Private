@@ -4,6 +4,7 @@
 #include "Flow.h"
 #include "OpenFlowMessage.h"
 #include "Node.h"
+#include "Digest.h"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -28,14 +29,16 @@ class Controller {
 		// Functions
 		bool start();
 		bool freeLink();
-		bool parseDigest(std::string digest);
+
+		// Thread loop functions
+		void thread();
 
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(OpenFlowMessage Message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
 		bool addDomainNode(Node* n);
-		bool synchronize();
+		bool synchTopology(std::string payload);
 		std::vector<Node*> getDomainNodes();
 
 		// Debugging functions
@@ -45,6 +48,7 @@ class Controller {
 		std::string				controllerIP;
 		std::string				controllerPort;
 		std::vector<Node*>		domainNodes;
+		bool					activeThread;
 
 		// Functions
 		bool linkController();
