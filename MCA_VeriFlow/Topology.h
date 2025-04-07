@@ -36,7 +36,7 @@ class Topology {
 		bool outputToFile(std::string filename);
 
 		// Marshalling functions
-		std::vector<Node> string_toTopology(std::string payload);
+		static std::vector<Node> string_toTopology(std::string payload);
 		std::string topology_toString(int index);
 
 		// Variables

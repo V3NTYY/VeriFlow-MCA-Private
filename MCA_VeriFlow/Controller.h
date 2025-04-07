@@ -38,7 +38,7 @@ class Controller {
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
 		bool addDomainNode(Node* n);
-		bool synchTopology(std::string payload);
+		bool synchTopology(Digest d);
 		bool sendUpdate(bool global, int destinationIndex);
 		std::vector<Node*> getDomainNodes();
 

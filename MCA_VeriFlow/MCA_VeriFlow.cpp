@@ -561,7 +561,7 @@ int main() {
                 std::cout << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized.\n" << std::endl;
             } else {
                 mca_veriflow->run();
-                std::cout << "CCPDN App started.\n" << std::endl;
+                std::cout << "[CCPDN] App started.\n" << std::endl;
             }
         }
 
@@ -571,7 +571,7 @@ int main() {
                 std::cout << "CCPDN App is not running.\n" << std::endl;
             } else {
                 mca_veriflow->stop();
-                std::cout << "CCPDN App stopped.\n" << std::endl;
+                std::cout << "[CCPDN] App stopped.\n" << std::endl;
             }
         }
     

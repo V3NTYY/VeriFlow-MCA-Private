@@ -115,9 +115,24 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	return false;
 }
 
-bool Controller::synchTopology(std::string payload)
+bool Controller::synchTopology(Digest d)
 {
-	return false;
+	// Create vector of nodes to hold our topology data from payload
+	std::vector<Node> topologyData = Topology::string_toTopology(d.getPayload());
+
+	if (topologyData.empty()) {
+		std::cout << "[CCPDN-ERROR]: Failed to parse topology data from payload." << std::endl;
+		return false;
+	}
+
+	// Override the current topology located at the "host index" field from the digest
+	int hostIndex = d.getHostIndex();
+	// Clears the vector of node objects at the host index
+	referenceTopology->topologyList[hostIndex].clear();
+	// Replace them with our new topology data
+	referenceTopology->topologyList[hostIndex] = topologyData;
+
+	return true;
 }
 
 bool Controller::sendUpdate(bool global, int destinationIndex)
@@ -130,14 +145,39 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	// Get the index that this CCPDN instance is located on
 	int hostIndex = referenceTopology->hostIndex;
 
+	if (hostIndex == destinationIndex) {
+		std::cout << "[CCPDN-ERROR]: Cannot send update to self.\n";
+		return false;
+	}
+
 	// Grab string format of local topology
 	std::string topOutput = referenceTopology->topology_toString(hostIndex);
 
+	if (topOutput.empty()) {
+		std::cout << "[CCPDN-ERROR]: Failed to convert topology to string." << std::endl;
+		return false;
+	}
+
 	// Create a digest object with topOutput as payload
-	Digest d(false, true, false, hostIndex, destinationIndex, topOutput);
+	Digest singleMessage(false, true, false, hostIndex, destinationIndex, topOutput);
+
+	// If the global var is true, send this digest to all known topologies (forcing them all to update)
+	if (global) {
+		bool success = true;
+		for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
+			if (i != hostIndex) {
+				Digest message(false, true, false, hostIndex, i, topOutput);
+				// Send the digest
+				if (!message.sendDigest()) {
+					success = false;
+				}
+			}
+		}
+		return success;
+	}
 
 	// Send the digest
-	return d.sendDigest();
+	return singleMessage.sendDigest();
 }
 
 std::vector<Node*> Controller::getDomainNodes()
