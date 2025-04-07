@@ -12,7 +12,7 @@ endif()
 project ("MCA_VeriFlow")
 
 # Add source to this project's executable.
-add_executable (MCA_VeriFlow "MCA_VeriFlow.cpp" "MCA_VeriFlow.h"  "Controller.cpp" "Controller.h" "Flow.cpp" "Flow.h" "OpenFlowMessage.h" "OpenFlowMessage.cpp" "Topology.h" "Topology.cpp" "Node.h" "Node.cpp" "json.hpp" )
+add_executable (MCA_VeriFlow "MCA_VeriFlow.cpp" "MCA_VeriFlow.h"  "Controller.cpp" "Controller.h" "Flow.cpp" "Flow.h" "OpenFlowMessage.h" "OpenFlowMessage.cpp" "Topology.h" "Topology.cpp" "Node.h" "Node.cpp" "json.hpp" "Digest.h" "Digest.cpp" )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET MCA_VeriFlow PROPERTY CXX_STANDARD 20)

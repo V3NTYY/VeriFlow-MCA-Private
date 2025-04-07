@@ -25,7 +25,7 @@ public:
     std::string toJson();
     void fromJson(const std::string& json_str);
 
-    bool sendDigest();
+    bool sendDigest(Digest d);
     int readDigest(const std::string& raw_data);
 
     bool getSynchBit();
