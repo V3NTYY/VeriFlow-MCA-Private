@@ -26,7 +26,7 @@ class Controller {
 		// Setters
 		void setControllerIP(std::string Controller_IP, std::string Controller_Port);
 
-		// Functions
+		// Controller setup/freeing functions
 		bool start();
 		bool freeLink();
 
@@ -37,9 +37,15 @@ class Controller {
 		bool sendOpenFlowMessage(OpenFlowMessage Message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
-		bool addDomainNode(Node* n);
 		bool synchTopology(Digest d);
 		bool sendUpdate(bool global, int destinationIndex);
+
+		// Verification functions
+		bool requestVerification(int destinationIndex);
+		bool performVerification();
+
+		// Misc functions
+		bool addDomainNode(Node* n);
 		std::vector<Node*> getDomainNodes();
 
 		// Debugging functions
@@ -52,7 +58,7 @@ class Controller {
 		bool					activeThread;
 		Topology*				referenceTopology;
 
-		// Functions
+		// Private Functions
 		bool linkController();
 		void openFlowHandshake();
 		void recvControllerMessages(bool thread);

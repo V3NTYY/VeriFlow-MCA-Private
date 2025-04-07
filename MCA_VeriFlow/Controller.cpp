@@ -6,6 +6,22 @@ void Controller::thread()
 
 }
 
+bool Controller::requestVerification(int destinationIndex)
+{
+	// Verify destination index exists within current topology
+	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
+		return false;
+	}
+
+	return Digest(0, 0, 1, referenceTopology->hostIndex, destinationIndex, "").sendDigest();
+}
+
+bool Controller::performVerification()
+{
+	// WARNING. We can't implement this method yet until we modify VeriFlow
+	return false;
+}
+
 // Constructor
 Controller::Controller(Topology* t) {
 	controllerIP = "";

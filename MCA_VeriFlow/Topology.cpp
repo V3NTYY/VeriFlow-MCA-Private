@@ -7,7 +7,22 @@ std::vector<Node> Topology::string_toTopology(std::string payload)
 
 std::string Topology::topology_toString(int index)
 {
-	return std::string();
+	// Ensure index exists
+	if (index < 0 || index >= topologyList.size()) {
+		return "";
+	}
+
+	std::string output = "";
+
+	// Iterate through all nodes in the topology
+	for (int j = 0; j < topologyList[index].size(); j++) {
+		output += topologyList[index][j].filePrint();
+		if (j != topologyList[index].size() - 1) {
+			output += "\n";
+		}
+	}
+
+	return output;
 }
 
 bool Topology::addNode(Node node)

@@ -3,6 +3,7 @@
 
 #include "Node.h"
 #include <fstream>
+#include <sstream>
 
 /// This class is a little confusing.
 ///
