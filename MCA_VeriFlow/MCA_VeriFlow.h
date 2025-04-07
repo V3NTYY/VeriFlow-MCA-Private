@@ -21,6 +21,8 @@
 
 class MCA_VeriFlow {
 	public:
+		MCA_VeriFlow(Topology t, Controller c) : topology(t), controller(c) {}
+
 		void run();
 		void stop();
 		bool registerTopologyFile(std::string filepath);

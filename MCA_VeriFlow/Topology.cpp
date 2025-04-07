@@ -1,5 +1,15 @@
 #include "Topology.h"
 
+std::vector<Node> Topology::string_toTopology(std::string payload)
+{
+	return std::vector<Node>();
+}
+
+std::string Topology::topology_toString(int index)
+{
+	return std::string();
+}
+
 bool Topology::addNode(Node node)
 {
 	std::vector<Node> newTopology;

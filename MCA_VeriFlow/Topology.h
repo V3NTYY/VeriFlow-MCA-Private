@@ -16,19 +16,33 @@
 
 class Topology {
 	public:
-		bool addNode(Node node);
+		// Node getters
 		Node getNodeByIP(std::string IP);
 		Node* getNodeReference(Node n);
-		std::vector<Node> getTopology(int index);
-		std::string printTopology(int index);
-		int getTopologyCount();
 
-		void clear();
+		// Add node to topology
+		bool addNode(Node node);
+
+		// Get and print topology data
+		std::vector<Node> getTopology(int index);
+		int getTopologyCount();
+		std::string printTopology(int index);
+
+		// Return a topology object containg only a single topology (by index)
 		Topology extractIndexTopology(int index);
+
+		// Misc functions
+		void clear();
 		bool outputToFile(std::string filename);
 
+		// Marshalling functions
+		std::vector<Node> string_toTopology(std::string payload);
+		std::string topology_toString(int index);
+
+		// Variables
 		std::vector<std::vector<Node>> topologyList;
 		bool verified;
+		int hostIndex;
 
 		// Each node in the topology is stored as a vector of node objects
 		// Each node knows its own links and information

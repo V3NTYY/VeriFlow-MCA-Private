@@ -358,7 +358,13 @@ bool MCA_VeriFlow::pingTest(Node n)
 #endif
 
 int main() {
-    MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
+
+    // Create topology and controller objects
+    Topology t;
+    Controller c(&t);
+
+    // Create the MCA_VeriFlow object
+    MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow(t, c);
 
     #ifdef _WIN32
     std::cout << "WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n" << std::endl;

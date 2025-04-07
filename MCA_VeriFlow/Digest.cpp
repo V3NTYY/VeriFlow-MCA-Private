@@ -40,7 +40,7 @@ void Digest::fromJson(const std::string& json_str) {
 void Digest::setDestinationIP() {
 }
 
-bool Digest::sendDigest(Digest d) {
+bool Digest::sendDigest() {
     return true;
 }
 

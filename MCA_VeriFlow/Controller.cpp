@@ -7,19 +7,12 @@ void Controller::thread()
 }
 
 // Constructor
-Controller::Controller() {
+Controller::Controller(Topology* t) {
 	controllerIP = "";
 	controllerPort = "";
 	sockfd = -1;
 	activeThread = false;
-}
-
-Controller::Controller(std::string Controller_IP, std::string Controller_Port)
-{
-	controllerIP = Controller_IP;
-	controllerPort = Controller_Port;
-	sockfd = -1;
-	activeThread = false;
+	referenceTopology = t;
 }
 
 // Destructor
@@ -125,6 +118,23 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 bool Controller::synchTopology(std::string payload)
 {
 	return false;
+}
+
+bool Controller::sendUpdate(bool global, int destinationIndex)
+{
+	// Verify destination index exists within current topology
+	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
+		return false;
+	}
+
+	// Grab string format of local topology
+	std::string topOutput = referenceTopology->topology_toString(0);
+
+	// Create a digest object with topOutput as payload
+	Digest d(false, true, false, destinationIndex, topOutput);
+
+	// Send the digest
+	return d.sendDigest();
 }
 
 std::vector<Node*> Controller::getDomainNodes()

@@ -5,6 +5,7 @@
 #include "OpenFlowMessage.h"
 #include "Node.h"
 #include "Digest.h"
+#include "Topology.h"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -19,8 +20,7 @@
 class Controller {
 	public:
 		// Constructors and destructors
-		Controller();
-		Controller(std::string Controller_IP, std::string Controller_Port);
+		Controller(Topology* t);
 		~Controller();
 
 		// Setters
@@ -39,6 +39,7 @@ class Controller {
 		bool removeFlowFromTable(Flow f);
 		bool addDomainNode(Node* n);
 		bool synchTopology(std::string payload);
+		bool sendUpdate(bool global, int destinationIndex);
 		std::vector<Node*> getDomainNodes();
 
 		// Debugging functions
@@ -49,6 +50,7 @@ class Controller {
 		std::string				controllerPort;
 		std::vector<Node*>		domainNodes;
 		bool					activeThread;
+		Topology*				referenceTopology;
 
 		// Functions
 		bool linkController();
