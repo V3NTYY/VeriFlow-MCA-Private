@@ -11,6 +11,26 @@ std::vector<std::string> splitInput(std::string input) {
     return words;
 }
 
+// Function to get user input, and verify the result as an int. Loops until a valid int is entered
+int getUserInputInt(std::string prompt) {
+    int result;
+	while (true) {
+		std::cout << prompt;
+		std::cin >> result;
+		if (std::cin.fail()) {
+            // Clear the error flag, discard current input and attempt again
+			std::cin.clear();
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			std::cout << "Invalid input.\n" << std::endl;
+		} else {
+            // Input is valid, return the result
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			break;
+		}
+	}
+	return result;
+}
+
 void MCA_VeriFlow::run() {
 
 }
@@ -495,7 +515,28 @@ int main() {
                     std::cout << mca_veriflow->topology.printTopology(i);
                 }
 
-                // Domain nodes registered already from static topology, no handshake required here.
+                // Ask for user to identify which topology is the host (what topology this CCPDN is running on)
+                bool userInputLoop = true;
+                int hostIndex = 0;
+
+                while (userInputLoop) {
+                    std::cout << std::endl;
+                    int hostIndex = getUserInputInt("Please enter the index of the topology this CCPDN is running on: ");
+
+                    // Ensure the topology index is valid
+                    if (hostIndex < 0 || hostIndex >= mca_veriflow->topology.getTopologyCount()) {
+                        std::cout << "Invalid topology index. Please try again.\n";
+                        continue;
+                    }
+                    else {
+                        std::cout << std::endl;
+                        userInputLoop = false;
+                        break;
+                    }
+                }
+
+                // Set the host index in the topology
+                mca_veriflow->topology.hostIndex = hostIndex;
 
                 topology_initialized = true;
             }
