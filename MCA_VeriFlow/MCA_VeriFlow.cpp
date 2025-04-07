@@ -409,23 +409,24 @@ int main() {
 			std::cout << "Invalid command" << std::endl;
 		}
 
-        // Help command
+        // Help command, * means implemented, - means work in progress, x means nothing started on it yet
         else if (args.at(0) == "help") {
             std::cout << "Commands:" << std::endl <<
                 " * help:                                   Display all commands and their parameters." << std::endl <<
-                " * run:                                    Start the CCPDN App. Controller must be linked, and topology initialized." << std::endl <<
-                " * stop:                                   Stop the CCPDN App." << std::endl <<
+                " * exit:                                   Exit the CCPDN App." << std::endl <<
+                " - run:                                    Start the CCPDN App. Controller must be linked, and topology initialized." << std::endl <<
+                " - stop:                                   Stop the CCPDN App." << std::endl <<
                 " * rdn [topology_file]:                    Identifies and links all candidates for domain nodes based on given topology file." << std::endl <<
                 " * refactor-top [file-name]:               Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file." << std::endl <<
-                " * output-top [file-name]:                 Output the current topology list to a new file." << std::endl <<
-                " * list-devices:                           List all the devices connected to the Pox Controller." << std::endl <<
-                " * list-flows [switch-ip-address]:         List all the flows associated with a switch based on its IP." << std::endl <<
+                " x output-top [file-name]:                 Output the current topology list to a new file." << std::endl <<
+                " x list-devices:                           List all the devices connected to the Pox Controller." << std::endl <<
+                " x list-flows [switch-ip-address]:         List all the flows associated with a switch based on its IP." << std::endl <<
                 " * link-controller [ip-address] [port]:    Link a currently running Pox Controller to this app." << std::endl <<
-                " * unlink-controller:                      Free the Pox Controller from this app." << std::endl <<
-                " * add-flow [flow_id] [eth_type], [protocol] [source-ip] [destination-ip] [source-port] [destination-port] [action]" << std::endl <<
+                " - unlink-controller:                      Free the Pox Controller from this app." << std::endl <<
+                " x add-flow [flow_id] [eth_type], [protocol] [source-ip] [destination-ip] [source-port] [destination-port] [action]" << std::endl <<
                 "                                           Add a flow to the flow table." << std::endl <<
-                " * del-flow:                               Delete a flow from the flow table." << std::endl <<
-                " * run-tcp-test                            Run's the TCP connection setup latency test." << std::endl <<
+                " x del-flow:                               Delete a flow from the flow table." << std::endl <<
+                " - run-tcp-test                            Run's the TCP connection setup latency test." << std::endl <<
                 "" << std::endl;
         }
 
