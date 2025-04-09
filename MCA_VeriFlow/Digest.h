@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include "json.hpp"
+#include "Node.h"
+#include "Controller.h"
 
 class Digest {
 private:

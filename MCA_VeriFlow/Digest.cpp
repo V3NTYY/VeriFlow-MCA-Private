@@ -44,6 +44,55 @@ void Digest::setDestinationIP() {
 }
 
 bool Digest::sendDigest() {
+    std::vector<Node*> domainNodes = Controller::getDomainNodes();
+    
+    // Find the domain node that matches the destination index
+    Node* destinationNode = nullptr;
+    for (Node* node : domainNodes) {
+        if (node->getTopologyID() == destinationIndex) {
+            destinationNode = node;
+            break;
+        }
+    }
+    
+    if (!destinationNode) {
+        std::cerr << "Error: No domain node found" << destinationIndex << std::endl;
+        return false;
+    }
+    
+    destination_ip = destinationNode->getIP();
+    
+    std::string jsonData = toJson();
+    
+    // Create a socket and send the data
+    #ifdef __unix__
+        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd < 0) {
+            std::cerr << "Error creating socket" << std::endl;
+            return false;
+        }
+
+        struct sockaddr_in server_address;
+        server_address.sin_family = AF_INET;
+        server_address.sin_port = htons(6633);
+        inet_pton(AF_INET, destination_ip.c_str(), &server_address.sin_addr);
+
+        if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+            std::cerr << "Error connecting to destination controller at " << destination_ip << std::endl;
+            close(sockfd);
+            return false;
+        }
+
+        ssize_t bytes_sent = send(sockfd, jsonData.c_str(), jsonData.size(), 0);
+        if (bytes_sent < 0) {
+            std::cerr << "Error sending data" << std::endl;
+            close(sockfd);
+            return false;
+        }
+
+        close(sockfd);
+    #endif
+    
     return true;
 }
 
