@@ -24,13 +24,13 @@ def myNetwork():
                       port=6653)
 
     info( '*** Add switches\n')
-    s1 = net.addSwitch('s1', cls=OVSKernelSwitch)
-    s2 = net.addSwitch('s2', cls=OVSKernelSwitch)
+    s1 = net.addSwitch('s1', cls=OVSKernelSwitch, dpid='1')
+    s2 = net.addSwitch('s2', cls=OVSKernelSwitch, dpid='2')
 
     info( '*** Add hosts\n')
-    h3 = net.addHost('h3', cls=Host, ip='10.0.0.3', defaultRoute=None)
     h2 = net.addHost('h2', cls=Host, ip='10.0.0.2', defaultRoute=None)
     h1 = net.addHost('h1', cls=Host, ip='10.0.0.1', defaultRoute=None)
+    h3 = net.addHost('h3', cls=Host, ip='10.0.0.3', defaultRoute=None)
 
     info( '*** Add links\n')
     net.addLink(h1, s1)
@@ -48,16 +48,13 @@ def myNetwork():
     net.get('s2').start([c0])
 
     info( '*** Post configure switches and hosts\n')
+    s1.cmd('ifconfig s1 10.0.0.5')
+    s2.cmd('ifconfig s2 10.0.0.6')
 
     CLI(net)
     net.stop()
 
-def addFlowRules(net):
-    s1 = net.get("s1")
-    s2 = net.get("s2")
-    s1.cmd('ovs-ofctl add-flow s1 "priority=100,in_port=1,actions=output:2"')
-    s2.cmd('ovs-ofctl add-flow s1 "priority=100,in_port=2,actions=output:1"')
-
 if __name__ == '__main__':
     setLogLevel( 'info' )
     myNetwork()
+
