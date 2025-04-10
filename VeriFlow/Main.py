@@ -9,17 +9,16 @@ BIT_BUCKET = 2
 
 def main():
 	print("Enter network configuration file name (eg.: file.txt):")
-	#filename = input("> ")
-	filename = "Topo/Small-Topo.txt"
+	filename = input("> ")
 	network = Network()
 	network.parseNetworkFromFile(filename)
-	#print("Enter IP address of the Controller")
-	#ip = input("> ")
-	#print("Enter Port for controller")
-	#port = input("> ")
+	print("Enter IP address of the Controller")
+	ip = input("> ")
+	print("Enter Port for controller")
+	port = input("> ")
 
-	#socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	#socket.connect(ip, port)
+	socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	socket.connect(ip, port)
 
 	generatedECs = network.getECsFromTrie()
 	network.checkWellformedness()

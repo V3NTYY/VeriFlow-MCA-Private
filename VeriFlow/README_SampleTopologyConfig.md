@@ -21,3 +21,30 @@ This rule matches all traffic under the 192.168.1.0/24 subnet, and forwards it t
 For most rules, drop is essentially the default action -- everything added here is considered as a forward.
 
 E!  // End Marker. Use this at end of file, after rules section.
+
+ALL AVAILABLE MARKERS:
+S# -- all nodes below are switches
+H# -- all nodes below are hosts. For now, hosts can only have a single switch parent.
+R# -- everything below is a flow rule. Not used.
+E! -- describe end of file. Only applicable to VeriFlow.
+CA# -- the next node is considered adjacent to the controller. Only applicable to CCPDN.
+TOP# -- a new topology is being described here. Only applicable to CCPDN.
+
+EXAMPLE FILE FOR CCPDN:
+
+S#
+10.0.0.5:10.0.0.1
+10.0.0.1:10.0.0.2
+
+H#
+CA#
+10.0.0.3:10.0.0.1
+10.0.0.4:10.0.0.5
+
+TOP#
+S#
+CA#
+10.0.0.2:
+
+H#
+10.0.0.10:10.0.0.2
