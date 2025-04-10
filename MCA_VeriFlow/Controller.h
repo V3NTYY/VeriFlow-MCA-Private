@@ -46,7 +46,7 @@ class Controller {
 
 		// Misc functions
 		bool addDomainNode(Node* n);
-		static std::vector<Node*> getDomainNodes();
+		std::vector<Node*> getDomainNodes();
 
 		// Debugging functions
 		void print();
@@ -54,7 +54,7 @@ class Controller {
 		int						  sockfd;
 		std::string				  controllerIP;
 		std::string				  controllerPort;
-		static std::vector<Node*> domainNodes;
+		std::vector<Node*>		  domainNodes;
 		bool					  activeThread;
 		Topology*				  referenceTopology;
 

@@ -121,19 +121,37 @@ bool Topology::outputToFile(std::string filename)
 		return false;
 	}
 
-	outputFile << "# Format: id ipAddress endDevice(0=false,1=true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...\n";
-	outputFile << "# The line '#NEW' separates topologies, and creates a new one\n";
-	outputFile << "# The line '#CA' signifies that the next node is adjacent to the controller\n\n";
-
 	// Iterate through all topologies
 	for (int i = 0; i < topologyList.size(); i++) {
-		// Don't add the #NEW line if it's the first topology
-		outputFile << ((i == 0) ? "" : "#NEW\n");
+		// Don't add the TOP# line if it's the first topology
+		outputFile << ((i == 0) ? "" : "TOP#\n");
 
-		// Iterate through all nodes in the topology
+		// Split the topology list into switches, then hosts. Print switches first, then hosts
+		std::vector<Node> switches;
+		std::vector<Node> hosts;
 		for (int j = 0; j < topologyList[i].size(); j++) {
-			outputFile << topologyList[i][j].filePrint() << std::endl;
+			if (topologyList[i][j].isSwitch()) {
+				switches.push_back(topologyList[i][j]);
+			}
+			else {
+				hosts.push_back(topologyList[i][j]);
+			}
 		}
+
+		// Print the switches
+		outputFile << "S#\n";
+		for (int j = 0; j < switches.size(); j++) {
+			outputFile << switches[j].filePrint() << "\n";
+		}
+
+		// Print the hosts
+		outputFile << "H#\n";
+		for (int j = 0; j < hosts.size(); j++) {
+			outputFile << hosts[j].filePrint() << "\n";
+		}
+
+		// Print remaining, unused config
+		outputFile << "R#\nE!";
 	}
 
 	return true;

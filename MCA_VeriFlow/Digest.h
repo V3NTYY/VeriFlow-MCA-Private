@@ -6,7 +6,6 @@
 #include <fstream>
 #include "json.hpp"
 #include "Node.h"
-#include "Controller.h"
 
 class Digest {
 private:
@@ -18,8 +17,6 @@ private:
     std::string payload;
     std::string destination_ip;
 
-    void setDestinationIP(); 
-
 public:
     Digest(bool synch = false, bool update = false, bool verification = false, 
            int hIndex = 0, int dIndex = 0, const std::string& data = "");
@@ -28,7 +25,7 @@ public:
     std::string toJson();
     void fromJson(const std::string& json_str);
 
-    bool sendDigest();
+    bool sendDigest(void* send);
     static int readDigest(const std::string& raw_data);
 
     bool getSynchBit();

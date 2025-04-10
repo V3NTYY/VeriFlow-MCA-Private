@@ -1,13 +1,37 @@
 ﻿#include "MCA_VeriFlow.h"
 
-// Function to split a string into a vector of words
-std::vector<std::string> splitInput(std::string input) {
+// Function to split a string into a vector of words based on delimiters
+std::vector<std::string> splitInput(std::string input, std::vector<std::string> delimiters) {
     std::vector<std::string> words;
-    std::istringstream stream(input);
     std::string word;
-    while (stream >> word) {
-        words.push_back(word);
-    }
+
+    // If the line is empty, return early
+    if (input.empty()) {
+		return words;
+	}
+
+    // Iterate through the entire input string. If a delimiter is found, the first half is added as a word. The second half is then checked for delimiters again.
+    for (size_t i = 0; i < input.length(); i++) {
+		bool isDelimiter = false;
+		for (std::string delimiter : delimiters) {
+			if (input.substr(i, delimiter.length()) == delimiter) {
+				isDelimiter = true;
+				if (!word.empty()) {
+					words.push_back(word);
+					word.clear();
+				}
+				break;
+			}
+		}
+		if (!isDelimiter) {
+			word += input[i];
+            // If this is the last word, push it back
+            if (i == input.length() - 1) {
+                words.push_back(word);
+            }
+		}
+	}
+
     return words;
 }
 
@@ -51,66 +75,71 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
 
     std::string line;
     int topology_index = 0;
-    bool next_node_ca = false;
+    bool isControllerAdjacent = false;
+    bool isHost = false; // false = switch, true = host
     while (std::getline(topology_file, line)) {
-        std::vector<std::string> args = splitInput(line);
- 
-        // Skip non-complete lines
-        if (args.size() < 3) {
-            // If #NEW is encountered, we are looking at a new topology
-            if (args.size() == 1 && args.at(0) == "#NEW") {
-                topology_index++;
-            }
-            // If #CA is encountered, the next node is adjacent to the controller
-            if (args.size() == 1 && args.at(0) == "#CA") {
-                next_node_ca = true;
-            }
+        std::vector<std::string> delimiters = { ":", ",", " " };
+        std::vector<std::string> args = splitInput(line, delimiters);
+
+        if (args.empty()) {
             continue;
         }
 
-        // Treat # as a comment
-        if (args.at(0) == "#" || args.at(0) == "") {
+        if (args.at(0) == "TOP#") {
+            topology_index++;
+            isHost = false;
+            continue;
+        } else if (args.at(0) == "CA#") {
+            isControllerAdjacent = true;
+        } else if (args.at(0) == "S#") {
+            isHost = false;
 			continue;
-		}
+		} else if (args.at(0) == "H#") {
+			isHost = true;
+			continue;
+        } else if (args.at(0) == "R#") {
+            // Used to add rules. But we don't add them statically here.
+			continue;
+		} else if (args.at(0) == "E!") {
+            // Used to end file reading. But not necessary since we could have multiple topologies.
+            continue;
+        }
 
-        /// Format: datapathId ipAddress endDevice(0 = false, 1 = true) port1 nextHopIpAddress1 port2 nextHopIpAddress2 ...
-        /// Whenever a line only contains #NEW, the rest of the line is ignored and a new topology is created
-        /// All devices after #NEW are considered to be in a separate topology
-        /// To designate a node as adjacent to the controller, use #CA
+        //    S#  // Switch Definitions Section
+        //    <SwitchID>:<NextHop1>, <NextHop2>, ...
+        //    <SwitchID> : <NextHop1>, <NextHop2>, ...
+        //    Example -> 10.0.0.1 : 10.0.0.2, 10.0.0.3
+        //    10.0.0.2 :
+        //    10.0.0.3 : 10.0.0.1
+        //    Hosts are not considered as a "next hop". Only switches.
 
-        /// Example:
-        /// 0 10.0.0.1 0 1 10.0.0.6 2 10.0.0.7
-        /// 1 10.0.0.6 1
-        /// 2 10.0.0.6 2
-        /// #NEW
-        /// 3 10.0.0.2 0 1 10.0.0.8 2 10.0.0.9
-        /// 4 10.0.0.8 1
-        /// 5 10.0.0.9 1
-        /// 
-        /// This creates two topologies, one with nodes 0, 1, 2 and the other with nodes 3, 4, 5
+        //    H#  // Host Definitions Section
+        //    <HostID> : <SwitchID>
+        //    Example -> 10.0.0.31 : 10.0.0.1
 
-        std::string datapathId = args.at(0);
-        std::string ipAddress = args.at(1);
-        bool endDevice = std::stoi(args.at(2));
+        //    R#  // Rules Definitions Section
+        //    <SwitchID>-<Prefix>-<NextHopId>
+        //    Example -> 10.0.0.1 - 192.168.1.0 / 24 - 10.0.0.2
+        //    This rule matches all traffic under the 192.168.1.0 / 24 subnet, and forwards it to 10.0.0.2
+        //    For most rules, drop is essentially the default action -- everything added here is considered as a forward.
 
-        // Handle extra parameters for links
-        std::vector<std::string> ports;
-        std::vector<std::string> nextHops;
-        for (int i = 3; i < args.size(); i++) {
-            if (i % 2 == 1) {
-                ports.push_back(args.at(i));
-            }
-            else {
-                nextHops.push_back(args.at(i));
-            }
+        //    E!  // End Marker. Use this at end of file, after rules section.
+
+        std::vector<std::string> links;
+
+        // Get node parameters
+        std::string ipAddress = args.at(0);
+        for (int i = 1; i < args.size(); i++) {
+            links.push_back(args.at(i));
         }
 
         // Create a new node
-        Node n = Node(topology_index, true, datapathId, ipAddress, endDevice, nextHops, ports);
-        n.setControllerAdjacency(next_node_ca);
-        next_node_ca = false;
+        Node n = Node(topology_index, !isHost, ipAddress, links);
+        n.setControllerAdjacency(isControllerAdjacent);
+        isControllerAdjacent = false;
         topology.addNode(n);
     }
+    return true;
 }
 
 bool MCA_VeriFlow::createDomainNodes()
@@ -131,13 +160,13 @@ bool MCA_VeriFlow::createDomainNodes()
 
         /// Filter nodelist to only nodes that have links and are switches
         for (int j = 0; j < topology1.size(); j++) {
-            if (topology1.at(j).getLinkList().size() > 0 && topology1.at(j).isSwitch()) {
+            if (topology1.at(j).getLinks().size() > 0 && topology1.at(j).isSwitch()) {
                 candidate_domain_nodes.push_back(topology1.at(j));
             }
         }
 
         for (int j = 0; j < topology2.size(); j++) {
-            if (topology2.at(j).getLinkList().size() > 0 && topology2.at(j).isSwitch()) {
+            if (topology2.at(j).getLinks().size() > 0 && topology2.at(j).isSwitch()) {
                 candidate_domain_nodes.push_back(topology2.at(j));
             }
         }
@@ -145,7 +174,7 @@ bool MCA_VeriFlow::createDomainNodes()
         /// Filter nodelist so it only contains inter-topology links
         std::vector<int> mark_for_removal;
         for (Node n : candidate_domain_nodes) {
-            for (std::string link : n.getLinkedIPs()) {
+            for (std::string link : n.getLinks()) {
                 // Check if the current node is linked to any node in the other topology based on IP
                 bool found = false;
                 Node m = topology.getNodeByIP(link);
@@ -190,7 +219,7 @@ bool MCA_VeriFlow::createDomainNodes()
             }
 
             // Create preference for nodes with the fewest links
-            points -= n.getLinkList().size();
+            points -= n.getLinks().size();
             preferencePoints.push_back(points);
         }
 
@@ -232,7 +261,7 @@ Topology MCA_VeriFlow::partitionTopology()
         for (int j = 0; j < nodes.size(); j++) {
             // If the nodes contains links that are out of topology, ONLY remove those links
             Node* n = t.getNodeReference(nodes.at(j));
-            std::vector<std::string> currLinks = n->getLinkList();
+            std::vector<std::string> currLinks = n->getLinks();
 
             if (currLinks.size() == 0) {
 				continue;
@@ -242,11 +271,6 @@ Topology MCA_VeriFlow::partitionTopology()
 				Node m = t.getNodeByIP(link);
                 if (!n->isMatchingDomain(m) && !m.isEmptyNode()) {
 					n->removeLink(link);
-
-                    // If we have no more links, this is now an end device
-                    if (n->getLinkList().size() == 0) {
-                        n->setEndDevice(true);
-                    }
                 }
             }
         }
@@ -404,7 +428,8 @@ int main() {
 		}
 
         // Parse args
-        std::vector<std::string> args = splitInput(input);
+        std::vector<std::string> delimiters = { " " };
+        std::vector<std::string> args = splitInput(input, delimiters);
         if (args.size() == 0) {
 			std::cout << "Invalid command" << std::endl;
 		}
@@ -497,7 +522,10 @@ int main() {
 			}
             else {
                 // Read the topology file and register it
-                mca_veriflow->registerTopologyFile(args.at(1));
+                if (!mca_veriflow->registerTopologyFile(args.at(1))) {
+                    std::cout << "Error reading topology file. Ensure the file exists and is in the correct format.\n" << std::endl;
+					continue;
+                }
 
                 // Verify the nodes exist in the topology
                 std::cout << "Performing ping test on all nodes for verification...\n" << std::endl;

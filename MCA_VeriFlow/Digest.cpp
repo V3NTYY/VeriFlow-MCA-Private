@@ -1,12 +1,11 @@
 #include "Digest.h"
+#include "Controller.h"
 
 // Constructor
 Digest::Digest(bool synch, bool update, bool verification, 
     int hIndex, int dIndex, const std::string& data)
     : synch_bit(synch), update_bit(update), verification_bit(verification),
-      hostIndex(hIndex), destinationIndex(dIndex), payload(data) {
-    setDestinationIP();
-}
+      hostIndex(hIndex), destinationIndex(dIndex), payload(data) { }
 
 // Destructor
 Digest::~Digest()
@@ -40,11 +39,11 @@ void Digest::fromJson(const std::string& json_str) {
     }
 }
 
-void Digest::setDestinationIP() {
-}
+bool Digest::sendDigest(void* send) {
 
-bool Digest::sendDigest() {
-    std::vector<Node*> domainNodes = Controller::getDomainNodes();
+    // Static cast the void pointer as a controller object since we want to avoid circular dependency
+    Controller* controller = static_cast<Controller*>(send);
+    std::vector<Node*> domainNodes = controller->getDomainNodes();
     
     // Find the domain node that matches the destination index
     Node* destinationNode = nullptr;

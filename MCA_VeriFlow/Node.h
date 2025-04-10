@@ -9,8 +9,7 @@ class Node {
 	static int nodeCount;
 	static int topologyID;
 	public:
-		Node(int TopologyIndex, bool SwitchNode, std::string DatapathID, std::string ip,
-			bool Enddevice, std::vector<std::string> LinkList, std::vector<std::string> PortList);
+		Node(int TopologyIndex, bool SwitchNode, std::string ip, std::vector<std::string> LinkList);
 		Node();
 		~Node();
 
@@ -26,16 +25,12 @@ class Node {
 		bool removeLink(std::string IP);
 		bool hasAdjacentController();
 		void setControllerAdjacency(bool value);
-		void setEndDevice(bool value);
 		void setPingResult(bool value);
 
 		int getTopologyID();
 		bool getPingResult();
-		std::string getDatapathID();
 		std::string getIP();
-		bool isEndDevice();
-		std::vector<std::string> getLinkList();
-		std::vector<std::string> getLinkedIPs();
+		std::vector<std::string> getLinks();
 
 		std::string print();
 		std::string filePrint();
@@ -47,12 +42,9 @@ class Node {
 		bool						domainNode;
 		std::string					linkingTopologies;
 		bool						controllerAdjacency;
-		std::string					datapathID;
 		std::string					IP;
-		bool						endDevice;
 		bool						pingResult;
 		std::vector<std::string>	linkList;
-		std::vector<std::string>	portList;
 };
 
 #endif

@@ -13,7 +13,7 @@ bool Controller::requestVerification(int destinationIndex)
 		return false;
 	}
 
-	return Digest(0, 0, 1, referenceTopology->hostIndex, destinationIndex, "").sendDigest();
+	return Digest(0, 0, 1, referenceTopology->hostIndex, destinationIndex, "").sendDigest(this);
 }
 
 bool Controller::performVerification()
@@ -184,7 +184,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 			if (i != hostIndex) {
 				Digest message(false, true, false, hostIndex, i, topOutput);
 				// Send the digest
-				if (!message.sendDigest()) {
+				if (!message.sendDigest(this)) {
 					success = false;
 				}
 			}
@@ -193,7 +193,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	}
 
 	// Send the digest
-	return singleMessage.sendDigest();
+	return singleMessage.sendDigest(this);
 }
 
 std::vector<Node*> Controller::getDomainNodes()
