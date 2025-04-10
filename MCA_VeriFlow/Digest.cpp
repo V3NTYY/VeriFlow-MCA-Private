@@ -39,10 +39,10 @@ void Digest::fromJson(const std::string& json_str) {
     }
 }
 
-bool Digest::sendDigest(void* send) {
+bool Digest::sendDigest(void* sendC) {
 
     // Static cast the void pointer as a controller object since we want to avoid circular dependency
-    Controller* controller = static_cast<Controller*>(send);
+    Controller* controller = static_cast<Controller*>(sendC);
     std::vector<Node*> domainNodes = controller->getDomainNodes();
     
     // Find the domain node that matches the destination index
