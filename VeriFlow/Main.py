@@ -15,10 +15,10 @@ def main():
 	print("Enter IP address of the Controller")
 	ip = input("> ")
 	print("Enter Port for controller")
-	port = input("> ")
+	port = int(input("> "))
 
-	socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	socket.connect(ip, port)
+	controller_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	controller_socket.connect(ip, port)
 
 	generatedECs = network.getECsFromTrie()
 	network.checkWellformedness()
