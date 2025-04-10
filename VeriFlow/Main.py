@@ -18,7 +18,7 @@ def main():
 	port = int(input("> "))
 
 	controller_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	controller_socket.connect(ip, port)
+	controller_socket.connect((ip, port))
 
 	generatedECs = network.getECsFromTrie()
 	network.checkWellformedness()
