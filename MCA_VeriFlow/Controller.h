@@ -25,8 +25,10 @@ class Controller {
 
 		// Setters
 		void setControllerIP(std::string Controller_IP, std::string Controller_Port);
+		void setVeriFlowIP(std::string VeriFlow_IP, std::string VeriFlow_Port);
 
 		// Controller setup/freeing functions
+		bool startController();
 		bool start();
 		bool freeLink();
 
@@ -35,6 +37,7 @@ class Controller {
 
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(OpenFlowMessage Message);
+		bool sendVeriFlowMessage(std::string message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
 		bool synchTopology(Digest d);
@@ -42,7 +45,7 @@ class Controller {
 
 		// Verification functions
 		bool requestVerification(int destinationIndex);
-		bool performVerification();
+		bool performVerification(bool externalRequest);
 
 		// Misc functions
 		bool addDomainNode(Node* n);
@@ -52,18 +55,26 @@ class Controller {
 		void print();
 	private:
 		int						  sockfd;
+		int						  sockvf;
 		std::string				  controllerIP;
 		std::string				  controllerPort;
+		std::string				  veriflowIP;
+		std::string				  veriflowPort;
 		std::vector<Node*>		  domainNodes;
 		bool					  activeThread;
 		Topology*				  referenceTopology;
+		char					  vfBuffer[1024];
+		char					  ofBuffer[1024];
 
 		// Private Functions
+		bool linkVeriFlow();
 		bool linkController();
 		void openFlowHandshake();
+		void veriFlowHandshake();
 		void recvControllerMessages(bool thread);
-		void listenerOpenFlow();
 		void parseOpenFlowPacket(const std::vector<uint8_t>& packet);
+		void recvVeriFlowMessages(bool thread);
+		std::string readBuffer(char* buf);
 };
 
 #endif

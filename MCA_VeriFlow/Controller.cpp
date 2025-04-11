@@ -16,9 +16,18 @@ bool Controller::requestVerification(int destinationIndex)
 	return Digest(0, 0, 1, referenceTopology->hostIndex, destinationIndex, "").sendDigest(this);
 }
 
-bool Controller::performVerification()
+bool Controller::performVerification(bool externalRequest)
 {
-	// WARNING. We can't implement this method yet until we modify VeriFlow
+	// Craft packet with [CCPDN] as header and topology=index as body
+	// Send the packet to the currently linked veriflow instance.
+	#ifdef __unix__
+		
+	#endif
+
+	if (externalRequest) {
+
+	}
+
 	return false;
 }
 
@@ -26,7 +35,10 @@ bool Controller::performVerification()
 Controller::Controller(Topology* t) {
 	controllerIP = "";
 	controllerPort = "";
+	veriflowIP = "";
+	veriflowPort = "";
 	sockfd = -1;
+	sockvf = -1;
 	activeThread = false;
 	referenceTopology = t;
 }
@@ -43,6 +55,37 @@ void Controller::setControllerIP(std::string Controller_IP, std::string Controll
 {
 	controllerIP = Controller_IP;
 	controllerPort = Controller_Port;
+}
+
+void Controller::setVeriFlowIP(std::string VeriFlow_IP, std::string VeriFlow_Port)
+{
+	veriflowIP = VeriFlow_IP;
+	veriflowPort = VeriFlow_Port;
+}
+
+bool Controller::linkVeriFlow()
+{
+#ifdef __unix__
+	// Setup socket
+	sockvf = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockvf < 0) {
+		std::cout << "Error creating socket" << std::endl;
+		return false;
+	}
+
+	// Setup the address to connect to
+	struct sockaddr_in server_address;
+	server_address.sin_family = AF_INET;
+	server_address.sin_port = htons(std::stoi(veriflowPort));
+	inet_pton(AF_INET, veriflowIP.c_str(), &server_address.sin_addr);
+
+	// Connect to the controller
+	if (connect(sockvf, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+		std::cout << "Error connecting to veriflow" << std::endl;
+		return false;
+	}
+#endif
+	return true;
 }
 
 bool Controller::linkController() {
@@ -71,10 +114,21 @@ bool Controller::linkController() {
 	return true;
 }
 
-bool Controller::start()
+bool Controller::startController()
 {
+	// Used for linking and confirming controller. Does not start the CCPDN service
 	if (linkController()) {
 		openFlowHandshake();
+		return true;
+	}
+	return false;
+}
+
+bool Controller::start()
+{
+	if (linkVeriFlow()) {
+		// Send hello to VeriFlow, and wait for response. If received, we're good to start our thread
+		veriFlowHandshake();
 		return true;
 	}
 	return false;
@@ -128,6 +182,26 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	}
 	std::cout << std::dec << std::endl << std::endl;
 
+	return false;
+}
+
+bool Controller::sendVeriFlowMessage(std::string message)
+{
+	// Convert message to sendable format, add null-terminating char
+	std::vector<char> Msg(message.begin(), message.end());
+	Msg.push_back('\0');
+
+#ifdef __unix__
+	// Recast message as char array and send it
+	ssize_t bytes_sent = send(sockvf, Msg.data(), Msg.size(), 0);
+#endif
+
+	// Print send message
+	std::cout << "--- [CCPDN-MESSAGE-VERIFLOW] --- \n";
+	for (int i = 0; i < Msg.size(); ++i) {
+		std::cout << Msg[i];
+	}
+	std::cout << std::endl << std::endl;;
 	return false;
 }
 
@@ -213,15 +287,20 @@ void Controller::openFlowHandshake()
 	recvControllerMessages(false);
 }
 
+void Controller::veriFlowHandshake()
+{
+	sendVeriFlowMessage("[CCPDN] Hello");
+	recvVeriFlowMessages(false);
+}
+
 void Controller::recvControllerMessages(bool thread)
 {
-	char buf[1024];
 	while (thread) {
 		#ifdef __unix__
-				ssize_t bytes_received = recv(sockfd, buf, sizeof(buf), 0);
+				ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
 				std::cout << "[POX-MESSAGE-CCPDN]: ";
 				for (int i = 0; i < bytes_received; ++i) {
-					std::cout << std::hex << static_cast<int>(buf[i]) << " ";
+					std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 				}
 				std::cout << std::dec << std::endl << std::endl;
 		#endif
@@ -230,20 +309,52 @@ void Controller::recvControllerMessages(bool thread)
 	// Receive a single message
 	if (!thread) {
 		#ifdef __unix__
-				ssize_t bytes_received = recv(sockfd, buf, sizeof(buf), 0);
+				ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
 				std::cout << "[POX-MESSAGE-CCPDN]: ";
 				for (int i = 0; i < bytes_received; ++i) {
-					std::cout << std::hex << static_cast<int>(buf[i]) << " ";
+					std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 				}
 				std::cout << std::dec << std::endl << std::endl;
 		#endif
 	}
 }
 
-void Controller::listenerOpenFlow()
-{
-}
-
 void Controller::parseOpenFlowPacket(const std::vector<uint8_t>& packet)
 {
 }
+
+void Controller::recvVeriFlowMessages(bool thread)
+{
+	while (thread) {
+#ifdef __unix__
+		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
+		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
+		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+#endif
+	}
+
+	// Receive a single message
+	if (!thread) {
+#ifdef __unix__
+		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
+		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
+		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+	}
+#endif
+	}
+}
+
+std::string Controller::readBuffer(char* buf)
+{
+	// Dereference the buffer as a char[1024], then convert to a string
+	std::string output(buf);
+	// Check if the string is empty
+	if (output.empty()) {
+		std::cout << "[CCPDN-ERROR]: Buffer is empty." << std::endl;
+		return std::string();
+	}
+
+	return output;
+}
+
+

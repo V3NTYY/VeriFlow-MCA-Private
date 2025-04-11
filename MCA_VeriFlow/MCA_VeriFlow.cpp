@@ -464,7 +464,7 @@ int main() {
             }
             else {
 				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
-				controller_linked = mca_veriflow->controller.start();
+				controller_linked = mca_veriflow->controller.startController();
 			}
         }
 
@@ -616,8 +616,9 @@ int main() {
         }
 
         else if (args.at(0) == "test-method") {
-            // string_toTopology and topology_toString works perfectly
-            // Just make sure to verify host index is correct, and to re-verify/re-run domain node algorithm
+            std::cout << "Linking to veriflow...\n";
+            mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6654");
+            mca_veriflow->controller.start();
         }
 
         // Invalid response
