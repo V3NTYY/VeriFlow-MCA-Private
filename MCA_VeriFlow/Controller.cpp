@@ -339,7 +339,6 @@ void Controller::recvVeriFlowMessages(bool thread)
 		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
 		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
 		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
-	}
 #endif
 	}
 }
