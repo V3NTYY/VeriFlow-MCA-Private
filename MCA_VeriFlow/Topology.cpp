@@ -1,8 +1,98 @@
 #include "Topology.h"
 
+// Copy-paste of MCA_VeriFlow splitInput function. Not efficient I know but im just trying to save time.
+std::vector<std::string> splitInputDupe(std::string input, std::vector<std::string> delimiters) {
+	std::vector<std::string> words;
+	std::string word;
+
+	// If the line is empty, return early
+	if (input.empty()) {
+		return words;
+	}
+
+	// Iterate through the entire input string. If a delimiter is found, the first half is added as a word. The second half is then checked for delimiters again.
+	for (size_t i = 0; i < input.length(); i++) {
+		bool isDelimiter = false;
+		for (std::string delimiter : delimiters) {
+			if (input.substr(i, delimiter.length()) == delimiter) {
+				isDelimiter = true;
+				if (!word.empty()) {
+					words.push_back(word);
+					word.clear();
+				}
+				break;
+			}
+		}
+		if (!isDelimiter) {
+			word += input[i];
+			// If this is the last word, push it back
+			if (i == input.length() - 1) {
+				words.push_back(word);
+			}
+		}
+	}
+
+	return words;
+}
+
 std::vector<Node> Topology::string_toTopology(std::string payload)
 {
-	return std::vector<Node>();
+	std::vector<Node> topology;
+	std::string line;
+	std::istringstream stream(payload);
+	int topology_index = 0;
+	bool isControllerAdjacent = false;
+	bool isHost = false; // false = switch, true = host
+
+	while (std::getline(stream, line)) {
+		std::vector<std::string> delimiters = { ":", ",", " " };
+		std::vector<std::string> args = splitInputDupe(line, delimiters);
+
+		if (args.empty()) {
+			continue;
+		}
+
+		// This shouldn't be in a digest for string_toTopology purposes
+		if (args.at(0) == "TOP#") {
+			topology_index++;
+			isHost = false;
+			continue;
+		}
+		else if (args.at(0) == "CA#") {
+			isControllerAdjacent = true;
+		}
+		else if (args.at(0) == "S#") {
+			isHost = false;
+			continue;
+		}
+		else if (args.at(0) == "H#") {
+			isHost = true;
+			continue;
+		}
+		else if (args.at(0) == "R#") {
+			// Used to add rules. But we don't add them statically here.
+			continue;
+		}
+		else if (args.at(0) == "E!") {
+			// Used to end file reading. But not necessary since we could have multiple topologies.
+			continue;
+		}
+
+		std::vector<std::string> links;
+
+		// Get node parameters
+		std::string ipAddress = args.at(0);
+		for (int i = 1; i < args.size(); i++) {
+			links.push_back(args.at(i));
+		}
+
+		// Create a new node
+		Node n = Node(topology_index, !isHost, ipAddress, links);
+		n.setControllerAdjacency(isControllerAdjacent);
+		isControllerAdjacent = false;
+		topology.push_back(n);
+	}
+	return topology;
 }
 
 std::string Topology::topology_toString(int index)
@@ -13,14 +103,36 @@ std::string Topology::topology_toString(int index)
 	}
 
 	std::string output = "";
+	int topology_index = 0;
+	bool isControllerAdjacent = false;
+	bool isHost = false; // false = switch, true = host
 
-	// Iterate through all nodes in the topology
+	// Split the topology list into switches, then hosts. Print switches first, then hosts
+	std::vector<Node> switches;
+	std::vector<Node> hosts;
 	for (int j = 0; j < topologyList[index].size(); j++) {
-		output += topologyList[index][j].filePrint();
-		if (j != topologyList[index].size() - 1) {
-			output += "\n";
+		if (topologyList[index][j].isSwitch()) {
+			switches.push_back(topologyList[index][j]);
+		}
+		else {
+			hosts.push_back(topologyList[index][j]);
 		}
 	}
+
+	// Print the switches
+	output += "S#\n";
+	for (int j = 0; j < switches.size(); j++) {
+		output += switches[j].filePrint() + "\n";
+	}
+
+	// Print the hosts
+	output += "H#\n";
+	for (int j = 0; j < hosts.size(); j++) {
+		output += hosts[j].filePrint() + "\n";
+	}
+
+	// Print remaining, unused config
+	output += "R#\nE!";
 
 	return output;
 }

@@ -450,6 +450,7 @@ int main() {
                 " x add-flow [file-name] [switch-ip-address]    Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " x del-flow: [file-name] [switch-ip-address]   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - run-tcp-test                                Run's the TCP connection setup latency test.\n" << std::endl <<
+                " * test-method                                 Run's a current method that needs to be tested. For development purposes only.\n" << std::endl <<
                 "" << std::endl;
         }
 
@@ -612,6 +613,11 @@ int main() {
 					std::cout << "RTT " << i << ": " << measured_rtts.at(i) << std::endl;
 				}
             #endif
+        }
+
+        else if (args.at(0) == "test-method") {
+            // string_toTopology and topology_toString works perfectly
+            // Just make sure to verify host index is correct, and to re-verify/re-run domain node algorithm
         }
 
         // Invalid response
