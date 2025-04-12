@@ -67,19 +67,26 @@ def start_veriflow_server(host, port):
 	server_thread_instance.daemon = True
 	server_thread_instance.start()
 
+def checkPythonVersion():
+	# Check if Python version is 3.x
+	if sys.version_info[0] != 3:
+		print("This script requires Python 3.x")
+		sys.exit(1)
+
 def main():
 	global msg
 	global client_socket
+	checkPythonVersion()
 	print("Enter network configuration file name (eg.: file.txt):")
-	filename = raw_input("> ")
+	filename = input("> ")
 	network = Network()
 	network.parseNetworkFromFile(filename)
 
 	## Setup VeriFlow server for CCPDN to pass messages to
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
-	veriflow_ip = raw_input("> ")
+	veriflow_ip = input("> ")
 	print("Enter port to host VeriFlow on (i.e. 6655)")
-	veriflow_port = int(raw_input("> "))
+	veriflow_port = int(input("> "))
 	start_veriflow_server(veriflow_ip, veriflow_port)
 
 	generatedECs = network.getECsFromTrie()

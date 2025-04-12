@@ -1,3 +1,3 @@
 #!/bin/bash
 cd VeriFlow
-sudo python Main.py
+sudo python3 Main.py
