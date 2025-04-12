@@ -112,11 +112,16 @@ class Network(object):
 				forwardingGraph.addToGraph(connectedSwitchId)
 				print("Forwarding Graph Add Switch", forwardingGraph)
 				while (True):
+					## If the current switch doesn't exist, then we have iterated enough
+					if currentSwitch == None:
+						return success
+					
+					## verification logic
 					associatedRule = currentSwitch.getAssociatedRule(ec.getLeft())
 					print("Associated Rule to switch ", currentSwitch, " ", associatedRule)
 					if (associatedRule == None):
 						print("No Associated Rule")
-						print("Connected Hosts to Swtich", currentSwitch, " ", currentSwitch.getConnectedHosts())
+						print("Connected Hosts to Switch", currentSwitch, " ", currentSwitch.getConnectedHosts())
 						if (len(currentSwitch.getConnectedHosts()) == 0): #Checks to see if there are hosts connected to the switch. 
 							#should we check to see if the specific host its looking for exists?
 							success = False
