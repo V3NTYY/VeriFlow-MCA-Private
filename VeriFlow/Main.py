@@ -16,10 +16,10 @@ def start_veriflow_server(host, port):
 				message = client_socket.recv(1024).decode('utf-8')
 				if not message:
 					break
-				parse_message(message)
+				parse_message(message, client_socket)
 
 		except Exception as e:
-			print("Error handling client: {}".format(e))
+			print("\nError handling client: {}".format(e))
 		finally:
 			client_socket.close()
 
@@ -31,21 +31,37 @@ def start_veriflow_server(host, port):
 		try:
 			while True:
 				client_socket, addr = server_socket.accept()
-				print("Connection accepted from {}".format(addr))
+				print("\nConnection accepted from {}".format(addr))
 				client_handler = threading.Thread(target=handle_client, args=(client_socket,))
 				client_handler.start()
 		except Exception as e:
-			print("Server error: {}".format(e))
+			print("\nServer error: {}".format(e))
 		finally:
 			server_socket.close()
 
-	def parse_message(msg):
-		print("Received message: {}".format(msg))
+	def parse_message(msg, client_socket):
+		# If the message contains [CCPDN], then we can acknowledge it
+		if "[CCPDN]" in msg:
+			## Send hello back if we receive hello
+			if "Hello" in msg:
+				print("\nReceived hello message from CCPDN!")
+				client_socket.send("[VERIFLOW] Hello".encode('utf-8'))
+			## Handle logic for a flow rule added
+			elif "New Flow" in msg:
+				## Remove first newline from message, then parse rest of digest
+				msg.split("\n", 1)
+			## Handle logic for a flow rule deleted
+			elif "Flow Deleted" in msg:
+				## Remove first newline from message, then parse rest of digest
+				msg.split("\n", 1)
 
 	# Create thread for server so we don't stall everything
 	server_thread_instance = threading.Thread(target=server_thread)
 	server_thread_instance.daemon = True
 	server_thread_instance.start()
+
+def form_flow_rule(packet):
+	pass
 
 def main():
 	print("Enter network configuration file name (eg.: file.txt):")
