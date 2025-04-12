@@ -58,7 +58,7 @@ def start_veriflow_server(host, port):
 			elif "FLOW" in message:
 				## Only parse characters after the text "[CCPDN] FLOW "
 				print("\nReceived FLOW Mod from CCPDN!")
-				message = message[13:].strip()	
+				message = message[13:].strip().rstrip('\x00')
 				msg = message
 				pingFlag.set()
 
