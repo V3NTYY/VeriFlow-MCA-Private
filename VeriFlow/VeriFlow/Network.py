@@ -111,15 +111,8 @@ class Network(object):
 
 					associatedRule = currentSwitch.getAssociatedRule(ec.getLeft())
 					if (associatedRule == None):
-						if (len(currentSwitch.getConnectedHosts()) == 0): #Checks to see if there are hosts connected to the switch.
-							break
-							#should we check to see if the specific host its looking for exists?
-							# print("BLACK HOLE FOUND")
-							# networkError = NetworkError()
-							# networkError.setErrorType(1) #ErrorType.BLACK_HOLE
-							# networkError.setEc(ec)
-							# networkError.setStartingPoint(self.switches.get(connectedSwitchId))
-							# self.getNetworkErrors().append(networkError) #from .add to .append
+						print("No associated rule")
+						break
 					nextHopId = associatedRule.getNextHopId()
 					if (nextHopId in self.hosts.keys()): #self.hosts.containsKey(nextHopId) #This is not needed, because black holes didnt work (I think?)
 						break
