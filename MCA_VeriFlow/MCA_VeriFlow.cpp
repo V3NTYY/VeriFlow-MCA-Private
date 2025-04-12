@@ -437,21 +437,35 @@ int main() {
         // Help command, * means implemented, - means work in progress, x means nothing started on it yet
         else if (args.at(0) == "help") {
             std::cout << "Commands:" << std::endl <<
-                " * help:                                       Display all commands and their parameters.\n" << std::endl <<
-                " * exit:                                       Exit the CCPDN App.\n" << std::endl <<
-                " - run:                                        Start the CCPDN App. Controller must be linked, and topology initialized.\n" << std::endl <<
-                " - stop:                                       Stop the CCPDN App.\n" << std::endl <<
-                " * rdn [topology_file]:                        Identifies and links all candidates for domain nodes based on given topology file.\n" << std::endl <<
-                " * refactor-top [file-name]:                   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
-                " * output-top [file-name]:                     Output the current topology list to a new file.\n" << std::endl <<
-                " * link-controller [ip-address] [port]:        Link a currently running Pox Controller to this app.\n" << std::endl <<
-                " - unlink-controller:                          Free the Pox Controller from this app.\n" << std::endl <<
-                " x list-flows [switch-ip-address]:             List all the flows associated with a switch based on its IP.\n" << std::endl <<
-                " x add-flow [file-name] [switch-ip-address]    Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " x del-flow: [file-name] [switch-ip-address]   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - run-tcp-test                                Run's the TCP connection setup latency test.\n" << std::endl <<
-                " * test-method                                 Run's a current method that needs to be tested. For development purposes only.\n" << std::endl <<
-                "" << std::endl;
+                " * help:" << std::endl <<
+                "   Display all commands and their parameters.\n" << std::endl <<
+                " * exit:" << std::endl <<
+                "   Exit the CCPDN App.\n" << std::endl <<
+                " - run:" << std::endl <<
+                "   Start the CCPDN Service. Controller must be linked, and topology initialized.\n" << std::endl <<
+                " - stop:" << std::endl <<
+                "   Stop the CCPDN Service.\n" << std::endl <<
+                " * rdn [topology_file]:" << std::endl <<
+                "   Identifies and links all candidates for domain nodes based on given topology file.\n" << std::endl <<
+                " * refactor-top [file-name]:" << std::endl <<
+                "   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
+                " * output-top [file-name]:" << std::endl <<
+                "   Output the current topology list to a new file.\n" << std::endl <<
+                " * link-controller [ip-address] [port]:" << std::endl <<
+                "   Link a currently running Pox Controller to this app.\n" << std::endl <<
+                " - unlink-controller:" << std::endl <<
+                "   Free the Pox Controller from this app.\n" << std::endl <<
+                " x list-flows [switch-ip-address]:" << std::endl <<
+                "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
+                " x add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
+                " x del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
+                " - run-tcp-test" << std::endl <<
+                "   Run's the TCP connection setup latency test.\n" << std::endl <<
+                " * test-method" << std::endl <<
+                "   Run's a current method that needs to be tested. For development purposes only.\n" << std::endl <<
+                "";
         }
 
         // link-controller command
@@ -616,10 +630,9 @@ int main() {
         }
 
         else if (args.at(0) == "test-method") {
-
-            //std::cout << "Linking to veriflow...\n";
-            //mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
-            //mca_veriflow->controller.start();
+            std::cout << "Linking to veriflow...\n";
+            mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
+            mca_veriflow->controller.start();
         }
 
         // Invalid response
