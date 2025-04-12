@@ -103,6 +103,7 @@ def main():
 		pingFlag.clear()
 
 		if msg is not None:
+			print("\nPARSED CCPDN MSG: '{}'".format(msg))
 			affectedEcs = set()
 			if (msg.startswith("A")):
 				affectedEcs = network.addRuleFromString(msg[2:])
