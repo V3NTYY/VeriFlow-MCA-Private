@@ -88,8 +88,11 @@ def main():
 	print("")
 
 	while True:
-		if(pingFlag == True):
-			pingFlag = False
+		## Wait for thread signal to handle message
+		pingFlag.wait()
+		pingFlag.clear()
+
+		if msg is not None:
 			affectedEcs = set()
 			if (msg.startswith("A")):
 				affectedEcs = network.addRuleFromString(msg[2:])
