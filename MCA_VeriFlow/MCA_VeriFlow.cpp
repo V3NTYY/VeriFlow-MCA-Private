@@ -640,9 +640,11 @@ int main() {
 
             Flow f("10.0.0.5", "0.0.0.0/0", "10.0.0.6", true);
             mca_veriflow->controller.performVerification(false, f);
+            mca_veriflow->controller.rstVeriFlowFlag();
 
             Flow f2("10.0.0.6", "0.0.0.0/0", "10.0.0.5", true);
             mca_veriflow->controller.performVerification(false, f2);
+            mca_veriflow->controller.rstVeriFlowFlag();
         }
 
         // Invalid response

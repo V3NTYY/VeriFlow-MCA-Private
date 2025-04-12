@@ -51,6 +51,8 @@ class Controller {
 		// Misc functions
 		bool addDomainNode(Node* n);
 		std::vector<Node*> getDomainNodes();
+		void rstControllerFlag();
+		void rstVeriFlowFlag();
 
 		// Debugging functions
 		void print();

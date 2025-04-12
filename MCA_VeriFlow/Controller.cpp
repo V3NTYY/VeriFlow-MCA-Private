@@ -310,6 +310,16 @@ std::vector<Node*> Controller::getDomainNodes()
 	return domainNodes;
 }
 
+void Controller::rstControllerFlag()
+{
+	ofFlag = false;
+}
+
+void Controller::rstVeriFlowFlag()
+{
+	vfFlag = false;
+}
+
 // Print the controller information
 void Controller::print()
 {
@@ -320,12 +330,14 @@ void Controller::openFlowHandshake()
 {
 	sendOpenFlowMessage(OpenFlowMessage::helloMessage());
 	recvControllerMessages(false);
+	rstControllerFlag();
 }
 
 void Controller::veriFlowHandshake()
 {
 	sendVeriFlowMessage("[CCPDN] Hello");
 	recvVeriFlowMessages(false);
+	rstVeriFlowFlag();
 }
 
 void Controller::recvControllerMessages(bool thread)
