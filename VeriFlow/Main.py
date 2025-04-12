@@ -11,11 +11,12 @@ import threading
 
 client_socket = None
 pingFlag = False
+msg = None
 
-def start_veriflow_server(host, port, msg):
+def start_veriflow_server(host, port):
 	global client_socket
 
-	def handle_client(client_socket, msg):
+	def handle_client(client_socket):
 		try:
 			while True:
 				msg = client_socket.recv(1024).decode('utf-8')
@@ -37,27 +38,29 @@ def start_veriflow_server(host, port, msg):
 			while True:
 				client_socket, addr = server_socket.accept()
 				print("\nConnection accepted from {}".format(addr))
-				client_handler = threading.Thread(target=handle_client, args=(client_socket,msg,))
+				client_handler = threading.Thread(target=handle_client, args=(client_socket,))
 				client_handler.start()
 		except Exception as e:
 			print("\nServer error: {}".format(e))
 		finally:
 			server_socket.close()
 
-	def parse_message(msg, client_socket):
+	def parse_message(message, client_socket):
+		global msg
 		global pingFlag
 		# FORMAT: [CCPDN] FLOW A#192.168.0.0-0.0.0.0/0-192.168.0.1
 		# If the message contains [CCPDN], then we can acknowledge it
-		if "[CCPDN]" in msg:
+		if "[CCPDN]" in message:
 			## Send hello back if we receive hello
-			if "Hello" in msg:
+			if "Hello" in message:
 				print("\nReceived hello message from CCPDN!")
 				client_socket.send("[VERIFLOW] Hello".encode('utf-8'))
 			## Handle logic for a flow rule added
-			elif "FLOW" in msg:
+			elif "FLOW" in message:
 				## Only parse characters after the text "[CCPDN] FLOW "
 				print("\nReceived FLOW Mod from CCPDN!")
-				msg = msg[13:]	
+				message = message[13:]	
+				msg = message
 				pingFlag = True
 
 	# Create thread for server so we don't stall everything
@@ -78,7 +81,7 @@ def main():
 	veriflow_ip = input("> ")
 	print("Enter port to host VeriFlow on (i.e. 6655)")
 	veriflow_port = int(input("> "))
-	start_veriflow_server(veriflow_ip, veriflow_port, msg)
+	start_veriflow_server(veriflow_ip, veriflow_port)
 
 	generatedECs = network.getECsFromTrie()
 	network.checkWellformedness()
@@ -89,7 +92,7 @@ def main():
 	print("")
 
 	while True:
-		if(pingFlag == True and msg != None):
+		if(pingFlag == True):
 			pingFlag = False
 			affectedEcs = set()
 			if (msg.startswith("A")):
