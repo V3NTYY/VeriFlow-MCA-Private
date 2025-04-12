@@ -120,23 +120,10 @@ class Network(object):
 					associatedRule = currentSwitch.getAssociatedRule(ec.getLeft())
 					print("Associated Rule to switch ", currentSwitch, " ", associatedRule)
 					if (associatedRule == None):
-						print("No Associated Rule")
-						print("Connected Hosts to Switch", currentSwitch, " ", currentSwitch.getConnectedHosts())
-						if (len(currentSwitch.getConnectedHosts()) == 0): #Checks to see if there are hosts connected to the switch. 
-							#should we check to see if the specific host its looking for exists?
-							success = False
-							print("BLACK HOLE FOUND")
-							networkError = NetworkError()
-							networkError.setErrorType(1) #ErrorType.BLACK_HOLE
-							networkError.setEc(ec)
-							networkError.setStartingPoint(self.switches.get(connectedSwitchId))
-							self.getNetworkErrors().append(networkError) #from .add to .append
+						## Do nothing for black holes for now
 						break
 					nextHopId = associatedRule.getNextHopId()
 					print("Next hop for rule", nextHopId)
-					if (nextHopId in self.hosts.keys()): #self.hosts.containsKey(nextHopId) #This is not needed, because black holes didnt work (I think?)
-						print("Hosts contains the next hop ID")
-						break
 					if (forwardingGraph.contains(nextHopId)):
 						success = False
 						print("LOOP FOUND")
