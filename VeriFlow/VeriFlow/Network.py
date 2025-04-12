@@ -107,6 +107,7 @@ class Network(object):
 				forwardingGraph.addToGraph(connectedSwitchId)
 				while (True):
 					if (currentSwitch == None):
+						print("Current Switch is None")
 						break
 
 					associatedRule = currentSwitch.getAssociatedRule(ec.getLeft())
@@ -114,6 +115,7 @@ class Network(object):
 						print("No associated rule")
 						break
 					nextHopId = associatedRule.getNextHopId()
+					print("Next Hop Id: ", nextHopId)
 					if (nextHopId in self.hosts.keys()): #self.hosts.containsKey(nextHopId) #This is not needed, because black holes didnt work (I think?)
 						break
 					if (forwardingGraph.contains(nextHopId)):
