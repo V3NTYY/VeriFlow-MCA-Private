@@ -617,7 +617,7 @@ int main() {
 
         else if (args.at(0) == "test-method") {
             std::cout << "Linking to veriflow...\n";
-            mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6653");
+            mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
             mca_veriflow->controller.start();
         }
 

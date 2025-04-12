@@ -2,23 +2,63 @@
 from VeriFlow.Network import Network
 import socket
 import sys
+import threading
 
 ROUTE_VIEW = 1
 BIT_BUCKET = 2
 
+import threading
+
+def start_veriflow_server(host, port):
+	def handle_client(client_socket):
+		try:
+			while True:
+				message = client_socket.recv(1024).decode('utf-8')
+				if not message:
+					break
+				parse_message(message)
+
+		except Exception as e:
+			print(f"Error handling client: {e}")
+		finally:
+			client_socket.close()
+
+	def server_thread():
+		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		server_socket.bind((host, port))
+		server_socket.listen(2)
+		print(f"\nVeriFlow server started on {host}:{port}")
+		try:
+			while True:
+				client_socket, addr = server_socket.accept()
+				print(f"Connection accepted from {addr}")
+				client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+				client_handler.start()
+		except Exception as e:
+			print(f"Server error: {e}")
+		finally:
+			server_socket.close()
+
+	def parse_message(msg):
+		print(f"Received message: {msg}")
+
+	# Create thread for server so we don't stall everything
+	server_thread_instance = threading.Thread(target=server_thread)
+	server_thread_instance.daemon = True
+	server_thread_instance.start()
 
 def main():
 	print("Enter network configuration file name (eg.: file.txt):")
 	filename = input("> ")
 	network = Network()
 	network.parseNetworkFromFile(filename)
-	print("Enter IP address of the Controller")
-	ip = input("> ")
-	print("Enter Port for controller")
-	port = int(input("> "))
 
-	controller_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	controller_socket.connect((ip, port))
+	## Setup VeriFlow server for CCPDN to pass messages to
+	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
+	veriflow_ip = input("> ")
+	print("Enter port to host VeriFlow on (i.e. 6655)")
+	veriflow_port = int(input("> "))
+	start_veriflow_server(veriflow_ip, veriflow_port)
 
 	generatedECs = network.getECsFromTrie()
 	network.checkWellformedness()
@@ -31,7 +71,7 @@ def main():
 		print("To exit type exit")
 
 		#inputline = socket.recv().decode()
-		#print("Recieved: ", inputline)
+		#print("Received: ", inputline)
 		inputline = input('> ')
 		if(inputline is not None):
 			affectedEcs = set()
