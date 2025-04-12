@@ -67,6 +67,7 @@ def start_veriflow_server(host, port):
 	server_thread_instance.start()
 
 def main():
+	global msg
 	print("Enter network configuration file name (eg.: file.txt):")
 	filename = input("> ")
 	network = Network()
