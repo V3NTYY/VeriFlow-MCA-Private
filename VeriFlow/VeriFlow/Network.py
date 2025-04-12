@@ -106,6 +106,9 @@ class Network(object):
 				forwardingGraph = ForwardingGraph()
 				forwardingGraph.addToGraph(connectedSwitchId)
 				while (True):
+					if (currentSwitch == None):
+						break
+
 					associatedRule = currentSwitch.getAssociatedRule(ec.getLeft())
 					if (associatedRule == None):
 						if (len(currentSwitch.getConnectedHosts()) == 0): #Checks to see if there are hosts connected to the switch.
