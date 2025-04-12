@@ -19,7 +19,7 @@ def start_veriflow_server(host, port):
 				parse_message(message)
 
 		except Exception as e:
-			print(f"Error handling client: {e}")
+			print("Error handling client: {}".format(e))
 		finally:
 			client_socket.close()
 
@@ -27,20 +27,20 @@ def start_veriflow_server(host, port):
 		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		server_socket.bind((host, port))
 		server_socket.listen(2)
-		print(f"\nVeriFlow server started on {host}:{port}")
+		print("\nVeriFlow server started on {}:{}".format(host, port))
 		try:
 			while True:
 				client_socket, addr = server_socket.accept()
-				print(f"Connection accepted from {addr}")
+				print("Connection accepted from {}".format(addr))
 				client_handler = threading.Thread(target=handle_client, args=(client_socket,))
 				client_handler.start()
 		except Exception as e:
-			print(f"Server error: {e}")
+			print("Server error: {}".format(e))
 		finally:
 			server_socket.close()
 
 	def parse_message(msg):
-		print(f"Received message: {msg}")
+		print("Received message: {}".format(msg))
 
 	# Create thread for server so we don't stall everything
 	server_thread_instance = threading.Thread(target=server_thread)
