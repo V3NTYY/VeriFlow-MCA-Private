@@ -36,6 +36,7 @@ class MCA_VeriFlow {
 
 		Topology topology;
 		Controller controller;
+		bool isRunning;
 
 	private:
 };

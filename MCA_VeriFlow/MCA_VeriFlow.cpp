@@ -60,14 +60,34 @@ MCA_VeriFlow::MCA_VeriFlow()
     Topology t;
     topology = t;
     controller = Controller(&topology);
+    isRunning = false;
 }
 
 void MCA_VeriFlow::run() {
 
+    if (isRunning) {
+        std::cerr << "CCPDN App is already running." << std::endl;
+    }
+
+    // Link the CCPDN to the veriflow server
+    if (!controller.start()) {
+		std::cerr << "Error linking to VeriFlow server." << std::endl;
+		return;
+	}
+
+    // Start the controller thread
+    std::thread controllerThread(&Controller::controllerThread, &controller, &isRunning);
+	controllerThread.detach();
+
+	// Start the VeriFlow thread
+    std::thread veriflowThread(&Controller::veriFlowThread, &controller, &isRunning);
+	veriflowThread.detach();
+
+	isRunning = true;
 }
 
 void MCA_VeriFlow::stop() {
-
+    isRunning = false;
 }
 
 bool MCA_VeriFlow::registerTopologyFile(std::string file) {
@@ -611,7 +631,7 @@ int main() {
 
         // stop command
         else if (args.at(0) == "stop") {
-            if (!controller_linked || !topology_initialized) {
+            if (!controller_linked || !topology_initialized || mca_veriflow->isRunning) {
                 std::cout << "CCPDN App is not running.\n" << std::endl;
             } else {
                 mca_veriflow->stop();
@@ -632,19 +652,6 @@ int main() {
         }
 
         else if (args.at(0) == "test-method") {
-            std::cout << "Linking to veriflow...\n";
-            mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
-            mca_veriflow->controller.start();
-
-            std::cout << "If rdn has not been set, this WILL crash.\n";
-
-            Flow f("10.0.0.5", "0.0.0.0/0", "10.0.0.6", true);
-            mca_veriflow->controller.performVerification(false, f);
-            mca_veriflow->controller.rstVeriFlowFlag();
-
-            Flow f2("10.0.0.6", "0.0.0.0/0", "10.0.0.5", true);
-            mca_veriflow->controller.performVerification(false, f2);
-            mca_veriflow->controller.rstVeriFlowFlag();
         }
 
         // Invalid response

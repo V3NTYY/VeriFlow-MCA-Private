@@ -34,7 +34,8 @@ class Controller {
 		bool freeLink();
 
 		// Thread loop functions
-		void thread();
+		void controllerThread(bool* run);
+		void veriFlowThread(bool* run);
 
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(OpenFlowMessage Message);

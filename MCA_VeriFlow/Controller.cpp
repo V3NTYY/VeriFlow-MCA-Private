@@ -1,9 +1,20 @@
 #include "Controller.h"
 
-// MAIN THREAD LOOP
-void Controller::thread()
+// MAIN THREADS
+void Controller::controllerThread(bool* run)
 {
+	while (*run) {
+		// Receive next message from our socket
+		recvControllerMessages(false);
+		// Convert our buffer to openflow message format
+	}
+}
 
+void Controller::veriFlowThread(bool* run)
+{
+	while (*run) {
+
+	}
 }
 
 bool Controller::requestVerification(int destinationIndex, Flow f)
@@ -324,7 +335,7 @@ void Controller::rstVeriFlowFlag()
 void Controller::print()
 {
 	// TODO: Add more POX controller statistics to print
-	std::cout << "CONTROLLER --> IP:" << controllerIP << ":" << controllerPort << std::endl;
+	std::cout << "[CCPDN] POX Controller -> " << controllerIP << ":" << controllerPort << std::endl;
 }
 void Controller::openFlowHandshake()
 {
