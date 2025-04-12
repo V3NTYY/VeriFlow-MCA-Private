@@ -20,6 +20,7 @@
 class Controller {
 	public:
 		// Constructors and destructors
+		Controller();
 		Controller(Topology* t);
 		~Controller();
 

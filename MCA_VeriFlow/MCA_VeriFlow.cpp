@@ -55,6 +55,13 @@ int getUserInputInt(std::string prompt) {
 	return result;
 }
 
+MCA_VeriFlow::MCA_VeriFlow()
+{
+    Topology t;
+    topology = t;
+    controller = Controller(&topology);
+}
+
 void MCA_VeriFlow::run() {
 
 }
@@ -402,13 +409,8 @@ bool MCA_VeriFlow::pingTest(Node n)
 #endif
 
 int main() {
-
-    // Create topology and controller objects
-    Topology t;
-    Controller c(&t);
-
     // Create the MCA_VeriFlow object
-    MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow(t, c);
+    MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
 
     #ifdef _WIN32
     std::cout << "WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n" << std::endl;
@@ -559,14 +561,14 @@ int main() {
 
                 // Ask for user to identify which topology is the host (what topology this CCPDN is running on)
                 bool userInputLoop = true;
-                int hostIndex = 0;
+                int HostIndex = 0;
 
                 while (userInputLoop) {
                     std::cout << std::endl;
-                    int hostIndex = getUserInputInt("Please enter the index of the topology this CCPDN is running on: ");
+                    HostIndex = getUserInputInt("Please enter the index of the topology this CCPDN is running on: ");
 
                     // Ensure the topology index is valid
-                    if (hostIndex < 0 || hostIndex >= mca_veriflow->topology.getTopologyCount()) {
+                    if (HostIndex < 0 || HostIndex >= mca_veriflow->topology.getTopologyCount()) {
                         std::cout << "Invalid topology index. Please try again.\n";
                         continue;
                     }
@@ -578,7 +580,7 @@ int main() {
                 }
 
                 // Set the host index in the topology
-                mca_veriflow->topology.hostIndex = hostIndex;
+                mca_veriflow->topology.hostIndex = HostIndex;
 
                 topology_initialized = true;
             }
@@ -633,6 +635,8 @@ int main() {
             std::cout << "Linking to veriflow...\n";
             mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
             mca_veriflow->controller.start();
+
+            std::cout << "If rdn has not been set, this WILL crash.\n";
 
             Flow f("10.0.0.5", "0.0.0.0/0", "10.0.0.6", true);
             mca_veriflow->controller.performVerification(false, f);

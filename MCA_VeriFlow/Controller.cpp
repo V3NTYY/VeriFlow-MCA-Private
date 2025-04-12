@@ -32,9 +32,7 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	recvVeriFlowMessages(false);
 
 	// Ensure flow rule falls within our host topology
-	std::cout << "getting host node\n";
 	Node host = referenceTopology->getNodeByIP(f.getSwitchIP(), referenceTopology->hostIndex);
-	std::cout << "getting target node\n";
 	Node target = referenceTopology->getNodeByIP(f.getSwitchIP());
 	if (host.isEmptyNode()) {
 		// We have inter-topology verification now. use reqVerification
@@ -49,8 +47,19 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 
 	}
 
-	std::cout << "returnign false\n";
 	return false;
+}
+
+Controller::Controller()
+{
+	controllerIP = "";
+	controllerPort = "";
+	veriflowIP = "";
+	veriflowPort = "";
+	sockfd = -1;
+	sockvf = -1;
+	activeThread = false;
+	referenceTopology = nullptr;
 }
 
 // Constructor

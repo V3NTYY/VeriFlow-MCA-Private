@@ -21,7 +21,7 @@
 
 class MCA_VeriFlow {
 	public:
-		MCA_VeriFlow(Topology t, Controller c) : topology(t), controller(c) {}
+		MCA_VeriFlow();
 
 		void run();
 		void stop();
