@@ -7,13 +7,12 @@ import threading
 ROUTE_VIEW = 1
 BIT_BUCKET = 2
 
-import threading
-
 client_socket = None
-pingFlag = False
+pingFlag = threading.Event()
 msg = None
 
 def start_veriflow_server(host, port):
+	global msg
 	global client_socket
 
 	def handle_client(client_socket):
@@ -47,7 +46,6 @@ def start_veriflow_server(host, port):
 
 	def parse_message(message, client_socket):
 		global msg
-		global pingFlag
 		# FORMAT: [CCPDN] FLOW A#192.168.0.0-0.0.0.0/0-192.168.0.1
 		# If the message contains [CCPDN], then we can acknowledge it
 		if "[CCPDN]" in message:
@@ -61,7 +59,7 @@ def start_veriflow_server(host, port):
 				print("\nReceived FLOW Mod from CCPDN!")
 				message = message[13:]	
 				msg = message
-				pingFlag = True
+				pingFlag.set()
 
 	# Create thread for server so we don't stall everything
 	server_thread_instance = threading.Thread(target=server_thread)
@@ -75,8 +73,6 @@ def main():
 	network.parseNetworkFromFile(filename)
 
 	## Setup VeriFlow server for CCPDN to pass messages to
-	msg = ""
-	pingFlag = False
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
 	veriflow_ip = input("> ")
 	print("Enter port to host VeriFlow on (i.e. 6655)")
