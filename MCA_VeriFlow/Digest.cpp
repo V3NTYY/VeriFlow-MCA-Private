@@ -21,12 +21,15 @@ std::string Digest::toJson() {
     j["destinationIndex"] = destinationIndex;
     j["payload"] = payload;
     j["destination_ip"] = destination_ip;
+    j["flow_data"] = appendedFlow.flowToStr();
     return j.dump();
 }
 
 void Digest::fromJson(const std::string& json_str) {
     try {
         nlohmann::json j = nlohmann::json::parse(json_str);
+        std::string flow_data;
+
         synch_bit = j["synch_bit"].get<int>() == 1;
         update_bit = j["update_bit"].get<int>() == 1;
         verification_bit = j["verification_bit"].get<int>() == 1;
@@ -34,6 +37,9 @@ void Digest::fromJson(const std::string& json_str) {
         destinationIndex = j["destinationIndex"].get<int>();
         payload = j["payload"].get<std::string>();
         destination_ip = j["destination_ip"].get<std::string>();
+        flow_data = j["flow_data"].get<std::string>();
+        appendedFlow = *Flow::strToFlow(flow_data);
+
     } catch (const std::exception& e) {
         std::cerr << "JSON parsing error: " << e.what() << std::endl;
     }
@@ -133,7 +139,16 @@ int Digest::readDigest(const std::string& data) {
     }
 }
 
-bool Digest::getSynchBit() { 
+void Digest::appendFlow(Flow f)
+{
+    appendedFlow = f;
+}
+
+Flow Digest::getFlow() {
+	return appendedFlow;
+}
+
+bool Digest::getSynchBit() {
     return synch_bit; 
 }
 

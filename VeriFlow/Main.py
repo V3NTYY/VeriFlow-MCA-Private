@@ -40,6 +40,7 @@ def start_veriflow_server(host, port):
 			server_socket.close()
 
 	def parse_message(msg, client_socket):
+		# FORMAT: [CCPDN] FLOW A#192.168.0.0-0.0.0.0/0-192.168.0.1
 		# If the message contains [CCPDN], then we can acknowledge it
 		if "[CCPDN]" in msg:
 			## Send hello back if we receive hello
@@ -47,13 +48,10 @@ def start_veriflow_server(host, port):
 				print("\nReceived hello message from CCPDN!")
 				client_socket.send("[VERIFLOW] Hello".encode('utf-8'))
 			## Handle logic for a flow rule added
-			elif "New Flow" in msg:
-				## Remove first newline from message, then parse rest of digest
-				msg.split("\n", 1)
-			## Handle logic for a flow rule deleted
-			elif "Flow Deleted" in msg:
-				## Remove first newline from message, then parse rest of digest
-				msg.split("\n", 1)
+			elif "FLOW" in msg:
+				## Only parse characters after the text [CCPDN] FLOW
+				msg = msg[12:]	
+				print(msg)
 
 	# Create thread for server so we don't stall everything
 	server_thread_instance = threading.Thread(target=server_thread)

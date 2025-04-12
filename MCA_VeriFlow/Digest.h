@@ -6,6 +6,7 @@
 #include <fstream>
 #include "json.hpp"
 #include "Node.h"
+#include "Flow.h"
 
 class Digest {
 private:
@@ -16,18 +17,26 @@ private:
     int destinationIndex;
     std::string payload;
     std::string destination_ip;
+    Flow appendedFlow;
 
 public:
     Digest(bool synch = false, bool update = false, bool verification = false, 
            int hIndex = 0, int dIndex = 0, const std::string& data = "");
     ~Digest();
 
+    // JSON Marshalling methods
     std::string toJson();
     void fromJson(const std::string& json_str);
 
+    // Digest methods
     bool sendDigest(void* send);
     static int readDigest(const std::string& raw_data);
 
+    // Flow methods
+    void appendFlow(Flow f);
+    Flow getFlow();
+
+    // Misc/getters
     bool getSynchBit();
     bool getUpdateBit();
     bool getVerificationBit();

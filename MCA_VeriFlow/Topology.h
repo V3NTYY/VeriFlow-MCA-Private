@@ -19,6 +19,7 @@ class Topology {
 	public:
 		// Node getters
 		Node getNodeByIP(std::string IP);
+		Node getNodeByIP(std::string IP, int index);
 		Node* getNodeReference(Node n);
 
 		// Add node to topology

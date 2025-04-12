@@ -8,7 +8,8 @@
 class Flow {
 	public:
 		// Constructors & destructors
-		Flow(std::string SwitchIP, std::string RulePrefix, std::string NextHopIP);
+		Flow(std::string SwitchIP, std::string RulePrefix, std::string NextHopIP, bool Action);
+		Flow();
 		~Flow();
 
 		// Marshalling methods
@@ -18,10 +19,17 @@ class Flow {
 		// Misc methods
 		void print();
 
+		// Getters
+		std::string getSwitchIP();
+		std::string getRulePrefix();
+		std::string getNextHopIP();
+		bool actionType();
+
 	private:
 		std::string switchIP;
 		std::string rulePrefix;
 		std::string nextHopIP;
+		bool action;
 };
 
 #endif

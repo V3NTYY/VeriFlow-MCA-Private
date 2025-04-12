@@ -44,8 +44,8 @@ class Controller {
 		bool sendUpdate(bool global, int destinationIndex);
 
 		// Verification functions
-		bool requestVerification(int destinationIndex);
-		bool performVerification(bool externalRequest);
+		bool requestVerification(int destinationIndex, Flow f);
+		bool performVerification(bool externalRequest, Flow f);
 
 		// Misc functions
 		bool addDomainNode(Node* n);

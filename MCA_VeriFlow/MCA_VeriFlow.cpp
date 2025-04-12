@@ -630,9 +630,12 @@ int main() {
         }
 
         else if (args.at(0) == "test-method") {
-            std::cout << "Linking to veriflow...\n";
+            Flow f("192.168.0.0", "0.0.0.0/0", "192.168.0.1", true);
+            mca_veriflow->controller.performVerification(false, f);
+
+            /*std::cout << "Linking to veriflow...\n";
             mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
-            mca_veriflow->controller.start();
+            mca_veriflow->controller.start();*/
         }
 
         // Invalid response

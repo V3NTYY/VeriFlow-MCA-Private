@@ -173,6 +173,19 @@ Node Topology::getNodeByIP(std::string IP)
 	return Node();
 }
 
+Node Topology::getNodeByIP(std::string IP, int index)
+{
+	// Iterate through all nodes in the topology
+	for (int j = 0; j < topologyList[index].size(); j++) {
+		// If the IP matches, return the node
+		if (topologyList[index][j].getIP() == IP) {
+			return topologyList[index][j];
+		}
+	}
+
+	return Node();
+}
+
 Node* Topology::getNodeReference(Node n)
 {
 	// Iterate through all topologies

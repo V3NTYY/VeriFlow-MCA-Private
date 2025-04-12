@@ -6,24 +6,42 @@ void Controller::thread()
 
 }
 
-bool Controller::requestVerification(int destinationIndex)
+bool Controller::requestVerification(int destinationIndex, Flow f)
 {
+	/// WARNING: Only call this function for cross-domain verification
+	/// Additionally, make any changes you need to the flow rule as well (i.e. for resubmits)
+
 	// Verify destination index exists within current topology
 	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
 		return false;
 	}
 
-	return Digest(0, 0, 1, referenceTopology->hostIndex, destinationIndex, "").sendDigest(this);
+	Digest verificationMessage(false, false, true, referenceTopology->hostIndex, destinationIndex, "");
+	verificationMessage.appendFlow(f);
+
+	return verificationMessage.sendDigest(this);
 }
 
-bool Controller::performVerification(bool externalRequest)
+bool Controller::performVerification(bool externalRequest, Flow f)
 {
-	// Craft packet with [CCPDN] as header and topology=index as body
-	// Send the packet to the currently linked veriflow instance.
-	#ifdef __unix__
-		
-	#endif
+	/// Craft the packet
+	std::string packet = "[CCPDN] FLOW ";
+	packet += f.flowToStr();
 
+	std::cout << "[CCPDN-VERIFICATION]: " << packet << std::endl;
+
+	// Ensure flow rule falls within our host topology
+	Node host = referenceTopology->getNodeByIP(f.getSwitchIP(), referenceTopology->hostIndex);
+	Node target = referenceTopology->getNodeByIP(f.getSwitchIP());
+	if (host.isEmptyNode()) {
+		// We have inter-topology verification now. use reqVerification
+		int targetTopology = target.getTopologyID();
+		std::cout << "[CCPDN-VERIFICATION]: Requesting verification from topology " << targetTopology << "..." << std::endl;
+		Digest verificationMessage(false, false, true, referenceTopology->hostIndex, targetTopology, "");
+	}
+	else { } // Normal verification logic goes here
+
+	// This just means that we should forward our results to the previous CCPDN instance
 	if (externalRequest) {
 
 	}
