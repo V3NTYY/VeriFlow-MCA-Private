@@ -29,6 +29,7 @@ def start_veriflow_server(host, port):
 			client_socket.close()
 
 	def server_thread():
+		global client_socket
 		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		server_socket.bind((host, port))
 		server_socket.listen(2)
