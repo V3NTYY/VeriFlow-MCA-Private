@@ -58,7 +58,7 @@ def start_veriflow_server(host, port):
 			elif "FLOW" in message:
 				## Only parse characters after the text "[CCPDN] FLOW "
 				print("\nReceived FLOW Mod from CCPDN!")
-				message = message[13:]	
+				message = message[13:].strip()	
 				msg = message
 				pingFlag.set()
 
@@ -66,6 +66,47 @@ def start_veriflow_server(host, port):
 	server_thread_instance = threading.Thread(target=server_thread)
 	server_thread_instance.daemon = True
 	server_thread_instance.start()
+
+def compare_strings(manual_input, server_msg):
+
+	print("=== Comparing Strings ===")
+	print(f"Manual Input: '{manual_input}'")
+	print(f"Server Message: '{server_msg}'")
+
+	# Strip whitespace for a fair comparison
+	manual_input = manual_input.strip()
+	server_msg = server_msg.strip()
+
+	# Direct comparison
+	if manual_input == server_msg:
+		print("Strings are identical.")
+	else:
+		print("Strings are different.")
+
+	# Byte-level comparison
+	manual_bytes = manual_input.encode('utf-8')
+	server_bytes = server_msg.encode('utf-8')
+	if manual_bytes == server_bytes:
+		print("Strings are identical at the byte level.")
+	else:
+		print("Strings differ at the byte level.")
+		print(f"Manual Input Bytes: {manual_bytes}")
+		print(f"Server Message Bytes: {server_bytes}")
+
+	# Character-by-character comparison
+	print("\nCharacter-by-Character Comparison:")
+	max_len = max(len(manual_input), len(server_msg))
+	for i in range(max_len):
+		char1 = manual_input[i] if i < len(manual_input) else None
+		char2 = server_msg[i] if i < len(server_msg) else None
+		if char1 != char2:
+			print(f"Difference at position {i}: '{char1}' != '{char2}'")
+
+	# Length comparison
+	if len(manual_input) != len(server_msg):
+		print(f"\nStrings have different lengths: {len(manual_input)} != {len(server_msg)}")
+
+	print("=== Comparison Complete ===")
 
 def checkPythonVersion():
 	# Check if Python version is 3.x
@@ -82,6 +123,9 @@ def main():
 	network = Network()
 	network.parseNetworkFromFile(filename)
 
+	print("Enter the first test rule")
+	testInput = input("> ")
+
 	## Setup VeriFlow server for CCPDN to pass messages to
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
 	veriflow_ip = input("> ")
@@ -94,7 +138,7 @@ def main():
 	network.log(generatedECs)
 
 	print("")
-	print("Use ctrl+z to exit the program")
+	print("Use ctrl+c to exit the program")
 	print("")
 
 	while True:
@@ -104,6 +148,7 @@ def main():
 
 		if msg is not None:
 			print("\nPARSED CCPDN MSG: '{}'".format(msg))
+			compare_strings(testInput, msg)
 			affectedEcs = set()
 			if (msg.startswith("A")):
 				affectedEcs = network.addRuleFromString(msg[2:])
