@@ -211,8 +211,6 @@ bool Controller::sendVeriFlowMessage(std::string message)
 	std::vector<char> Msg(message.begin(), message.end());
 	Msg.push_back('\0');
 
-	std::cout << "Message length: " << Msg.size() << std::endl;
-
 #ifdef __unix__
 	// Recast message as char array and send it
 	ssize_t bytes_sent = send(sockvf, Msg.data(), Msg.size(), 0);

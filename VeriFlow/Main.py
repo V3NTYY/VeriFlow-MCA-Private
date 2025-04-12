@@ -50,7 +50,7 @@ def start_veriflow_server(host, port):
 			## Handle logic for a flow rule added
 			elif "FLOW" in msg:
 				## Only parse characters after the text [CCPDN] FLOW
-				msg = msg[12:]	
+				msg = msg[13:]	
 				print(msg)
 
 	# Create thread for server so we don't stall everything
