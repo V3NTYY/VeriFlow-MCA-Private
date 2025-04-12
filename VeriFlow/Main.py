@@ -4,9 +4,6 @@ import socket
 import sys
 import threading
 
-## Add path for veriflow files
-sys.path.append('../VeriFlow')
-
 ROUTE_VIEW = 1
 BIT_BUCKET = 2
 
