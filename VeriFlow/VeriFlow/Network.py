@@ -89,6 +89,7 @@ class Network(object):
 	
 
 	def checkWellformedness(self, ecs = None):
+		success = True
 		print("")
 		print("Checking WellFormed-Ness")
 		if(ecs is None or len(ecs) == 0): #From ecs is None
@@ -118,6 +119,7 @@ class Network(object):
 						print("Connected Hosts to Swtich", currentSwitch, " ", currentSwitch.getConnectedHosts())
 						if (len(currentSwitch.getConnectedHosts()) == 0): #Checks to see if there are hosts connected to the switch. 
 							#should we check to see if the specific host its looking for exists?
+							success = False
 							print("BLACK HOLE FOUND")
 							networkError = NetworkError()
 							networkError.setErrorType(1) #ErrorType.BLACK_HOLE
@@ -131,6 +133,7 @@ class Network(object):
 						print("Hosts contains the next hop ID")
 						break
 					if (forwardingGraph.contains(nextHopId)):
+						success = False
 						print("LOOP FOUND")
 						print("Forwarding graph contains", nextHopId)
 						networkError = NetworkError()
@@ -144,6 +147,7 @@ class Network(object):
 					print("Current switch", currentSwitch)
 					forwardingGraph.addToGraph(nextHopId)
 					print("Forwarding Graph after added next hop", forwardingGraph)
+				return success
 
 	def getEcs(self):
 		return self.ecs

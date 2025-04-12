@@ -28,7 +28,6 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	std::string packet = "[CCPDN] FLOW ";
 	packet += f.flowToStr();
 
-	std::cout << "[CCPDN-VERIFICATION]: " << packet << std::endl;
 	sendVeriFlowMessage(packet);
 	recvVeriFlowMessages(false);
 
@@ -38,7 +37,7 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	if (host.isEmptyNode()) {
 		// We have inter-topology verification now. use reqVerification
 		int targetTopology = target.getTopologyID();
-		std::cout << "[CCPDN-VERIFICATION]: Requesting verification from topology " << targetTopology << "..." << std::endl;
+		std::cout << "[CCPDN]: Requesting verification from topology " << targetTopology << "..." << std::endl;
 		Digest verificationMessage(false, false, true, referenceTopology->hostIndex, targetTopology, "");
 	}
 	else { } // Normal verification logic goes here
@@ -196,7 +195,7 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 		ssize_t bytes_sent = send(sockfd, Msg.data(), Msg.size(), 0);
 	#endif
 
-	std::cout << "[CCPDN-MESSAGE-POX]: ";
+	std::cout << "--- [CCPDN-MESSAGE-POX] ---\n";
 	for (int i = 0; i < Msg.size(); ++i) {
 		std::cout << std::hex << static_cast<int>(Msg[i]) << " ";
 	}
@@ -231,7 +230,7 @@ bool Controller::synchTopology(Digest d)
 	std::vector<Node> topologyData = Topology::string_toTopology(d.getPayload());
 
 	if (topologyData.empty()) {
-		std::cout << "[CCPDN-ERROR]: Failed to parse topology data from payload." << std::endl;
+		std::cout << "[CCPDN]: ERROR. Failed to parse topology data from payload." << std::endl;
 		return false;
 	}
 
@@ -256,7 +255,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	int hostIndex = referenceTopology->hostIndex;
 
 	if (hostIndex == destinationIndex) {
-		std::cout << "[CCPDN-ERROR]: Cannot send update to self.\n";
+		std::cout << "[CCPDN]: ERROR. Cannot send update to self.\n";
 		return false;
 	}
 
@@ -264,7 +263,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	std::string topOutput = referenceTopology->topology_toString(hostIndex);
 
 	if (topOutput.empty()) {
-		std::cout << "[CCPDN-ERROR]: Failed to convert topology to string." << std::endl;
+		std::cout << "[CCPDN]: ERROR. Failed to convert topology to string." << std::endl;
 		return false;
 	}
 
@@ -318,7 +317,7 @@ void Controller::recvControllerMessages(bool thread)
 	while (thread) {
 		#ifdef __unix__
 				ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
-				std::cout << "[POX-MESSAGE-CCPDN]: ";
+				std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
 				for (int i = 0; i < bytes_received; ++i) {
 					std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 				}
@@ -330,7 +329,7 @@ void Controller::recvControllerMessages(bool thread)
 	if (!thread) {
 		#ifdef __unix__
 				ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
-				std::cout << "[POX-MESSAGE-CCPDN]: ";
+				std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
 				for (int i = 0; i < bytes_received; ++i) {
 					std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 				}

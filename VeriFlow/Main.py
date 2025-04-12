@@ -9,14 +9,18 @@ BIT_BUCKET = 2
 
 import threading
 
-def start_veriflow_server(host, port):
-	def handle_client(client_socket):
+client_socket = None
+
+def start_veriflow_server(host, port, msg, pingFlag):
+	global client_socket
+
+	def handle_client(client_socket, msg, pingFlag):
 		try:
 			while True:
-				message = client_socket.recv(1024).decode('utf-8')
-				if not message:
+				msg = client_socket.recv(1024).decode('utf-8')
+				if not msg:
 					break
-				parse_message(message, client_socket)
+				parse_message(msg, client_socket, pingFlag)
 
 		except Exception as e:
 			print("\nError handling client: {}".format(e))
@@ -32,14 +36,14 @@ def start_veriflow_server(host, port):
 			while True:
 				client_socket, addr = server_socket.accept()
 				print("\nConnection accepted from {}".format(addr))
-				client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+				client_handler = threading.Thread(target=handle_client, args=(client_socket,msg,pingFlag,))
 				client_handler.start()
 		except Exception as e:
 			print("\nServer error: {}".format(e))
 		finally:
 			server_socket.close()
 
-	def parse_message(msg, client_socket):
+	def parse_message(msg, client_socket, pingFlag):
 		# FORMAT: [CCPDN] FLOW A#192.168.0.0-0.0.0.0/0-192.168.0.1
 		# If the message contains [CCPDN], then we can acknowledge it
 		if "[CCPDN]" in msg:
@@ -49,17 +53,15 @@ def start_veriflow_server(host, port):
 				client_socket.send("[VERIFLOW] Hello".encode('utf-8'))
 			## Handle logic for a flow rule added
 			elif "FLOW" in msg:
-				## Only parse characters after the text [CCPDN] FLOW
+				## Only parse characters after the text "[CCPDN] FLOW "
+				print("\nReceived FLOW Mod from CCPDN!")
 				msg = msg[13:]	
-				print(msg)
+				pingFlag = True
 
 	# Create thread for server so we don't stall everything
 	server_thread_instance = threading.Thread(target=server_thread)
 	server_thread_instance.daemon = True
 	server_thread_instance.start()
-
-def form_flow_rule(packet):
-	pass
 
 def main():
 	print("Enter network configuration file name (eg.: file.txt):")
@@ -68,45 +70,49 @@ def main():
 	network.parseNetworkFromFile(filename)
 
 	## Setup VeriFlow server for CCPDN to pass messages to
+	msg = ""
+	pingFlag = False
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
 	veriflow_ip = input("> ")
 	print("Enter port to host VeriFlow on (i.e. 6655)")
 	veriflow_port = int(input("> "))
-	start_veriflow_server(veriflow_ip, veriflow_port)
+	start_veriflow_server(veriflow_ip, veriflow_port, msg, pingFlag)
 
 	generatedECs = network.getECsFromTrie()
 	network.checkWellformedness()
 	network.log(generatedECs)
 
-	while True:
-		print(" ")
-		print("Add rule by entering A#switchIP-rulePrefix-nextHopIP (eg.A#127.0.0.1-128.0.0.0/2-127.0.0.2)")
-		print("Remove rule by entering R#switchIP-rulePrefix-nextHopIP (eg.R#127.0.0.1-128.0.0.0/2-127.0.0.2)")
-		print("To exit type exit")
+	print("")
+	print("Use ctrl+c to exit the program")
+	print("")
 
-		#inputline = socket.recv().decode()
-		#print("Received: ", inputline)
-		inputline = input('> ')
-		if(inputline is not None):
+	while True:
+		if(msg is not None and pingFlag is True):
+			pingFlag = False
 			affectedEcs = set()
-			if (inputline.startswith("A")):
-				affectedEcs = network.addRuleFromString(inputline[2:])
-				network.checkWellformedness(affectedEcs)
-			elif (inputline.startswith("R")):
-				affectedEcs = network.deleteRuleFromString(inputline[2:])
-				network.checkWellformedness(affectedEcs)
-			elif ("exit" in inputline):
-				break
+			if (msg.startswith("A")):
+				affectedEcs = network.addRuleFromString(msg[2:])
+				if network.checkWellformedness(affectedEcs) is True:
+					print("Rule added successfully!")
+					client_socket.send("[VERIFLOW] Success".encode('utf-8'))
+				else:
+					print("Rule addition failed!")
+					client_socket.send("[VERIFLOW] Fail".encode('utf-8'))
+			elif (msg.startswith("R")):
+				affectedEcs = network.deleteRuleFromString(msg[2:])
+				if network.checkWellformedness(affectedEcs) is True:
+					print("Rule deleted successfully!")
+					client_socket.send("[VERIFLOW] Success".encode('utf-8'))
+				else:
+					print("Rule deletion failed!")
+					client_socket.send("[VERIFLOW] Fail".encode('utf-8'))
 			else:
-				print("Wrong input format!")
+				print("Wrong input on packet!")
 				continue
 
 			print("")
 			network.log(affectedEcs)
-			inputline = None
-		else:
-			print("waiting for data...")
-			print(" ")
+			msg = None
 
 if __name__ == '__main__':
 	main()

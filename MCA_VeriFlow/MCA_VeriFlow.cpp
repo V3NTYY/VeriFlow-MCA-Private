@@ -634,8 +634,11 @@ int main() {
             mca_veriflow->controller.setVeriFlowIP("127.0.0.1", "6655");
             mca_veriflow->controller.start();
 
-            Flow f("192.168.0.0", "0.0.0.0/0", "192.168.0.1", true);
+            Flow f("10.0.0.5", "0.0.0.0/0", "10.0.0.6", true);
             mca_veriflow->controller.performVerification(false, f);
+
+            Flow f2("10.0.0.6", "0.0.0.0/0", "10.0.0.5", true);
+            mca_veriflow->controller.performVerification(false, f2);
         }
 
         // Invalid response
