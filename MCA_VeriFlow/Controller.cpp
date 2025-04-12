@@ -29,6 +29,8 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	packet += f.flowToStr();
 
 	std::cout << "[CCPDN-VERIFICATION]: " << packet << std::endl;
+	sendVeriFlowMessage(packet);
+	recvVeriFlowMessages(false);
 
 	// Ensure flow rule falls within our host topology
 	Node host = referenceTopology->getNodeByIP(f.getSwitchIP(), referenceTopology->hostIndex);
