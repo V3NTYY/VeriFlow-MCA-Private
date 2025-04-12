@@ -70,8 +70,8 @@ def start_veriflow_server(host, port):
 def compare_strings(manual_input, server_msg):
 
 	print("=== Comparing Strings ===")
-	print(f"Manual Input: '{manual_input}'")
-	print(f"Server Message: '{server_msg}'")
+	print("Manual Input: '{}'".format(manual_input))
+	print("Server Message: '{}'".format(server_msg))
 
 	# Strip whitespace for a fair comparison
 	manual_input = manual_input.strip()
@@ -90,8 +90,8 @@ def compare_strings(manual_input, server_msg):
 		print("Strings are identical at the byte level.")
 	else:
 		print("Strings differ at the byte level.")
-		print(f"Manual Input Bytes: {manual_bytes}")
-		print(f"Server Message Bytes: {server_bytes}")
+		print("Manual Input Bytes: {}".format(manual_bytes))
+		print("Server Message Bytes: {}".format(server_bytes))
 
 	# Character-by-character comparison
 	print("\nCharacter-by-Character Comparison:")
@@ -100,11 +100,11 @@ def compare_strings(manual_input, server_msg):
 		char1 = manual_input[i] if i < len(manual_input) else None
 		char2 = server_msg[i] if i < len(server_msg) else None
 		if char1 != char2:
-			print(f"Difference at position {i}: '{char1}' != '{char2}'")
+			print("Difference at position {}: '{}' != '{}'".format(i, char1, char2))
 
 	# Length comparison
 	if len(manual_input) != len(server_msg):
-		print(f"\nStrings have different lengths: {len(manual_input)} != {len(server_msg)}")
+		print("\nStrings have different lengths: {} != {}".format(len(manual_input), len(server_msg)))
 
 	print("=== Comparison Complete ===")
 
