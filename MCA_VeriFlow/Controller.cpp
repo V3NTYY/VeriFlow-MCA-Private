@@ -60,6 +60,8 @@ Controller::Controller()
 	sockvf = -1;
 	activeThread = false;
 	referenceTopology = nullptr;
+	ofFlag = false;
+	vfFlag = false;
 }
 
 // Constructor
@@ -72,6 +74,8 @@ Controller::Controller(Topology* t) {
 	sockvf = -1;
 	activeThread = false;
 	referenceTopology = t;
+	ofFlag = false;
+	vfFlag = false;
 }
 
 // Destructor
@@ -327,26 +331,37 @@ void Controller::veriFlowHandshake()
 void Controller::recvControllerMessages(bool thread)
 {
 	while (thread) {
-		#ifdef __unix__
-				ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
-				std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
-				for (int i = 0; i < bytes_received; ++i) {
-					std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
-				}
-				std::cout << std::dec << std::endl << std::endl;
-		#endif
+#ifdef __unix__
+		// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
+		if (!ofFlag) {
+			std::memset(ofBuffer, 0, sizeof(ofBuffer)); // Clear the buffer before receiving data
+			ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
+			std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
+			for (int i = 0; i < bytes_received; ++i) {
+				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
+			}
+			std::cout << std::dec << std::endl << std::endl;
+			ofFlag = true;
+		}
+#endif
 	}
 
 	// Receive a single message
-	if (!thread) {
-		#ifdef __unix__
-				ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
-				std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
-				for (int i = 0; i < bytes_received; ++i) {
-					std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
-				}
-				std::cout << std::dec << std::endl << std::endl;
-		#endif
+	while (!thread) {
+#ifdef __unix__
+		// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
+		if (!ofFlag) {
+			std::memset(ofBuffer, 0, sizeof(ofBuffer)); // Clear the buffer before receiving data
+			ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
+			std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
+			for (int i = 0; i < bytes_received; ++i) {
+				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
+			}
+			std::cout << std::dec << std::endl << std::endl;
+			ofFlag = true;
+			break;
+		}
+#endif
 	}
 }
 
@@ -358,18 +373,29 @@ void Controller::recvVeriFlowMessages(bool thread)
 {
 	while (thread) {
 #ifdef __unix__
-		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
-		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
-		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+		// Receive a message from the socket -- only do so when our vfFlag is inactive, meaning we're NOT using the buffer
+		if (!vfFlag) {
+			std::memset(vfBuffer, 0, sizeof(vfBuffer)); // Clear the buffer before receiving data
+			ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
+			std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
+			std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+			vfFlag = true;
+		}
 #endif
 	}
 
 	// Receive a single message
-	if (!thread) {
+	while (!thread) {
 #ifdef __unix__
-		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
-		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
-		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+		// Receive a message from the socket -- only do so when our vfFlag is inactive, meaning we're NOT using the buffer
+		if (!vfFlag) {
+			std::memset(vfBuffer, 0, sizeof(vfBuffer)); // Clear the buffer before receiving data
+			ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
+			std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
+			std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+			vfFlag = true;
+			break;
+		}
 #endif
 	}
 }

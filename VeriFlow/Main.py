@@ -67,47 +67,6 @@ def start_veriflow_server(host, port):
 	server_thread_instance.daemon = True
 	server_thread_instance.start()
 
-def compare_strings(manual_input, server_msg):
-
-	print("=== Comparing Strings ===")
-	print("Manual Input: '{}'".format(manual_input))
-	print("Server Message: '{}'".format(server_msg))
-
-	# Strip whitespace for a fair comparison
-	manual_input = manual_input.strip()
-	server_msg = server_msg.strip()
-
-	# Direct comparison
-	if manual_input == server_msg:
-		print("Strings are identical.")
-	else:
-		print("Strings are different.")
-
-	# Byte-level comparison
-	manual_bytes = manual_input.encode('utf-8')
-	server_bytes = server_msg.encode('utf-8')
-	if manual_bytes == server_bytes:
-		print("Strings are identical at the byte level.")
-	else:
-		print("Strings differ at the byte level.")
-		print("Manual Input Bytes: {}".format(manual_bytes))
-		print("Server Message Bytes: {}".format(server_bytes))
-
-	# Character-by-character comparison
-	print("\nCharacter-by-Character Comparison:")
-	max_len = max(len(manual_input), len(server_msg))
-	for i in range(max_len):
-		char1 = manual_input[i] if i < len(manual_input) else None
-		char2 = server_msg[i] if i < len(server_msg) else None
-		if char1 != char2:
-			print("Difference at position {}: '{}' != '{}'".format(i, char1, char2))
-
-	# Length comparison
-	if len(manual_input) != len(server_msg):
-		print("\nStrings have different lengths: {} != {}".format(len(manual_input), len(server_msg)))
-
-	print("=== Comparison Complete ===")
-
 def checkPythonVersion():
 	# Check if Python version is 3.x
 	if sys.version_info[0] != 3:
@@ -122,9 +81,6 @@ def main():
 	filename = input("> ")
 	network = Network()
 	network.parseNetworkFromFile(filename)
-
-	print("Enter the first test rule")
-	testInput = input("> ")
 
 	## Setup VeriFlow server for CCPDN to pass messages to
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
@@ -147,8 +103,6 @@ def main():
 		pingFlag.clear()
 
 		if msg is not None:
-			print("\nPARSED CCPDN MSG: '{}'".format(msg))
-			compare_strings(testInput, msg)
 			affectedEcs = set()
 			if (msg.startswith("A")):
 				affectedEcs = network.addRuleFromString(msg[2:])
