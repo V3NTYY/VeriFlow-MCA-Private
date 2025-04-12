@@ -71,15 +71,15 @@ def main():
 	global msg
 	global client_socket
 	print("Enter network configuration file name (eg.: file.txt):")
-	filename = input("> ")
+	filename = raw_input("> ")
 	network = Network()
 	network.parseNetworkFromFile(filename)
 
 	## Setup VeriFlow server for CCPDN to pass messages to
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
-	veriflow_ip = input("> ")
+	veriflow_ip = raw_input("> ")
 	print("Enter port to host VeriFlow on (i.e. 6655)")
-	veriflow_port = int(input("> "))
+	veriflow_port = int(raw_input("> "))
 	start_veriflow_server(veriflow_ip, veriflow_port)
 
 	generatedECs = network.getECsFromTrie()
@@ -87,7 +87,7 @@ def main():
 	network.log(generatedECs)
 
 	print("")
-	print("Use ctrl+c to exit the program")
+	print("Use ctrl+z to exit the program")
 	print("")
 
 	while True:
