@@ -34,3 +34,39 @@ std::vector<uint8_t> OpenFlowMessage::toBytes()
 
 	return output;
 }
+
+Flow OpenFlowMessage::parse()
+{
+	Flow f;
+
+	// If the type is an openflow mod/removal, we need to parse the payload data into a flow (Action#switch ip - rule prefix - next hop)
+	if (type == OFPT_FLOW_MOD || type == OFPT_PACKET_OUT) {
+		// If we don't have a payload then what are we doing
+		if (payload.empty()) {
+			return f;
+		}
+
+		// Create a vector of bytes from the payload string
+		std::vector<uint8_t> bytes(payload.begin(), payload.end());
+
+		// Parse the flow from the byte vector
+		// some flow_tobytes method here
+	}
+
+	return f;
+}
+
+OpenFlowMessage OpenFlowMessage::fromBytes(std::vector<uint8_t> bytes)
+{
+	OpenFlowMessage msg(0,0,0,"");
+
+	if (bytes.size() < 8) {
+		return msg;
+	}
+
+	msg.version = bytes[0];
+	msg.type = bytes[1];
+	msg.length = (bytes[2] << 8) | bytes[3]; // Shift bits[2] to the left by 8 bits, the remaining 8 bits on the right then become bytes[3] with an OR
+	msg.xid = (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7]; // Same applies here, except this will be 32-bits long
+	return msg;
+}

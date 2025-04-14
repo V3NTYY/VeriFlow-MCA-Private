@@ -35,7 +35,6 @@ class Controller {
 
 		// Thread loop functions
 		void controllerThread(bool* run);
-		void veriFlowThread(bool* run);
 
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(OpenFlowMessage Message);

@@ -79,10 +79,6 @@ void MCA_VeriFlow::run() {
     std::thread controllerThread(&Controller::controllerThread, &controller, &isRunning);
 	controllerThread.detach();
 
-	// Start the VeriFlow thread
-    std::thread veriflowThread(&Controller::veriFlowThread, &controller, &isRunning);
-	veriflowThread.detach();
-
 	isRunning = true;
 }
 

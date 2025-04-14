@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "Flow.h"
 
 // OpenFlow enum pulled from https://opennetworking.org/wp-content/uploads/2014/10/openflow-switch-v1.5.1.pdf
 enum ofp_type {
@@ -87,6 +88,8 @@ class OpenFlowMessage {
 	public:
 		OpenFlowMessage(uint8_t type, uint8_t version, uint32_t xid, std::string payload);
 		std::vector<uint8_t> toBytes();
+		Flow parse();
+		static OpenFlowMessage fromBytes(std::vector<uint8_t> bytes);
 		static OpenFlowMessage helloMessage();
 	private:
 		// Header data

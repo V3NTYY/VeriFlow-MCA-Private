@@ -6,14 +6,26 @@ void Controller::controllerThread(bool* run)
 	while (*run) {
 		// Receive next message from our socket
 		recvControllerMessages(false);
-		// Convert our buffer to openflow message format
-	}
-}
 
-void Controller::veriFlowThread(bool* run)
-{
-	while (*run) {
+		// Convert our buffer to openflow message format -- first convert to bytes
+		std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
+		OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
+		Flow recvFlow = msg.parse();
 
+		// Parse the given flow to determine actions to take
+		// int code = parseFlow(recvFlow);
+
+		// Case 0:
+		// Flow rule (target IP and forward hops) is within host topology
+		// Action: run verification on flow rule
+
+		// Case 1:
+		// Flow rule (target IP and forward hops) are NOT ALL within host topology
+		// Action: run inter-topology verification method on flow rule
+
+		// Case x:
+		// For whatever reason, flow rule belongs to separate topology
+		// Action: cross-reference global topology -- if it doesn't exist at all, its a black hole and deny
 	}
 }
 
@@ -72,7 +84,6 @@ Controller::Controller()
 	activeThread = false;
 	referenceTopology = nullptr;
 	ofFlag = false;
-	vfFlag = false;
 }
 
 // Constructor
@@ -86,7 +97,6 @@ Controller::Controller(Topology* t) {
 	activeThread = false;
 	referenceTopology = t;
 	ofFlag = false;
-	vfFlag = false;
 }
 
 // Destructor
