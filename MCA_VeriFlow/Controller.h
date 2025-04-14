@@ -41,6 +41,7 @@ class Controller {
 		bool sendVeriFlowMessage(std::string message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
+		std::vector<Flow> retrieveFlows(std::string IP);
 		bool synchTopology(Digest d);
 		bool sendUpdate(bool global, int destinationIndex);
 

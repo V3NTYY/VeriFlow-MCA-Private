@@ -23,9 +23,14 @@ void Controller::controllerThread(bool* run)
 		// Flow rule (target IP and forward hops) are NOT ALL within host topology
 		// Action: run inter-topology verification method on flow rule
 
-		// Case x:
+		// Case 3:
 		// For whatever reason, flow rule belongs to separate topology
 		// Action: cross-reference global topology -- if it doesn't exist at all, its a black hole and deny
+
+		// Case 4:
+		// We are receiving an openflow message with return flow list.
+		// Action: Do nothing, another method will be handling this
+
 	}
 }
 
@@ -34,7 +39,7 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 	/// WARNING: Only call this function for cross-domain verification
 
 	// Modify flow rule as necessary for our verification
-	// Action: Run adjustCrossTopFlow(Flow f)
+	Flow verifyFlow = adjustCrossTopFlow(f);
 
 	// Verify destination index exists within current topology
 	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
@@ -42,7 +47,7 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 	}
 
 	Digest verificationMessage(false, false, true, referenceTopology->hostIndex, destinationIndex, "");
-	verificationMessage.appendFlow(f);
+	verificationMessage.appendFlow(verifyFlow);
 
 	return verificationMessage.sendDigest(this);
 }
@@ -56,6 +61,7 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	// Send the packet, wait for response
 	sendVeriFlowMessage(packet);
 	recvVeriFlowMessages(false);
+	rstVeriFlowFlag();
 
 	// Decode response
 	std::string response = readBuffer(vfBuffer);
@@ -199,14 +205,29 @@ bool Controller::freeLink()
 
 bool Controller::addFlowToTable(Flow f)
 {
-	// TODO: Invoke Openflow method to add flow to table
+	// Craft an OpenFlow message with our given flow rule, ask to add and send
 	return false;
 }
 
 bool Controller::removeFlowFromTable(Flow f)
 {
-	// TODO: Invoke Openflow method to match flow from table and remove it
+	// Craft an OpenFlow message with our given flow rule, ask for removal and send
 	return false;
+}
+
+std::vector<Flow> Controller::retrieveFlows(std::string IP)
+{
+	std::vector<Flow> flows;
+	// Craft an OpenFlow message requesting the flow list.
+
+	// Wait for ofFlag to be set to true, indicating we have received the flow list
+	while (!ofFlag) {}
+	rstControllerFlag();
+
+	// Parse the flow list from buffer
+	// Action: someMethodParsesThis();
+
+	return flows;
 }
 
 bool Controller::addDomainNode(Node* n)

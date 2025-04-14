@@ -473,17 +473,89 @@ int main() {
                 "   Link a currently running Pox Controller to this app.\n" << std::endl <<
                 " - unlink-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
-                " x list-flows [switch-ip-address]:" << std::endl <<
+                " - list-flows [switch-ip-address]:" << std::endl <<
                 "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
-                " x add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                " - add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " x del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - run-tcp-test" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
                 " * test-method" << std::endl <<
                 "   Run's a current method that needs to be tested. For development purposes only.\n" << std::endl <<
                 "";
+        }
+
+        else if (args.at(0) == "list-flows") {
+            if (!topology_initialized || !controller_linked) {
+                std::cout << "Ensure topology is initialized and controller is linked first.\n" << std::endl;
+            }
+            else if (args.size() < 2) {
+                std::cout << "Not enough arguments. Usage: list-flows [switch-ip-address]\n" << std::endl;
+            }
+            else {
+                std::string targetIP = args.at(1);
+                // Ensure IP exists within host topology
+                Node n = mca_veriflow->topology.getNodeByIP(targetIP);
+                if (n.isEmptyNode()) {
+                    std::cout << "[CCPDN-ERROR]: No such switch in topology.\n" << std::endl;
+                }
+
+                // Request flows from controller
+                std::vector<Flow> flows = mca_veriflow->controller.retrieveFlows(targetIP);
+
+                // Print all flows
+                std::cout << "--- FLOWS " << targetIP << " ---" << std::endl;
+                for (Flow f : flows) {
+					std::cout << "Rule Prefix: " << f.getRulePrefix() << std::endl;
+					std::cout << "Next Hop IP: " << f.getNextHopIP() << std::endl;
+					std::cout << "Action: " << (f.actionType() ? "Forward" : "Drop") << std::endl;
+					std::cout << std::endl;
+				}
+            }
+        }
+
+        else if (args.at(0) == "add-flow") {
+			if (!topology_initialized || !controller_linked) {
+				std::cout << "Ensure topology is initialized and controller is linked first.\n" << std::endl;
+			}
+			else if (args.size() < 4) {
+				std::cout << "Not enough arguments. Usage: add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
+			}
+            else {
+				std::string targetIP = args.at(1);
+				// Ensure IP exists within host topology
+				Node n = mca_veriflow->topology.getNodeByIP(targetIP);
+				if (n.isEmptyNode()) {
+					std::cout << "[CCPDN-ERROR]: No such switch in topology.\n" << std::endl;
+				}
+
+                Flow add(args.at(1), args.at(2), args.at(3), true);
+
+				// Add flow to controller
+				mca_veriflow->controller.addFlowToTable(add);
+			}
+		}
+
+		else if (args.at(0) == "del-flow") {
+			if (!topology_initialized || !controller_linked) {
+				std::cout << "Ensure topology is initialized and controller is linked first.\n" << std::endl;
+			}
+            else if (args.size() < 4) {
+				std::cout << "Not enough arguments. Usage: del-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
+			}
+			else {
+                // Ensure IP exists within host topology
+                Node n = mca_veriflow->topology.getNodeByIP(args.at(1));
+                if (n.isEmptyNode()) {
+                    std::cout << "[CCPDN-ERROR]: No such switch in topology.\n" << std::endl;
+                }
+
+				Flow remove(args.at(1), args.at(2), args.at(3), false);
+
+				// Delete flow from controller
+                mca_veriflow->controller.removeFlowFromTable(remove);
+            }
         }
 
         // link-controller command
