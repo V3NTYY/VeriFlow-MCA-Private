@@ -32,7 +32,9 @@ void Controller::controllerThread(bool* run)
 bool Controller::requestVerification(int destinationIndex, Flow f)
 {
 	/// WARNING: Only call this function for cross-domain verification
-	/// Additionally, make any changes you need to the flow rule as well (i.e. for resubmits)
+
+	// Modify flow rule as necessary for our verification
+	// Action: Run adjustCrossTopFlow(Flow f)
 
 	// Verify destination index exists within current topology
 	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
@@ -47,27 +49,19 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 
 bool Controller::performVerification(bool externalRequest, Flow f)
 {
-	/// Craft the packet
+	// Craft the packet
 	std::string packet = "[CCPDN] FLOW ";
 	packet += f.flowToStr();
 
+	// Send the packet, wait for response
 	sendVeriFlowMessage(packet);
 	recvVeriFlowMessages(false);
 
-	// Ensure flow rule falls within our host topology
-	Node host = referenceTopology->getNodeByIP(f.getSwitchIP(), referenceTopology->hostIndex);
-	Node target = referenceTopology->getNodeByIP(f.getSwitchIP());
-	if (host.isEmptyNode()) {
-		// We have inter-topology verification now. use reqVerification
-		int targetTopology = target.getTopologyID();
-		std::cout << "[CCPDN]: Requesting verification from topology " << targetTopology << "..." << std::endl;
-		Digest verificationMessage(false, false, true, referenceTopology->hostIndex, targetTopology, "");
-	}
-	else { } // Normal verification logic goes here
+	// Decode response
+	std::string response = readBuffer(vfBuffer);
 
-	// This just means that we should forward our results to the previous CCPDN instance
-	if (externalRequest) {
-
+	if (response == "[VERIFLOW] Success") {
+		return true;
 	}
 
 	return false;
@@ -339,6 +333,26 @@ void Controller::rstControllerFlag()
 void Controller::rstVeriFlowFlag()
 {
 	vfFlag = false;
+}
+
+Flow Controller::adjustCrossTopFlow(Flow f)
+{
+	/// Since we are only handling loops, this method should only handle loops logic (w/ resubmits)
+	
+	// Check if the switch IP exists in the global topology. If it doesn't, return an empty flow to indicate no verification to be done (black hole)
+
+	// First, grab all flows associated with the target switch for this flow rule (Node_T)
+	std::vector<Flow> totalFlows = {};
+
+	// Craft a new flow rule (Flow_A) with the host topology domain node to be used as the new target switch (Node_D)
+
+	// Add all of the flow rules from Node_T to the new target switch (Node_D, aka domain node)
+
+	// Add totalFlows to Node_D, run verification -- if valid:
+
+	// Return the new flow rule (Flow_A) to be used for verification
+
+	return Flow();
 }
 
 // Print the controller information

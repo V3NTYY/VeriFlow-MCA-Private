@@ -53,6 +53,7 @@ class Controller {
 		std::vector<Node*> getDomainNodes();
 		void rstControllerFlag();
 		void rstVeriFlowFlag();
+		Flow adjustCrossTopFlow(Flow f);
 
 		// Debugging functions
 		void print();
