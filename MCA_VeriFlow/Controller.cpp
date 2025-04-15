@@ -206,13 +206,53 @@ bool Controller::freeLink()
 bool Controller::addFlowToTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask to add and send
+	uint32_t xid = static_cast<uint32_t>(std::rand());
+    OpenFlowMessage msg(OFPT_FLOW_MOD, OFP_10, xid, f.flowToStr());
+    
+    // Send the OpenFlow message to the controller
+    if (!sendOpenFlowMessage(msg)) {
+        std::cout << "[CCPDN]: Failed to send flow add message to controller" << std::endl;
+        return false;
+    }
+    
+    // Wait for confirmation from the controller
+    recvControllerMessages(false);
+    rstControllerFlag();
 	return false;
 }
 
 bool Controller::removeFlowFromTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask for removal and send
-	return false;
+    std::string switchIP = f.getSwitchIP();
+    std::vector<Flow> flows = retrieveFlows(switchIP);
+    
+    // Search for matching flow
+    for (Flow existingFlow : flows) {
+        if (existingFlow.getSwitchIP() == f.getSwitchIP() &&
+            existingFlow.getRulePrefix() == f.getRulePrefix() &&
+            existingFlow.getNextHopIP() == f.getNextHopIP()) {
+            
+            uint32_t xid = static_cast<uint32_t>(std::rand());            
+            OpenFlowMessage msg(OFPT_FLOW_MOD, OFP_10, xid, f.flowToStr());
+            
+            // Send the removal message
+            if (!sendOpenFlowMessage(msg)) {
+                std::cout << "[CCPDN]: Failed to send flow removal message to controller" << std::endl;
+                return false;
+            }
+            
+            // Wait for confirmation from the controller
+            recvControllerMessages(false);
+            rstControllerFlag();
+            
+            return true;
+        }
+    }
+    
+    // No matching flow found
+    std::cout << "[CCPDN]: No matching flow found to remove" << std::endl;
+    return false;
 }
 
 std::vector<Flow> Controller::retrieveFlows(std::string IP)
