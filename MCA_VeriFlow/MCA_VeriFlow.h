@@ -9,6 +9,7 @@
 #include <thread>
 #include <numeric>
 #include <cstring>
+#include <algorithm>
 #include "Topology.h"
 #include "Controller.h"
 

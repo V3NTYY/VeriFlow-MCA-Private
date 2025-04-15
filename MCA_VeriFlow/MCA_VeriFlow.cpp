@@ -339,45 +339,47 @@ bool MCA_VeriFlow::pingTest(Node n)
 #ifdef __unix__
     std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string& host, int port, int num_pings) {
         std::vector<double> rtts;
+    
         for (int i = 0; i < num_pings; i++) {
-                int sockfd;
-                struct sockaddr_in server_addr;
-                struct hostent* server;
-                auto start_time = std::chrono::high_resolution_clock::now();
-                // create socket and text connection
-                sockfd = socket(AF_INET, SOCK_STREAM, 0);
-                if (sockfd < 0) {
-                    std::cerr << "Socket creation failed.\n";
-                    return {};
-                }
-
-                server = gethostbyname(host.c_str());
-                if (server == nullptr) {
-                    std::cerr << "Error: No such host.\n";
-                    close(sockfd);
-                    return {};
-                }
-
-                memset(&server_addr, 0, sizeof(server_addr));
-                server_addr.sin_family = AF_INET;
-                memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-                server_addr.sin_port = htons(port);
-
-                if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-                    std::cerr << "Connection failed.\n";
-                    close(sockfd);
-                    return {};
-                }
-
-                auto end_time = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double> rtt = end_time - start_time;
-                rtts.push_back(rtt.count());
-
+            int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+            if (sockfd < 0) {
+                std::cerr << "Socket creation failed.\n";
+                continue;
+            }
+        
+            struct sockaddr_in server_addr{};
+            struct hostent* server = gethostbyname(host.c_str());
+            if (server == nullptr) {
+                std::cerr << "No such host.\n";
                 close(sockfd);
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                continue;
+            }
+        
+            memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+            server_addr.sin_family = AF_INET;
+            server_addr.sin_port = htons(port);
+        
+            auto start_time = std::chrono::high_resolution_clock::now();
+        
+            if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+                std::cerr << "Connection failed.\n";
+                close(sockfd);
+                continue;
+            }
+        
+            auto end_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> rtt = end_time - start_time;
+            rtts.push_back(rtt.count());
+        
+            const char* msg = "VERIFY\n";
+            send(sockfd, msg, strlen(msg), 0);
+        
+            close(sockfd);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        return rtts;
-    }
+    
+    return rtts;
+}
 #endif
 
 #ifdef __unix__
@@ -709,14 +711,34 @@ int main() {
     
 
         else if (args.at(0) == "run-tcp-test") {
-            std::cout << "Running TCP test...\n" << std::endl;
-            #ifdef __unix__
-                std::vector<double> measured_rtts;
-                measured_rtts = mca_veriflow->measure_tcp_connection("google.com", 80, 10);
-                for (int i = 0; i < measured_rtts.size(); i++) {
-					std::cout << "RTT " << i << ": " << measured_rtts.at(i) << std::endl;
-				}
-            #endif
+            if (args.size() < 3) {
+                std::cout << "Usage: run-tcp-test [target-ip] [port]\n";
+            } else {
+                std::cout << "Running TCP test...\n" << std::endl;
+                #ifdef __unix__
+                    std::vector<double> times = mca_veriflow->measure_tcp_connection(args.at(1), std::stoi(args.at(2)), 10);
+                    
+                    std::cout << "Verification latency measurements:\n";
+                    for (size_t i = 0; i < times.size(); i++) {
+                        std::cout << "Test " << i+1 << ": " << times[i] * 1000 << " ms\n";
+                    }
+                    
+                    // Calculate statistics
+                    if (!times.empty()) {
+                        double sum = std::accumulate(times.begin(), times.end(), 0.0);
+                        double mean = sum / times.size();
+                        double max = *std::max_element(times.begin(), times.end());
+                        double min = *std::min_element(times.begin(), times.end());
+                    
+                        std::cout << "\nAverage: " << mean * 1000 << " ms\n";
+                        std::cout << "Max: " << max * 1000 << " ms\n";
+                        std::cout << "Min: " << min * 1000 << " ms\n";
+                    } else {
+                        std::cout << "No data returned from TCP test.\n";
+                    }
+                    
+                #endif
+            }
         }
 
         else if (args.at(0) == "test-method") {
