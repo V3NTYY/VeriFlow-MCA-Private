@@ -10,7 +10,13 @@ void Controller::controllerThread(bool* run)
 		// Convert our buffer to openflow message format -- first convert to bytes
 		std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
 		OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
-		Flow recvFlow = msg.parse();
+
+		// Parse any flows attached to the received packet
+		std::vector<Flow> recvFlows = msg.parse();
+
+		for (Flow f : recvFlows) {
+			f.print();
+		}
 
 		// Parse the given flow to determine actions to take
 		// int code = parseFlow(recvFlow);
@@ -31,6 +37,7 @@ void Controller::controllerThread(bool* run)
 		// We are receiving an openflow message with return flow list.
 		// Action: Do nothing, another method will be handling this
 
+		rstControllerFlag();
 	}
 }
 
@@ -258,14 +265,18 @@ bool Controller::removeFlowFromTable(Flow f)
 std::vector<Flow> Controller::retrieveFlows(std::string IP)
 {
 	std::vector<Flow> flows;
-	// Craft an OpenFlow message requesting the flow list.
+
+	// Send this request to controller
+	if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
+		std::cout << "[CCPDN]: Failed to send flow list request to controller" << std::endl;
+		return flows;
+	}
 
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	while (!ofFlag) {}
 	rstControllerFlag();
 
-	// Parse the flow list from buffer
-	// Action: someMethodParsesThis();
+	// Parse the current
 
 	return flows;
 }
@@ -292,6 +303,18 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 		std::cout << std::hex << static_cast<int>(Msg[i]) << " ";
 	}
 	std::cout << std::dec << std::endl << std::endl;
+
+	return false;
+}
+
+bool Controller::sendOpenFlowMessage(ofp_stats_full_req Request)
+{
+#ifdef __unix__
+	// Send the OFP_Stats Request
+	ssize_t bytes_sent = send(sockfd, &Request, sizeof(Request), 0);
+#endif
+
+	std::cout << "--- [CCPDN-REQUESTFLOWS-POX] ---\n\n";
 
 	return false;
 }

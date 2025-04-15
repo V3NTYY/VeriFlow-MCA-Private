@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include "Flow.h"
+#ifdef __unix__
+#include <arpa/inet.h>
+#endif
 
 // OpenFlow enum pulled from https://opennetworking.org/wp-content/uploads/2014/10/openflow-switch-v1.5.1.pdf
 enum ofp_type {
@@ -55,6 +58,11 @@ enum ofp_type {
 	OFPT_CONTROLLER_STATUS = 35, /* Async message */
 };
 
+// This works since our controller is OF v1.0 -- 1.3 or above should commit to the enum above
+#define OFPT_STATS_REQUEST 16
+#define OFPT_STATS_REPLY 17
+#define OFPST_FLOW 1
+
 enum ofp_version {
 	OFP_10 = 0x01,
 	OFP_11 = 0x02,
@@ -84,30 +92,24 @@ enum ofp_version {
 	OFP_35 = 0x1A,
 };
 
-class OpenFlowMessage {
-	public:
-		OpenFlowMessage(uint8_t type, uint8_t version, uint32_t xid, std::string payload);
-		std::vector<uint8_t> toBytes();
-		Flow parse();
-		static OpenFlowMessage fromBytes(std::vector<uint8_t> bytes);
-		static OpenFlowMessage helloMessage();
-	private:
-		// Header data
-		uint8_t		version;	// 0x01 = 1.0
-		uint8_t		type;		// One of the OFPT constants
-		uint16_t	length;		// Length of this header
-		uint32_t	xid;		// Transaction id associated with this packet
-		std::string	payload;	// Payload of the message
+// I understand this is essentially a copy+paste of the OpenFlowMessage class, but I've only realized
+// That I need other structs as well, so at this point I'd rather
+// Just re-create it if it only takes 5 lines
+struct ofp_header {
+	uint8_t version;
+	uint8_t type;
+	uint16_t length;
+	uint32_t xid;
 };
 
 struct ofp_stats_req {
-	class OpenFlowMessage header;
+	struct ofp_header header;
 	uint16_t type;
 	uint16_t flags;
 	uint8_t padding[4];
 };
 
-struct ofp_stats_reply {
+struct ofp_stats_full_req {
 	struct ofp_stats_req stats_req;
 	uint8_t table_id;
 	uint8_t padding[3];
@@ -116,4 +118,68 @@ struct ofp_stats_reply {
 	uint8_t secondPadding[2];
 	uint64_t cookie;
 	uint64_t cookie_mask;
+};
+
+struct ofp_match {
+	uint32_t wildcards;
+	uint16_t in_port;
+	uint8_t dl_src[6];
+	uint8_t dl_dst[6];
+	uint16_t dl_vlan;
+	uint8_t dl_vlan_pcp;
+	uint8_t pad1;
+	uint16_t dl_type;
+	uint8_t nw_tos;
+	uint8_t nw_proto;
+	uint8_t pad2[2];
+	uint32_t nw_src;
+	uint32_t nw_dst;
+	uint16_t tp_src;
+	uint16_t tp_dst;
+};
+
+struct ofp_action_output {
+	uint16_t type;
+	uint16_t len;
+	uint32_t port;
+	uint16_t max_len;
+	uint8_t pad[6];
+};
+
+struct ofp_flow_stats {
+	uint16_t length;
+	uint8_t table_id;
+	uint8_t pad;
+	uint32_t duration_sec;
+	uint32_t duration_nsec;
+	uint16_t priority;
+	uint16_t idle_timeout;
+	uint16_t hard_timeout;
+	uint16_t flags;
+	uint8_t pad2[4];
+	uint64_t cookie;
+	uint64_t packet_count;
+	uint64_t byte_count;
+	struct ofp_match match;
+	struct ofp_action_output actions;
+};
+
+class OpenFlowMessage {
+	public:
+		OpenFlowMessage(uint8_t type, uint8_t version, uint32_t xid, std::string payload);
+		std::vector<uint8_t> toBytes();
+		std::vector<Flow> parse();
+		std::vector<ofp_flow_stats> parseFlowStats();
+		static std::string ipToString(uint32_t ip);
+		static std::string getRulePrefix(ofp_match match);
+		static OpenFlowMessage fromBytes(std::vector<uint8_t> bytes);
+		static ofp_stats_full_req createFlowRequest();
+		static OpenFlowMessage helloMessage();
+	private:
+		// Header data
+		uint8_t		version;	// 0x01 = 1.0
+		uint8_t		type;		// One of the OFPT constants
+		uint16_t	length;		// Length of this header
+		uint32_t	xid;		// Transaction id associated with this packet
+		std::string	payload;	// Payload of the message
 };
