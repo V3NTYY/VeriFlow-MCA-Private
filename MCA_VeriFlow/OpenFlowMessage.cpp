@@ -1,5 +1,10 @@
 #include "OpenFlowMessage.h"
 
+// Define ntohll macro for network-byte conversion
+#ifndef ntohll
+#define ntohll(x) (((uint64_t)ntohl((uint32_t)((x << 32) >> 32))) << 32) | ntohl(((uint32_t)(x >> 32)))
+#endif
+
 ofp_stats_full_req OpenFlowMessage::createFlowRequest() {
 	// Construct our request
 	uint32_t xid = std::rand();
@@ -158,8 +163,8 @@ std::string OpenFlowMessage::ipToString(uint32_t ip)
 	// Convert to string
 #ifdef __unix__
 	struct in_addr ip_addr;
-	ip_addr.s_addr = ntohl(match.nw_src);
-	ip_str = std::to_string(inet_ntoa(ip_addr));
+	ip_addr.s_addr = ntohl(ip);
+	ip_str = inet_ntoa(ip_addr);
 #endif
 
 	return ip_str;

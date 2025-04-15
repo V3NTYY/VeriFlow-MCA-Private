@@ -274,6 +274,9 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	while (!ofFlag) {}
+
+	
+
 	rstControllerFlag();
 
 	// Parse the current

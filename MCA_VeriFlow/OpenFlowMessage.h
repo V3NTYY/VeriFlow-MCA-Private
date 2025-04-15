@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <cstring>
 #include "Flow.h"
 #ifdef __unix__
 #include <arpa/inet.h>
