@@ -99,3 +99,21 @@ class OpenFlowMessage {
 		uint32_t	xid;		// Transaction id associated with this packet
 		std::string	payload;	// Payload of the message
 };
+
+struct ofp_stats_req {
+	class OpenFlowMessage header;
+	uint16_t type;
+	uint16_t flags;
+	uint8_t padding[4];
+};
+
+struct ofp_stats_reply {
+	struct ofp_stats_req stats_req;
+	uint8_t table_id;
+	uint8_t padding[3];
+	uint32_t out_port;
+	uint32_t out_group;
+	uint8_t secondPadding[2];
+	uint64_t cookie;
+	uint64_t cookie_mask;
+};

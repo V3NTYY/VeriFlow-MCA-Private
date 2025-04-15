@@ -1,5 +1,24 @@
 #include "OpenFlowMessage.h"
 
+void sendStatsRequest(int sockfd, uint32_t xid) {
+	//// Create FlowStatsRequest message
+	//ofp_stats_reply stats_req;
+	//std::memset(&stats_req, 0, sizeof(stats_req));
+
+	//// set openflowmessage params
+	//stats_req.header.version = OFP_10;
+	//stats_req.header.type = OFPT_STATS_REQUEST;
+	//stats_req.header.length = htons(sizeof(stats_req));
+	//stats_req.header.xid = htonl(xid);
+
+	//// set type+flags
+	//stats_req.type = htons(OFPST_FLOW);
+	//stats_req.flags = 0;
+
+	////set request fields
+	//stats_req.table_id = 0;
+}
+
 OpenFlowMessage OpenFlowMessage::helloMessage() {
 
 	OpenFlowMessage msg(OFPT_HELLO, OFP_10, 0, "");
