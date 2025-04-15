@@ -107,7 +107,6 @@ struct ofp_stats_req {
 	struct ofp_header header;
 	uint16_t type;
 	uint16_t flags;
-	uint8_t padding[4];
 };
 
 struct ofp_stats_full_req {
@@ -116,7 +115,6 @@ struct ofp_stats_full_req {
 	uint8_t padding[3];
 	uint32_t out_port;
 	uint32_t out_group;
-	uint8_t secondPadding[2];
 	uint64_t cookie;
 	uint64_t cookie_mask;
 };
@@ -128,11 +126,11 @@ struct ofp_match {
 	uint8_t dl_dst[6];
 	uint16_t dl_vlan;
 	uint8_t dl_vlan_pcp;
-	uint8_t pad1;
+	uint8_t padding1;
 	uint16_t dl_type;
 	uint8_t nw_tos;
 	uint8_t nw_proto;
-	uint8_t pad2[2];
+	uint8_t padding2[2];
 	uint32_t nw_src;
 	uint32_t nw_dst;
 	uint16_t tp_src;
@@ -144,7 +142,7 @@ struct ofp_action_output {
 	uint16_t len;
 	uint32_t port;
 	uint16_t max_len;
-	uint8_t pad[6];
+	uint8_t padding[6];
 };
 
 struct ofp_flow_stats {
@@ -157,7 +155,7 @@ struct ofp_flow_stats {
 	uint16_t idle_timeout;
 	uint16_t hard_timeout;
 	uint16_t flags;
-	uint8_t pad2[4];
+	uint8_t padding2[4];
 	uint64_t cookie;
 	uint64_t packet_count;
 	uint64_t byte_count;

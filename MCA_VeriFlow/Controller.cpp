@@ -299,6 +299,10 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	#ifdef __unix__
 		// Recast message as char array and send it
 		ssize_t bytes_sent = send(sockfd, Msg.data(), Msg.size(), 0);
+		if (bytes_sent != Msg.size()) {
+			std::cerr << "[CCPDN-ERROR]: Failed to send OpenFlow Message" << std::endl;
+			return false;
+		}
 	#endif
 
 	std::cout << "--- [CCPDN-MESSAGE-POX] ---\n";
@@ -307,7 +311,7 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	}
 	std::cout << std::dec << std::endl << std::endl;
 
-	return false;
+	return true;
 }
 
 bool Controller::sendOpenFlowMessage(ofp_stats_full_req Request)
@@ -315,11 +319,15 @@ bool Controller::sendOpenFlowMessage(ofp_stats_full_req Request)
 #ifdef __unix__
 	// Send the OFP_Stats Request
 	ssize_t bytes_sent = send(sockfd, &Request, sizeof(Request), 0);
+	if (bytes_sent != sizeof(Request)) {
+		std::cerr << "[CCPDN-ERROR]: Failed to send Flow Request" << std::endl;
+		return false;
+	}
 #endif
 
-	std::cout << "--- [CCPDN-REQUESTFLOWS-POX] ---\n\n";
+	std::cout << "--- [CCPDN-REQUESTFLOWS-POX] ---\n\n\n";
 
-	return false;
+	return true;
 }
 
 bool Controller::sendVeriFlowMessage(std::string message)
