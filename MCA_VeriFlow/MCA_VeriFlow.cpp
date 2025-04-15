@@ -714,7 +714,7 @@ int main() {
             if (args.size() < 3) {
                 std::cout << "Usage: run-tcp-test [target-ip] [port]\n";
             } else if (!controller_linked || !topology_initialized) {
-                std::cout << "Ensure topology is initialized and controller is linked first.\n";
+                std::cout << "Ensure topology is initialized and controller is linked first.\n\n";
             } else {
                 std::cout << "Running TCP test...\n" << std::endl;
                 #ifdef __unix__
