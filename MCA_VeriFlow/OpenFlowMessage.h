@@ -123,7 +123,7 @@ enum ofp_stats_types {
 #define OFPT_STATS_REQUEST 16
 #define OFPT_STATS_REPLY 17
 
-// 8 bytes
+// 8 bytes -- // HEADER FIELD, ALWAYS HERE
 struct ofp_header {
 	uint8_t version;
 	uint8_t type;
@@ -131,7 +131,7 @@ struct ofp_header {
 	uint32_t xid;
 };
 
-// 8 bytes
+// 8 bytes -- // UNUSED but required field
 struct ofp_action_header { // Unused but required field
 	uint16_t type; /* One of OFPAT_*. */
 	uint16_t len; /* Length of action, including this
@@ -141,7 +141,7 @@ struct ofp_action_header { // Unused but required field
 	uint8_t pad[4];
 };
 
-// 40 bytes
+// 40 bytes -- // MATCH STRUCT -- REQUIRED FOR FLOWS
 struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint32_t wildcards; /* Wildcard fields. */
 	uint16_t in_port; /* Input switch port. */
@@ -161,7 +161,7 @@ struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint16_t tp_dst; /* TCP/UDP destination port. */
 };
 
-// 48 bytes --  required for features reply
+// 48 bytes --  PHY-PORT -- REQUIRED FOR FEATURES REPLY
 struct ofp_phy_port {
 	uint16_t port_no;
 	uint8_t hw_addr[6];
@@ -176,7 +176,7 @@ struct ofp_phy_port {
 	uint32_t peer; /* Features advertised by peer. */
 };
 
-// 32 bytes --  required for features reply
+// 32 bytes --  FEATURES REPLY -- REQUIRED
 struct ofp_switch_features {
 	struct ofp_header header;
 	uint64_t datapath_id; /* Datapath unique ID. The lower 48-bits are for
@@ -194,23 +194,34 @@ struct ofp_switch_features {
 	the header. */
 };
 
-// 12 bytes + variable length bytes -- might not use this? not sure.
-struct ofp_stats_request { // THIS IS THE WRAPPER for sending a request
+// 12 bytes + variable length bytes
+struct ofp_stats_request { // WRAPPER of message to request stats
 	struct ofp_header header;
 	uint16_t type;
 	uint16_t flags;
 	uint8_t body[0];
 };
 
+// 44 bytes -- // BODY of message to request flow stats
+struct ofp_flow_stats_request {
+	struct ofp_match match; /* Fields to match. */
+	uint8_t table_id;		/* ID of table to read (from ofp_table_stats),
+							0xff for all tables or 0xfe for emergency. */
+	uint8_t pad;			/* Align to 32 bits. */
+	uint16_t out_port;		/* Require matching entries to include this
+							as an output port. A value of OFPP_NONE (0xffff)
+							indicates no restriction. */
+};
+
 // 12 + variable length bytes
-struct ofp_stats_reply { // THIS IS THE WRAPPER for receiving a response
+struct ofp_stats_reply { // WRAPPER of message containing stats reply
 	struct ofp_header header;
 	uint16_t type; // Use ofp_stat_types to match, and infer how to process body
 	uint16_t flags; /* OFPSF_REPLY_* flags. */
 	uint8_t body[0]; /* Body of the reply. */
 };
 
-// 88 bytes -- THIS IS THE RESPONSE for receiving a flow
+// 88 bytes -- // BODY of message containing flow stats reply
 struct ofp_flow_stats {
 	uint16_t length; /* Length of this entry. */
 	uint8_t table_id; /* ID of table flow came from. */
@@ -230,15 +241,44 @@ struct ofp_flow_stats {
 	struct ofp_action_header actions[0]; /* Actions. */
 };
 
-// 44 bytes -- // THIS IS THE BODY REQUEST for sending a flow, match all/no restrictions
-struct ofp_flow_stats_request {
-	struct ofp_match match; /* Fields to match. */
-	uint8_t table_id;		/* ID of table to read (from ofp_table_stats),
-							0xff for all tables or 0xfe for emergency. */
-	uint8_t pad;			/* Align to 32 bits. */
-	uint16_t out_port;		/* Require matching entries to include this
-							as an output port. A value of OFPP_NONE (0xffff)
-							indicates no restriction. */
+struct ofp_flow_mod {
+    struct ofp_header header;
+    struct ofp_match match;      /* Fields to match */
+    uint64_t cookie;             /* Opaque controller-issued identifier. */
+
+    /* Flow actions. */
+    uint16_t command;             /* One of OFPFC_*. */
+    uint16_t idle_timeout;        /* Idle time before discarding (seconds). */
+    uint16_t hard_timeout;        /* Max time before discarding (seconds). */
+    uint16_t priority;            /* Priority level of flow entry. */
+    uint32_t buffer_id;           /* Buffered packet to apply to (or -1).
+                                     Not meaningful for OFPFC_DELETE*. */
+    uint16_t out_port;            /* For OFPFC_DELETE* commands, require
+                                     matching entries to include this as an
+                                     output port.  A value of OFPP_NONE
+                                     indicates no restriction. */
+    uint16_t flags;               /* One of OFPFF_*. */
+    struct ofp_action_header actions[0]; /* The action length is inferred
+                                            from the length field in the
+                                            header. */
+};
+
+struct ofp_flow_removed {
+    struct ofp_header header;
+    struct ofp_match match;   /* Description of fields. */
+    uint64_t cookie;          /* Opaque controller-issued identifier. */
+
+    uint16_t priority;        /* Priority level of flow entry. */
+    uint8_t reason;           /* One of OFPRR_*. */
+    uint8_t pad[1];           /* Align to 32-bits. */
+
+    uint32_t duration_sec;    /* Time flow was alive in seconds. */
+    uint32_t duration_nsec;   /* Time flow was alive in nanoseconds beyond
+                                 duration_sec. */
+    uint16_t idle_timeout;    /* Idle timeout from original flow mod. */
+    uint8_t pad2[2];          /* Align to 64-bits. */
+    uint64_t packet_count;
+    uint64_t byte_count;
 };
 
 class OpenFlowMessage {
