@@ -24,9 +24,11 @@ void Controller::controllerThread(bool* run)
 			ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
 
 			// We only care if we have flow information in this
-			if (stats_reply->type != OFPST_FLOW) {
+#ifdef __unix__
+			if (ntohs(stats_reply->type) != OFPST_FLOW) {
 				std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read." << std::endl;
-				std::cout << stats_reply->type << std::endl;
+				std::cout << ntohs(stats_reply->type) << std::endl;
+				rstControllerFlag();
 				continue;
 			}
 
@@ -35,7 +37,7 @@ void Controller::controllerThread(bool* run)
 			// Count the number of flow_stats_reply objects in the body, for each one, parse the flow
 			int count = body_size / sizeof(ofp_flow_stats);
 			// Create pointer for traversal while parsing
-			uint8_t* body_ptr = stats_reply->body;
+			uint8_t* body_ptr = ntohs(stats_reply->body);
 
 			while (count > 0) {
 				// Cast the body to a flow_stats_reply object
@@ -55,6 +57,7 @@ void Controller::controllerThread(bool* run)
 				body_size -= sizeof(ofp_flow_stats);
 				body_ptr += sizeof(ofp_flow_stats);
 			}
+#endif
 		}
 
 		// Iterate through each flow, based on results, determine if we need to run verification
