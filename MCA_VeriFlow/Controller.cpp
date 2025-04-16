@@ -54,6 +54,14 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		return false;
 	}
 
+	// Debug: Print raw packet data
+	std::cout << "--- [RAW PACKET DATA] ---\n";
+	const uint8_t* raw = reinterpret_cast<const uint8_t*>(packet.data());
+	for (size_t i = 0; i < packet.size(); i++) {
+		std::cout << std::hex << static_cast<int>(raw[i]) << " ";
+	}
+	std::cout << std::dec << std::endl;
+
 	// Create pointers to cast to
 	ofp_header* ofHeader = nullptr;
 	ofp_stats_reply* ofStatsReply = nullptr;
@@ -501,33 +509,39 @@ void Controller::veriFlowHandshake()
 std::vector<uint8_t> Controller::recvControllerMessages()
 {
 	std::vector<uint8_t> packet;
+	// Clear packet and fix size before receival
+	packet.clear();
+	packet.resize(4096);
+
 #ifdef __unix__
+
+	if (!ofFlag) {
+			
 		// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
-		if (!ofFlag) {
-			std::memset(ofBuffer, 0, sizeof(ofBuffer)); // Clear the buffer before receiving data
-			ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
-			if (bytes_received < 0) {
-				std::cerr << "[CCPDN-ERROR]: Failed to receive message from controller" << std::endl;
-				ofFlag = true;
-				return packet;
-			}
-			else if (bytes_received == 0) {
-				std::cout << "[CCPDN-ERROR]: Connection closed by controller" << std::endl;
-				ofFlag = true;
-				return packet;
-			}
-
-			// Print received data
-			std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
-			for (int i = 0; i < bytes_received; ++i) {
-				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
-			}
-			std::cout << std::dec << std::endl << std::endl;
-
-			// Set packet buffer to the received data
-			packet = std::vector<uint8_t>(ofBuffer, ofBuffer + bytes_received);
+		ssize_t bytes_received = recv(sockfd, packet.data(), packet.size(), 0);
+		if (bytes_received < 0) {
+			std::cerr << "[CCPDN-ERROR]: Failed to receive message from controller" << std::endl;
 			ofFlag = true;
+			return {};
+		} else if (bytes_received == 0) {
+			std::cout << "[CCPDN-ERROR]: Connection closed by controller" << std::endl;
+			ofFlag = true;
+			return {};
 		}
+
+		// Resize to bytes received
+		packet.resize(bytes_received);
+
+		// Print received data
+		std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
+		for (size_t i = 0; i < bytes_received; ++i) {
+			std::cout << std::hex << static_cast<int>(packet[i]) << " ";
+		}
+		std::cout << std::dec << std::endl;
+
+		// Enable our safety flag
+		ofFlag = true;
+	}
 #endif
 	return packet;
 }

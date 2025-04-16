@@ -81,7 +81,6 @@ class Controller {
 		Topology*				  referenceTopology;
 		char					  vfBuffer[1024];
 		bool					  vfFlag;
-		char					  ofBuffer[1024];
 		bool					  ofFlag;
 
 		// Private Functions
