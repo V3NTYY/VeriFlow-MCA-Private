@@ -398,7 +398,7 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 	}
 #endif
 
-	std::cout << "--- [CCPDN-MESSAGE-POX] ---\n";
+	std::cout << "--- [CCPDN-MESSAGEHEADER-POX] ---\n";
 
 	return true;
 }
@@ -445,6 +445,8 @@ bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
 		return false;
 	}
 #endif
+
+	std::cout << "--- [CCPDN-STATSREPLY-POX] ---\n";
     return true;
 }
 
@@ -601,13 +603,6 @@ std::vector<uint8_t> Controller::recvControllerMessages()
 
 		// Resize to bytes received
 		packet.resize(bytes_received);
-
-		// Print received data
-		std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
-		for (size_t i = 0; i < bytes_received; ++i) {
-			std::cout << std::hex << static_cast<int>(packet[i]) << " ";
-		}
-		std::cout << std::dec << std::endl;
 
 		// Enable our safety flag
 		ofFlag = true;
