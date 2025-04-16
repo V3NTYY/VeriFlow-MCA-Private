@@ -7,6 +7,31 @@
 #include <arpa/inet.h>
 #endif
 
+// OpenFlow header includes
+#ifdef __KERNEL__
+#include <linux/types.h>
+#else
+#include <stdint.h>
+#endif
+
+// OpenFlow macros
+#ifdef SWIG
+#define OFP_ASSERT(EXPR)        /* SWIG can't handle OFP_ASSERT. */
+#elif !defined(__cplusplus)
+/* Build-time assertion for use in a declaration context. */
+#define OFP_ASSERT(EXPR)                                                \
+        extern int (*build_assert(void))[ sizeof(struct {               \
+                    unsigned int build_assert_failed : (EXPR) ? 1 : -1; })]
+#else /* __cplusplus */
+#define OFP_ASSERT(_EXPR) typedef int build_assert_failed[(_EXPR) ? 1 : -1]
+#endif /* __cplusplus */
+
+#ifndef SWIG
+#define OFP_PACKED __attribute__((packed))
+#else
+#define OFP_PACKED              /* SWIG doesn't understand __attribute. */
+#endif
+
 // OpenFlow enum pulled from https://opennetworking.org/wp-content/uploads/2014/10/openflow-switch-v1.5.1.pdf
 enum ofp_type {
 	/* Immutable messages. */
@@ -130,6 +155,7 @@ struct ofp_header {
 	uint16_t length;
 	uint32_t xid;
 };
+OFP_ASSERT(sizeof(struct ofp_header) == 8);
 
 // 8 bytes -- // UNUSED but required field
 struct ofp_action_header { // Unused but required field
@@ -140,6 +166,7 @@ struct ofp_action_header { // Unused but required field
 	64-bit aligned. */
 	uint8_t pad[4];
 };
+OFP_ASSERT(sizeof(struct ofp_action_header) == 8);
 
 // 40 bytes -- // MATCH STRUCT -- REQUIRED FOR FLOWS
 struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
@@ -160,6 +187,7 @@ struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint16_t tp_src; /* TCP/UDP source port. */
 	uint16_t tp_dst; /* TCP/UDP destination port. */
 };
+OFP_ASSERT(sizeof(struct ofp_match) == 40);
 
 // 48 bytes --  PHY-PORT -- REQUIRED FOR FEATURES REPLY
 struct ofp_phy_port {
@@ -175,6 +203,7 @@ struct ofp_phy_port {
 	uint32_t supported; /* Features supported by the port. */
 	uint32_t peer; /* Features advertised by peer. */
 };
+OFP_ASSERT(sizeof(struct ofp_phy_port) == 48);
 
 // 32 bytes --  FEATURES REPLY -- REQUIRED
 struct ofp_switch_features {
@@ -193,6 +222,7 @@ struct ofp_switch_features {
 	is inferred from the length field in
 	the header. */
 };
+OFP_ASSERT(sizeof(struct ofp_switch_features) == 32);
 
 // 12 bytes + variable length bytes
 struct ofp_stats_request { // WRAPPER of message to request stats
@@ -201,6 +231,7 @@ struct ofp_stats_request { // WRAPPER of message to request stats
 	uint16_t flags;
 	uint8_t body[0];
 };
+OFP_ASSERT(sizeof(struct ofp_stats_request) == 12);
 
 // 44 bytes -- // BODY of message to request flow stats
 struct ofp_flow_stats_request {
@@ -212,6 +243,7 @@ struct ofp_flow_stats_request {
 							as an output port. A value of OFPP_NONE (0xffff)
 							indicates no restriction. */
 };
+OFP_ASSERT(sizeof(struct ofp_flow_stats_request) == 44);
 
 // 12 + variable length bytes
 struct ofp_stats_reply { // WRAPPER of message containing stats reply
@@ -220,6 +252,7 @@ struct ofp_stats_reply { // WRAPPER of message containing stats reply
 	uint16_t flags; /* OFPSF_REPLY_* flags. */
 	uint8_t body[0]; /* Body of the reply. */
 };
+OFP_ASSERT(sizeof(struct ofp_stats_reply) == 12);
 
 // 88 bytes -- // BODY of message containing flow stats reply
 struct ofp_flow_stats {
@@ -240,7 +273,9 @@ struct ofp_flow_stats {
 	uint64_t byte_count; /* Number of bytes in flow. */
 	struct ofp_action_header actions[0]; /* Actions. */
 };
+OFP_ASSERT(sizeof(struct ofp_flow_stats) == 88);
 
+// 72 bytes
 struct ofp_flow_mod {
     struct ofp_header header;
     struct ofp_match match;      /* Fields to match */
@@ -262,6 +297,7 @@ struct ofp_flow_mod {
                                             from the length field in the
                                             header. */
 };
+OFP_ASSERT(sizeof(struct ofp_flow_mod) == 72);
 
 struct ofp_flow_removed {
     struct ofp_header header;
@@ -280,6 +316,7 @@ struct ofp_flow_removed {
     uint64_t packet_count;
     uint64_t byte_count;
 };
+OFP_ASSERT(sizeof(struct ofp_flow_removed) == 88);
 
 class OpenFlowMessage {
 	public:
