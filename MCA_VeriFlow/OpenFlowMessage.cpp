@@ -134,6 +134,20 @@ std::vector<Flow> OpenFlowMessage::parse()
 	return returnFlows;
 }
 
+std::string OpenFlowMessage::toString()
+{
+	std::string output = "";
+
+	// Convert to string
+	output += "Version: " + std::to_string(version) + "\n";
+	output += "Type: " + std::to_string(type) + "\n";
+	output += "Length: " + std::to_string(length) + "\n";
+	output += "Xid: " + std::to_string(xid) + "\n";
+	output += "Payload: " + payload + "\n";
+
+	return output;
+}
+
 std::string OpenFlowMessage::ipToString(uint32_t ip)
 {
 	std::string ip_str = "";

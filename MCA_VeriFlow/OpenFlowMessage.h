@@ -224,6 +224,9 @@ class OpenFlowMessage {
 		// Parser methods
 		std::vector<Flow> parse();
 
+		// Debug methods
+		std::string toString();
+
 		// Header data
 		uint8_t		version;	// 0x01 = 1.0
 		uint8_t		type;		// One of the OFPT constants

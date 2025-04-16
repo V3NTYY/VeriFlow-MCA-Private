@@ -10,14 +10,15 @@ void Controller::controllerThread(bool* run)
 		std::cout << "waiting for msg...\n";
 		// Receive next message from our socket
 		recvControllerMessages(false);
-		std::cout << "msg received, parsing...\n";
 
 		// Convert our buffer to openflow message format -- first convert to bytes
 		std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
 		OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
+		std::cout << msg.toString() << std::endl;
 
 		// If we detect a flow modification, flow removed, or multipart reply, we need to parse the flows
 		if (msg.type == OFPT_FLOW_MOD || msg.type == OFPT_MULTIPART_REPLY || msg.type == OFPT_FLOW_REMOVED || msg.type  == OFPT_STATS_REPLY) {
+			std::cout << "Flow modification detected, parsing...\n";
 			// Cast the message buffer to a stats_reply
 			ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
 
