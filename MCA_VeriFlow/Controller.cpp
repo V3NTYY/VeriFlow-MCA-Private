@@ -561,9 +561,8 @@ std::vector<uint8_t> Controller::recvControllerMessages()
 				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 			}
 			std::cout << std::dec << std::endl << std::endl;
-			packet(ofBuffer, ofBuffer + bytes_received);
+			packet = std::vector<uint8_t>(ofBuffer, ofBuffer + bytes_received);
 			ofFlag = true;
-			break;
 		}
 #endif
 	return packet;
