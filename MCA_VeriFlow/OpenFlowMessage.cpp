@@ -29,7 +29,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 
 	// Calculate request size
 	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
-	
+
 #ifdef __unix__
     // Construct our request
 	uint32_t XID = (100 + (std::rand() % 4095 - 99));

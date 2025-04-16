@@ -616,10 +616,10 @@ void Controller::handleHeader(ofp_header* header)
 	}
 
 	// For debugging purposes, print out the contents
-	std::cout << "Version: " << header->version << std::endl;
-	std::cout << "Type: " << header->type << std::endl;
-	std::cout << "Length: " << header->length << std::endl;
-	std::cout << "XID: " << header->xid << std::endl;
+	std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
+	std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
+	std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
+	std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
 }
 
 std::string Controller::readBuffer(char* buf)
