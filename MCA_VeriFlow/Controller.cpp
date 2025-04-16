@@ -3,11 +3,14 @@
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
 {
+	std::cout << "Start thread...\n";
 	while (*run) {
 		std::vector<Flow> flows;
 
+		std::cout << "waiting for msg...\n";
 		// Receive next message from our socket
 		recvControllerMessages(false);
+		std::cout << "msg received, parsing...\n";
 
 		// Convert our buffer to openflow message format -- first convert to bytes
 		std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
