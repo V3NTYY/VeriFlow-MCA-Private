@@ -124,14 +124,17 @@ enum ofp_stats_types {
 #define OFPT_STATS_REPLY 17
 
 // 8 bytes
+#pragma pack(push, 1)
 struct ofp_header {
 	uint8_t version;
 	uint8_t type;
 	uint16_t length;
 	uint32_t xid;
 };
+#pragma pack(pop)
 
 // 8 bytes
+#pragma pack(push, 1)
 struct ofp_action_header { // Unused but required field
 	uint16_t type; /* One of OFPAT_*. */
 	uint16_t len; /* Length of action, including this
@@ -140,8 +143,10 @@ struct ofp_action_header { // Unused but required field
 	64-bit aligned. */
 	uint8_t pad[4];
 };
+#pragma pack(pop)
 
 // 40 bytes
+#pragma pack(push, 1)
 struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint32_t wildcards; /* Wildcard fields. */
 	uint16_t in_port; /* Input switch port. */
@@ -160,8 +165,10 @@ struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint16_t tp_src; /* TCP/UDP source port. */
 	uint16_t tp_dst; /* TCP/UDP destination port. */
 };
+#pragma pack(pop)
 
 // 48 bytes --  required for features reply
+#pragma pack(push, 1)
 struct ofp_phy_port {
 	uint16_t port_no;
 	uint8_t hw_addr[6];
@@ -175,8 +182,10 @@ struct ofp_phy_port {
 	uint32_t supported; /* Features supported by the port. */
 	uint32_t peer; /* Features advertised by peer. */
 };
+#pragma pack(pop)
 
 // 32 bytes --  required for features reply
+#pragma pack(push, 1)
 struct ofp_switch_features {
 	struct ofp_header header;
 	uint64_t datapath_id; /* Datapath unique ID. The lower 48-bits are for
@@ -193,24 +202,30 @@ struct ofp_switch_features {
 	is inferred from the length field in
 	the header. */
 };
+#pragma pack(pop)
 
 // 12 bytes -- might not use this? not sure.
+#pragma pack(push, 1)
 struct ofp_stats_request { // THIS IS THE WRAPPER for sending a request
 	struct ofp_header header;
 	uint16_t type;
 	uint16_t flags;
 	uint8_t body[0];
 };
+#pragma  pack(pop)
 
 // 12 bytes
+#pragma pack(push, 1)
 struct ofp_stats_reply { // THIS IS THE WRAPPER for receiving a response
 	struct ofp_header header;
 	uint16_t type; // Use ofp_stat_types to match, and infer how to process body
 	uint16_t flags; /* OFPSF_REPLY_* flags. */
 	uint8_t body[0]; /* Body of the reply. */
 };
+#pragma pack(pop)
 
 // 88 bytes -- THIS IS THE RESPONSE for receiving a flow
+#pragma pack(push, 1)
 struct ofp_flow_stats {
 	uint16_t length; /* Length of this entry. */
 	uint8_t table_id; /* ID of table flow came from. */
@@ -229,8 +244,10 @@ struct ofp_flow_stats {
 	uint64_t byte_count; /* Number of bytes in flow. */
 	struct ofp_action_header actions[0]; /* Actions. */
 };
+#pragma pack(pop)
 
 // 44 bytes -- // THIS IS THE BODY REQUEST for sending a flow, match all/no restrictions
+#pragma pack(push, 1)
 struct ofp_flow_stats_request {
 	struct ofp_match match; /* Fields to match. */
 	uint8_t table_id;		/* ID of table to read (from ofp_table_stats),
@@ -240,6 +257,7 @@ struct ofp_flow_stats_request {
 							as an output port. A value of OFPP_NONE (0xffff)
 							indicates no restriction. */
 };
+#pragma pack(pop)
 
 class OpenFlowMessage {
 	public:

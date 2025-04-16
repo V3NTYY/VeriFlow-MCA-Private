@@ -81,9 +81,9 @@ class Controller {
 		bool linkController();
 		void openFlowHandshake();
 		void veriFlowHandshake();
-		void recvControllerMessages(bool thread);
+		std::vector<uint8_t> recvControllerMessages();
 		void parseOpenFlowPacket(const std::vector<uint8_t>& packet);
-		void recvVeriFlowMessages(bool thread);
+		void recvVeriFlowMessages();
 		std::string readBuffer(char* buf);
 };
 

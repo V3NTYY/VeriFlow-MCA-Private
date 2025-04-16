@@ -10,21 +10,27 @@ void Controller::controllerThread(bool* run)
 
 		std::cout << "waiting for msg...\n";
 		// Receive next message from our socket
-		recvControllerMessages(false);
+		std::vector<uint8_t> packet = recvControllerMessages();
 
-		// Convert our buffer to openflow message format -- first convert to bytes
-		std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
 		OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
 		std::cout << msg.toString() << std::endl;
 
 		// If we detect a flow modification, flow removed, or multipart reply, we need to parse the flows
 		if (msg.type == OFPT_FLOW_MOD || msg.type == OFPT_MULTIPART_REPLY || msg.type == OFPT_FLOW_REMOVED || msg.type  == OFPT_STATS_REPLY) {
 			std::cout << "Flow modification detected, parsing...\n";
+
+			// Ensure size is correct
+			if (packet.size() < sizeof(ofp_stats_reply)) {
+				std::cout << "[CCPDN-ERROR]: In-complete message, cancelling read." << std::endl;
+				rstControllerFlag();
+				continue;
+			}
+
 			// Cast the message buffer to a stats_reply
 			ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
 
-			// We only care if we have flow information in this
 #ifdef __unix__
+			// Verify this is only flow-related stats
 			if (ntohs(stats_reply->type) != OFPST_FLOW) {
 				std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read." << std::endl;
 				std::cout << ntohs(stats_reply->type) << std::endl;
@@ -117,7 +123,7 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 
 	// Send the packet, wait for response
 	sendVeriFlowMessage(packet);
-	recvVeriFlowMessages(false);
+	recvVeriFlowMessages();
 	rstVeriFlowFlag();
 
 	// Decode response
@@ -283,10 +289,6 @@ bool Controller::addFlowToTable(Flow f)
         std::cout << "[CCPDN]: Failed to send flow add message to controller" << std::endl;
         return false;
     }
-    
-    // Wait for confirmation from the controller
-    recvControllerMessages(false);
-    rstControllerFlag();
 	return false;
 }
 
@@ -310,10 +312,6 @@ bool Controller::removeFlowFromTable(Flow f)
                 std::cout << "[CCPDN]: Failed to send flow removal message to controller" << std::endl;
                 return false;
             }
-            
-            // Wait for confirmation from the controller
-            recvControllerMessages(false);
-            rstControllerFlag();
             
             return true;
         }
@@ -546,13 +544,13 @@ void Controller::openFlowHandshake()
 void Controller::veriFlowHandshake()
 {
 	sendVeriFlowMessage("[CCPDN] Hello");
-	recvVeriFlowMessages(false);
+	recvVeriFlowMessages();
 	rstVeriFlowFlag();
 }
 
-void Controller::recvControllerMessages(bool thread)
+std::vector<uint8_t> Controller::recvControllerMessages()
 {
-	while (thread) {
+	std::vector<uint8_t> packet;
 #ifdef __unix__
 		// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
 		if (!ofFlag) {
@@ -563,63 +561,31 @@ void Controller::recvControllerMessages(bool thread)
 				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 			}
 			std::cout << std::dec << std::endl << std::endl;
-			ofFlag = true;
-		}
-#endif
-	}
-
-	// Receive a single message
-	while (!thread) {
-#ifdef __unix__
-		// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
-		if (!ofFlag) {
-			std::memset(ofBuffer, 0, sizeof(ofBuffer)); // Clear the buffer before receiving data
-			ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
-			std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
-			for (int i = 0; i < bytes_received; ++i) {
-				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
-			}
-			std::cout << std::dec << std::endl << std::endl;
+			packet(ofBuffer, ofBuffer + bytes_received);
 			ofFlag = true;
 			break;
 		}
 #endif
-	}
+	return packet;
 }
 
 void Controller::parseOpenFlowPacket(const std::vector<uint8_t>& packet)
 {
 }
 
-void Controller::recvVeriFlowMessages(bool thread)
+void Controller::recvVeriFlowMessages()
 {
-	while (thread) {
 #ifdef __unix__
-		// Receive a message from the socket -- only do so when our vfFlag is inactive, meaning we're NOT using the buffer
-		if (!vfFlag) {
-			std::memset(vfBuffer, 0, sizeof(vfBuffer)); // Clear the buffer before receiving data
-			ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
-			std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
-			std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
-			vfFlag = true;
-		}
-#endif
+	// Receive a message from the socket -- only do so when our vfFlag is inactive, meaning we're NOT using the buffer
+	if (!vfFlag) {
+		std::memset(vfBuffer, 0, sizeof(vfBuffer)); // Clear the buffer before receiving data
+		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
+		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
+		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
+		vfFlag = true;
+		break;
 	}
-
-	// Receive a single message
-	while (!thread) {
-#ifdef __unix__
-		// Receive a message from the socket -- only do so when our vfFlag is inactive, meaning we're NOT using the buffer
-		if (!vfFlag) {
-			std::memset(vfBuffer, 0, sizeof(vfBuffer)); // Clear the buffer before receiving data
-			ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
-			std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
-			std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
-			vfFlag = true;
-			break;
-		}
 #endif
-	}
 }
 
 std::string Controller::readBuffer(char* buf)
