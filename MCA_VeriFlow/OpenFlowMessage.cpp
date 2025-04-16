@@ -15,7 +15,7 @@ ofp_header OpenFlowMessage::createHello()
 	header.version = OFP_10;
 	header.type = OFPT_HELLO;
 	header.length = htons(sizeof(ofp_header));
-	header.xid = htonl(std::rand()); // XID is not used in hello message
+	header.xid = htonl(100 + (std::rand() % 4095 - 99)); // XID is not used in hello message
 #endif
 	
     return header;
@@ -23,31 +23,33 @@ ofp_header OpenFlowMessage::createHello()
 
 ofp_stats_request OpenFlowMessage::createFlowRequest()
 {
-    // Construct our request
-	uint32_t xid = std::rand();
 	ofp_stats_request request;
-	std::memset(&request, 0, sizeof(request));
-
-	// Create our match request
 	ofp_match toMatch;
-	std::memset(&toMatch, 0, sizeof(toMatch));
-	toMatch.wildcards = ((1 << 22) - 1); // Match all fields
-
-	// Create our body of request
 	ofp_flow_stats_request toBody;
-	std::memset(&toBody, 0, sizeof(toBody));
-	toBody.table_id = 0xFF; // Match all tables
-	toBody.match = toMatch;
 
 	// Calculate request size
 	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
-
+	
 #ifdef __unix__
+    // Construct our request
+	uint32_t XID = (100 + (std::rand() % 4095 - 99));
+	std::memset(&request, 0, sizeof(request));
+
+	// Create our match request
+	std::memset(&toMatch, 0, sizeof(toMatch));
+	toMatch.wildcards = htonl((1 << 22) - 1); // Match all fields
+
+	// Create our body of request
+	std::memset(&toBody, 0, sizeof(toBody));
+	toBody.table_id = 0xFF; // Match all tables
+	toBody.out_port = htons(0xFFFF); // Match all output ports
+	toBody.match = toMatch;
+
 	// Set the OF header values
 	request.header.version = OFP_10;
 	request.header.type = OFPT_STATS_REQUEST;
 	request.header.length = htons(request_size);
-	request.header.xid = htonl(xid);
+	request.header.xid = htonl(XID);
 
 	request.type = htons(OFPST_FLOW);
 	request.flags = 0;
@@ -68,7 +70,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	return *request_ptr;
 }
 
-ofp_switch_features OpenFlowMessage::createFeaturesReply()
+ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
 {
 	ofp_switch_features reply;
 	std::memset(&reply, 0, sizeof(reply));
@@ -78,7 +80,7 @@ ofp_switch_features OpenFlowMessage::createFeaturesReply()
 	reply.header.version = OFP_10;
 	reply.header.type = OFPT_FEATURES_REPLY;
 	reply.header.length = htons(sizeof(ofp_switch_features));
-	reply.header.xid = htonl(0);
+	reply.header.xid = XID;
 
 	// Set the features -- buffers/tables should NOT be in network-endian order
 	reply.n_buffers = 256;

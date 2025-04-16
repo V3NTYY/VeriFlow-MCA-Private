@@ -264,7 +264,7 @@ class OpenFlowMessage {
 		// Message creation
 		static ofp_header createHello();
 		static ofp_stats_request createFlowRequest();
-		static ofp_switch_features createFeaturesReply();
+		static ofp_switch_features createFeaturesReply(uint32_t XID);
 
 		// Helper methods
 		static std::string ipToString(uint32_t ip);

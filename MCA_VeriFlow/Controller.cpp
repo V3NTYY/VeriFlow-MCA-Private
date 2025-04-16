@@ -54,25 +54,11 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		return false;
 	}
 
-	// Debug: Print raw packet data
-	std::cout << "--- [RAW PACKET DATA] ---\n";
-	const uint8_t* raw = reinterpret_cast<const uint8_t*>(packet.data());
-	for (size_t i = 0; i < packet.size(); i++) {
-		std::cout << std::hex << static_cast<int>(raw[i]) << " ";
-	}
-	std::cout << std::dec << std::endl;
-
 	// Create pointers to cast to
-	ofp_header* ofHeader = nullptr;
-	ofp_stats_reply* ofStatsReply = nullptr;
+	ofp_header* ofHeader = reinterpret_cast<ofp_header*>(packet.data());
+	ofp_stats_reply* ofStatsReply = reinterpret_cast<ofp_stats_reply*>(packet.data());
 
-	// If our packet data exceeds ofp_header size, it's an ofp_stats_reply
-	if (packet.size() >= sizeof(ofp_stats_reply)) {
-		ofStatsReply = reinterpret_cast<ofp_stats_reply*>(packet.data());
-	} else { // Otherwise its just a header
-		ofHeader = reinterpret_cast<ofp_header*>(packet.data());
-	}
-
+	// Parse the header first
 	handleHeader(ofHeader);
 	handleStatsReply(ofStatsReply);
 
@@ -263,7 +249,7 @@ bool Controller::freeLink()
 bool Controller::addFlowToTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask to add and send
-	uint32_t xid = static_cast<uint32_t>(std::rand());
+	uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));
     // Craft flow mod message
     
     // Send the OpenFlow message to the controller
@@ -283,7 +269,7 @@ bool Controller::removeFlowFromTable(Flow f)
             existingFlow.getRulePrefix() == f.getRulePrefix() &&
             existingFlow.getNextHopIP() == f.getNextHopIP()) {
             
-            uint32_t xid = static_cast<uint32_t>(std::rand());            
+            uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));            
             // Craft flow removal message
             
             // Send the removal message to the controller
@@ -576,7 +562,6 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
 		std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read. Code: " << reply->type << std::endl;
-		handleHeader(reinterpret_cast<ofp_header*>(reply));
 		return;
 	}
 
@@ -628,7 +613,7 @@ void Controller::handleHeader(ofp_header* header)
 
 	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
 	if (header->type == OFPT_FEATURES_REQUEST) {
-		sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
+		sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(header->xid));
 	}
 
 	// For debugging purposes, print out the contents
