@@ -75,11 +75,11 @@ void MCA_VeriFlow::run() {
 		return;
 	}
 
+    isRunning = true;
+
     // Start the controller thread
     std::thread controllerThread(&Controller::controllerThread, &controller, &isRunning);
 	controllerThread.detach();
-
-	isRunning = true;
 }
 
 void MCA_VeriFlow::stop() {
