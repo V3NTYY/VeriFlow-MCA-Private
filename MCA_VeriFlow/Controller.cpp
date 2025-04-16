@@ -53,13 +53,15 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		return false;
 	}
 
-	// Create pointers to cast to
-	ofp_header* ofHeader = reinterpret_cast<ofp_header*>(packet.data());
-	ofp_stats_reply* ofStatsReply = reinterpret_cast<ofp_stats_reply*>(packet.data());
+	// Create solid copies of packet data w/ pointer cast
+	ofp_header ofHeader = *reinterpret_cast<ofp_header*>(packet.data());
+	ofp_stats_reply ofStatsReply = *reinterpret_cast<ofp_stats_reply*>(packet.data());
+	ofp_flow_mod flowMod = *reinterpret_cast<ofp_flow_mod*>(packet.data());
+	ofp_flow_removed flowRemoved = *reinterpret_cast<ofp_flow_removed*>(packet.data());
 
 	// Parse the header first
-	handleHeader(ofHeader);
-	handleStatsReply(ofStatsReply);
+	handleHeader(&ofHeader);
+	handleStatsReply(&ofStatsReply);
 
 	return true;
 }
