@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include <thread>
 
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
@@ -221,8 +222,14 @@ bool Controller::linkController() {
 	return true;
 }
 
-bool Controller::startController()
+bool Controller::startController(bool* thread)
 {
+	*thread = true;
+
+	// Start the controller thread
+	std::thread controllerThread(&Controller::controllerThread, this, &thread);
+	controllerThread.detach();
+
 	// Used for linking and confirming controller. Does not start the CCPDN service
 	if (linkController()) {
 		openFlowHandshake();

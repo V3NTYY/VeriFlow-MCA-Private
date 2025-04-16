@@ -65,21 +65,11 @@ MCA_VeriFlow::MCA_VeriFlow()
 
 void MCA_VeriFlow::run() {
 
-    if (isRunning) {
-        std::cerr << "CCPDN App is already running." << std::endl;
-    }
-
     // Link the CCPDN to the veriflow server
     if (!controller.start()) {
 		std::cerr << "Error linking to VeriFlow server." << std::endl;
 		return;
 	}
-
-    isRunning = true;
-
-    // Start the controller thread
-    std::thread controllerThread(&Controller::controllerThread, &controller, &isRunning);
-	controllerThread.detach();
 }
 
 void MCA_VeriFlow::stop() {
@@ -570,7 +560,7 @@ int main() {
             }
             else {
 				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
-				controller_linked = mca_veriflow->controller.startController();
+				controller_linked = mca_veriflow->controller.startController(&(mca_veriflow->isRunning));
 			}
         }
 

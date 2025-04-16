@@ -29,7 +29,7 @@ class Controller {
 		void setVeriFlowIP(std::string VeriFlow_IP, std::string VeriFlow_Port);
 
 		// Controller setup/freeing functions
-		bool startController();
+		bool startController(bool* thread);
 		bool start();
 		bool freeLink();
 
