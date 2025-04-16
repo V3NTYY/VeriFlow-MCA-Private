@@ -349,7 +349,7 @@ bool Controller::sendOpenFlowMessage(ofp_stats_request Request)
 	}
 #endif
 
-	std::cout << "--- [CCPDN-REQUESTFLOWS-POX] ---\n\n\n";
+	std::cout << "--- [CCPDN-REQUESTFLOWS-POX] ---\n";
 
 	return true;
 }
@@ -365,7 +365,7 @@ bool Controller::sendOpenFlowMessage(ofp_switch_features Features)
 	}
 #endif
 
-	std::cout << "--- [CCPDN-SENDFEATURES-POX] ---\n\n\n";
+	std::cout << "--- [CCPDN-SENDFEATURES-POX] ---\n";
 
 	return true;
 }
@@ -562,6 +562,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
 		std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read. Code: " << reply->type << std::endl;
+		handleHeader(reinterpret_cast<ofp_header*>(reply));
 		return;
 	}
 
@@ -612,7 +613,9 @@ void Controller::handleHeader(ofp_header* header)
 #endif
 
 	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
-	sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
+	if (header->type == OFPT_FEATURES_REQUEST) {
+		sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
+	}
 
 	// For debugging purposes, print out the contents
 	std::cout << "Version: " << header->version << std::endl;
