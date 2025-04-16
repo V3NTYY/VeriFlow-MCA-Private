@@ -226,6 +226,12 @@ bool Controller::startController()
 
 bool Controller::start()
 {
+	// Prompt user for veriflow ip and port
+	std::cout << "Enter VeriFlow IP: ";
+	std::cin >> veriflowIP;
+	std::cout << "Enter VeriFlow Port: ";
+	std::cin >> veriflowPort;
+
 	if (linkVeriFlow()) {
 		// Send hello to VeriFlow, and wait for response. If received, we're good to start our thread
 		veriFlowHandshake();
