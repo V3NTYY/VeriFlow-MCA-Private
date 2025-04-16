@@ -530,6 +530,8 @@ void Controller::openFlowHandshake()
 	recvControllerMessages(false);
 	rstControllerFlag();
 	sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
+	recvControllerMessages(false);
+	rstControllerFlag();
 }
 
 void Controller::veriFlowHandshake()
