@@ -37,7 +37,7 @@ void Controller::controllerThread(bool* run)
 			// Count the number of flow_stats_reply objects in the body, for each one, parse the flow
 			int count = body_size / sizeof(ofp_flow_stats);
 			// Create pointer for traversal while parsing
-			uint8_t* body_ptr = ntohs(stats_reply->body);
+			uint8_t* body_ptr = stats_reply->body;
 
 			while (count > 0) {
 				// Cast the body to a flow_stats_reply object
