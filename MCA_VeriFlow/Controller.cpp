@@ -54,6 +54,9 @@ void Controller::controllerThread(bool* run)
 		for (Flow f : flows) {
 			f.print();
 		}
+		
+		// Update our shared list of flows
+		sharedFlows = flows;
 
 		// Parse the given flow to determine actions to take
 		// int code = parseFlow(recvFlow);
@@ -309,21 +312,23 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 {
 	std::vector<Flow> flows;
 
-	// Send this request to controller
-	if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
-		std::cout << "[CCPDN]: Failed to send flow list request to controller" << std::endl;
-		return flows;
+	// Wait for ofFlag to be set to true, indicating we have received the flow list
+	bool sent = false;
+	while (!ofFlag) {
+		if (!sent) {
+			// Send this request to controller
+			if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
+				std::cout << "[CCPDN]: Failed to send flow list request to controller" << std::endl;
+				return flows;
+			}
+			else {
+				sent = true;
+			}
+		}
 	}
 
-	// Wait for ofFlag to be set to true, indicating we have received the flow list
-	while (!ofFlag) {}
-
-	
-
+	flows = sharedFlows;
 	rstControllerFlag();
-
-	// Parse the current
-
 	return flows;
 }
 

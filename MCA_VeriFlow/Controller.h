@@ -67,6 +67,7 @@ class Controller {
 		std::string				  veriflowIP;
 		std::string				  veriflowPort;
 		std::vector<Node*>		  domainNodes;
+		std::vector<Flow>		  sharedFlows;
 		bool					  activeThread;
 		Topology*				  referenceTopology;
 		char					  vfBuffer[1024];
