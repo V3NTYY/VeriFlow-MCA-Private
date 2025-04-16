@@ -9,7 +9,6 @@ void Controller::controllerThread(bool* run)
 
 		// Clear our current flow list
 		sharedFlows.clear();
-		std::cout << "waiting for msg...\n";
 
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
