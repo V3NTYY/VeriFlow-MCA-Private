@@ -13,12 +13,14 @@ void Controller::controllerThread(bool* run)
 
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
-		if (packet.empty()) {
-			std::cout << "No packet received.\n";
-		}
 
 		// Parse the packet
 		parsePacket(packet);
+
+		// For now, print any flows received
+		for (Flow f : sharedFlows) {
+			f.print();
+		}
 
 		// Parse the given flow to determine actions to take
 		// int code = parseFlow(recvFlow);
@@ -39,64 +41,34 @@ void Controller::controllerThread(bool* run)
 		// We are receiving an openflow message with return flow list.
 		// Action: Do nothing, another method will be handling this
 
+		// Reset the flag once we are finished parsing everything
 		rstControllerFlag();
 	}
 }
 
-void Controller::parsePacket(std::vector<uint8_t>& packet) {
-	OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
-	std::cout << msg.toString() << std::endl;
+bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 
-	// If we detect a flow modification, flow removed, or multipart reply, we need to parse the flows
-	if (msg.type == OFPT_FLOW_MOD || msg.type == OFPT_MULTIPART_REPLY || msg.type == OFPT_FLOW_REMOVED || msg.type  == OFPT_STATS_REPLY) {
-		std::cout << "Flow modification detected, parsing...\n";
-
-		// Ensure size is correct
-		if (packet.size() < sizeof(ofp_stats_reply)) {
-			std::cout << "[CCPDN-ERROR]: In-complete message, cancelling read." << std::endl;
-			rstControllerFlag();
-			return;
-		}
-
-		// Cast the message buffer to a stats_reply
-		ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
-
-#ifdef __unix__
-		// Verify this is only flow-related stats
-		if (ntohs(stats_reply->type) != OFPST_FLOW) {
-			std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read." << std::endl;
-			std::cout << ntohs(stats_reply->type) << std::endl;
-			rstControllerFlag();
-			continue;
-		}
-
-		// Calculate body size to help find num of variable objects
-		size_t body_size = packet.size() - sizeof(ofp_stats_reply);
-		// Count the number of flow_stats_reply objects in the body, for each one, parse the flow
-		int count = body_size / sizeof(ofp_flow_stats);
-		// Create pointer for traversal while parsing
-		uint8_t* body_ptr = stats_reply->body;
-
-		while (count > 0) {
-			// Cast the body to a flow_stats_reply object
-			ofp_flow_stats* flow_stats_reply = reinterpret_cast<ofp_flow_stats*>(body_ptr);
-
-			// Ensure we have enough data
-			if (body_size < sizeof(ofp_flow_stats)) {
-				std::cout << "[CCPDN-ERROR]: In-complete flow, cancelling read." << std::endl;
-				break;
-			}
-
-			// Parse the flow stats reply into a flow object
-			sharedFlows.push_back(OpenFlowMessage::parseStatsReply(*flow_stats_reply));
-
-			// Adjust traversal variables
-			count--;
-			body_size -= sizeof(ofp_flow_stats);
-			body_ptr += sizeof(ofp_flow_stats);
-		}
-#endif
+	// Ensure we have a valid packet
+	if (packet.empty()) {
+		std::cout << "[CCPDN-ERROR]: Empty packet, cancelling read." << std::endl;
+		return false;
 	}
+
+	// Create pointers to cast to
+	ofp_header* ofHeader = nullptr;
+	ofp_stats_reply* ofStatsReply = nullptr;
+
+	// If our packet data exceeds ofp_header size, it's an ofp_stats_reply
+	if (packet.size() >= sizeof(ofp_header)) {
+		ofStatsReply = reinterpret_cast<ofp_stats_reply*>(packet.data());
+	} else { // Otherwise its just a header
+		ofHeader = reinterpret_cast<ofp_header*>(packet.data());
+	}
+
+	handleHeader(ofHeader);
+	handleStatsReply(ofStatsReply);
+
+	return true;
 }
 
 bool Controller::requestVerification(int destinationIndex, Flow f)
@@ -245,7 +217,7 @@ bool Controller::startController(bool* thread)
 
 	// Used for linking and confirming controller. Does not start the CCPDN service
 	if (linkController()) {
-		openFlowHandshake();
+		sendOpenFlowMessage(OpenFlowMessage::createHello());
 		return true;
 	}
 	return false;
@@ -284,13 +256,10 @@ bool Controller::addFlowToTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask to add and send
 	uint32_t xid = static_cast<uint32_t>(std::rand());
-    OpenFlowMessage msg(OFPT_FLOW_MOD, OFP_10, xid, f.flowToStr());
+    // Craft flow mod message
     
     // Send the OpenFlow message to the controller
-    if (!sendOpenFlowMessage(msg)) {
-        std::cout << "[CCPDN]: Failed to send flow add message to controller" << std::endl;
-        return false;
-    }
+
 	return false;
 }
 
@@ -307,13 +276,9 @@ bool Controller::removeFlowFromTable(Flow f)
             existingFlow.getNextHopIP() == f.getNextHopIP()) {
             
             uint32_t xid = static_cast<uint32_t>(std::rand());            
-            OpenFlowMessage msg(OFPT_FLOW_MOD, OFP_10, xid, f.flowToStr());
+            // Craft flow removal message
             
-            // Send the removal message
-            if (!sendOpenFlowMessage(msg)) {
-                std::cout << "[CCPDN]: Failed to send flow removal message to controller" << std::endl;
-                return false;
-            }
+            // Send the removal message to the controller
             
             return true;
         }
@@ -357,23 +322,18 @@ bool Controller::addDomainNode(Node* n)
 	return false;
 }
 
-bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
+bool Controller::sendOpenFlowMessage(ofp_header Header)
 {
-	std::vector<uint8_t> Msg = msg.toBytes();
-	#ifdef __unix__
-		// Recast message as char array and send it
-		ssize_t bytes_sent = send(sockfd, Msg.data(), Msg.size(), 0);
-		if (bytes_sent != Msg.size()) {
-			std::cerr << "[CCPDN-ERROR]: Failed to send OpenFlow Message" << std::endl;
-			return false;
-		}
-	#endif
+#ifdef __unix__
+	// Send the header
+	ssize_t bytes_sent = send(sockfd, &Header, sizeof(Header), 0);
+	if (bytes_sent != sizeof(Header)) {
+		std::cerr << "[CCPDN-ERROR]: Failed to send OpenFlow Header" << std::endl;
+		return false;
+	}
+#endif
 
 	std::cout << "--- [CCPDN-MESSAGE-POX] ---\n";
-	for (int i = 0; i < Msg.size(); ++i) {
-		std::cout << std::hex << static_cast<int>(Msg[i]) << " ";
-	}
-	std::cout << std::dec << std::endl << std::endl;
 
 	return true;
 }
@@ -531,17 +491,6 @@ Flow Controller::adjustCrossTopFlow(Flow f)
 	return Flow();
 }
 
-// Print the controller information
-void Controller::print()
-{
-	// TODO: Add more POX controller statistics to print
-	std::cout << "[CCPDN] POX Controller -> " << controllerIP << ":" << controllerPort << std::endl;
-}
-void Controller::openFlowHandshake()
-{
-	sendOpenFlowMessage(OpenFlowMessage::helloMessage());
-}
-
 void Controller::veriFlowHandshake()
 {
 	sendVeriFlowMessage("[CCPDN] Hello");
@@ -583,10 +532,6 @@ std::vector<uint8_t> Controller::recvControllerMessages()
 	return packet;
 }
 
-void Controller::parseOpenFlowPacket(const std::vector<uint8_t>& packet)
-{
-}
-
 void Controller::recvVeriFlowMessages()
 {
 #ifdef __unix__
@@ -599,6 +544,78 @@ void Controller::recvVeriFlowMessages()
 		vfFlag = true;
 	}
 #endif
+}
+
+void Controller::handleStatsReply(ofp_stats_reply* reply)
+{
+	// Null check
+	if (reply == nullptr) {
+		return;
+	}
+
+#ifdef __unix__
+	// Fix endian-ness of reply
+	reply->header.length = ntohs(reply->header.length);
+	reply->header.xid = ntohl(reply->header.xid);
+	reply->type = ntohs(reply->type);
+
+	// Only stats reply we care about are flows
+	if (reply->type != OFPST_FLOW) {
+		std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read. Code: " << stats_reply->type << std::endl;
+		return;
+	}
+
+	// Calculate pointer and body size information to find current flow_stat object
+	const uint8_t* ofp_flow_stats_ptr = reinterpret_cast<const uint8_t*>(reply) + sizeof(ofp_stats_reply);
+	size_t body_size = ntohs(reply->header.length) - sizeof(ofp_stats_reply);
+	
+	// Iterate through each flow_stat given in the packet
+	while (body_size >= sizeof(ofp_flow_stats)) {
+
+		// Cast ptr to access flow_stats struct
+		ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
+
+		// Process length of current entry -- handle end of ptr
+		size_t flow_length = ntohs(flow_stats->length);
+		if (flow_length == 0 || flow_length > body_size) {
+			break;
+		}
+
+		// Flow processing
+		uint32_t srcIP = ntohl(flow_stats->match.nw_src);
+		uint32_t dstIP = ntohl(flow_stats->match.nw_dst);
+		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
+
+		// Create string formats
+		std::string targetSwitch = std::to_string(srcIP);
+		std::string nextHop = std::to_string(dstIP);
+		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, srcIP);
+		
+		// Add flow to shared flows
+		sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
+
+		// Move to next entry
+		ofp_flow_stats_ptr += flow_length;
+		body_size -= flow_length;
+	}
+#endif
+}
+
+void Controller::handleHeader(ofp_header* header)
+{
+	if (header == nullptr) {
+		return;
+	}
+#ifdef __unix__
+	header->length = ntohs(header->length);
+	header->xid = ntohl(header->xid);
+#endif
+
+	// For debugging purposes, print out the contents
+	std::cout << "Version: " << header->version << std::endl;
+	std::cout << "Type: " << header->type << std::endl;
+	std::cout << "Length: " << header->length << std::endl;
+	std::cout << "XID: " << header->xid << std::endl;
 }
 
 std::string Controller::readBuffer(char* buf)

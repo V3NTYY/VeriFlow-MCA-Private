@@ -204,7 +204,7 @@ struct ofp_switch_features {
 };
 #pragma pack(pop)
 
-// 12 bytes -- might not use this? not sure.
+// 12 bytes + variable length bytes -- might not use this? not sure.
 #pragma pack(push, 1)
 struct ofp_stats_request { // THIS IS THE WRAPPER for sending a request
 	struct ofp_header header;
@@ -214,7 +214,7 @@ struct ofp_stats_request { // THIS IS THE WRAPPER for sending a request
 };
 #pragma  pack(pop)
 
-// 12 bytes
+// 12 + variable length bytes
 #pragma pack(push, 1)
 struct ofp_stats_reply { // THIS IS THE WRAPPER for receiving a response
 	struct ofp_header header;
@@ -261,29 +261,14 @@ struct ofp_flow_stats_request {
 
 class OpenFlowMessage {
 	public:
-		OpenFlowMessage(uint8_t type, uint8_t version, uint32_t xid, std::string payload);
-		std::vector<uint8_t> toBytes();
-		static OpenFlowMessage fromBytes(std::vector<uint8_t> bytes);
-		static OpenFlowMessage helloMessage();
-
-		// OpenFlow helper methods
+		// Message creation
+		static ofp_header createHello();
 		static ofp_stats_request createFlowRequest();
 		static ofp_switch_features createFeaturesReply();
-		static Flow parseStatsReply(ofp_flow_stats reply);
+
+		// Helper methods
 		static std::string ipToString(uint32_t ip);
-		static std::string getRulePrefix(ofp_match match);
-
-		// Parser methods
-		std::vector<Flow> parse();
-
-		// Debug methods
-		std::string toString();
-
-		// Header data
-		uint8_t		version;	// 0x01 = 1.0
-		uint8_t		type;		// One of the OFPT constants
-		uint16_t	length;		// Length of this header
-		uint32_t	xid;		// Transaction id associated with this packet
-		std::string	payload;	// Payload of the message
+		static std::string getRulePrefix(uint32_t wildcards, uint32_t srcIP);
+		
 	private:
 };

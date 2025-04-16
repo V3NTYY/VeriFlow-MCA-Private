@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <cstddef>
 
 #ifdef __unix__
 	#include <sys/socket.h>
@@ -35,10 +36,18 @@ class Controller {
 
 		// Thread loop functions
 		void controllerThread(bool* run);
-		void parsePacket(std::vector<uint8_t>& packet);
+
+		// Reading + Parsing functions
+		bool parsePacket(std::vector<uint8_t>& packet);
+		std::vector<uint8_t> recvControllerMessages();
+		void recvVeriFlowMessages();
+
+		// OpenFlow packet decode functions
+		void handleStatsReply(ofp_stats_reply* reply);
+		void handleHeader(ofp_header* header);
 
 		// Command functions (for controller)
-		bool sendOpenFlowMessage(OpenFlowMessage Message);
+		bool sendOpenFlowMessage(ofp_header Header);
 		bool sendOpenFlowMessage(ofp_stats_request Request);
 		bool sendOpenFlowMessage(ofp_switch_features Features);
 		bool sendVeriFlowMessage(std::string message);
@@ -59,8 +68,6 @@ class Controller {
 		void rstVeriFlowFlag();
 		Flow adjustCrossTopFlow(Flow f);
 
-		// Debugging functions
-		void print();
 	private:
 		int						  sockfd;
 		int						  sockvf;
@@ -80,11 +87,7 @@ class Controller {
 		// Private Functions
 		bool linkVeriFlow();
 		bool linkController();
-		void openFlowHandshake();
 		void veriFlowHandshake();
-		std::vector<uint8_t> recvControllerMessages();
-		void parseOpenFlowPacket(const std::vector<uint8_t>& packet);
-		void recvVeriFlowMessages();
 		std::string readBuffer(char* buf);
 };
 
