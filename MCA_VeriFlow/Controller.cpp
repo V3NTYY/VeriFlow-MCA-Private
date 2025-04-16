@@ -6,73 +6,19 @@ void Controller::controllerThread(bool* run)
 {
 	std::cout << "Start thread...\n";
 	while (*run) {
-		std::vector<Flow> flows;
 
+		// Clear our current flow list
+		sharedFlows.clear();
 		std::cout << "waiting for msg...\n";
+
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
-
-		OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
-		std::cout << msg.toString() << std::endl;
-
-		// If we detect a flow modification, flow removed, or multipart reply, we need to parse the flows
-		if (msg.type == OFPT_FLOW_MOD || msg.type == OFPT_MULTIPART_REPLY || msg.type == OFPT_FLOW_REMOVED || msg.type  == OFPT_STATS_REPLY) {
-			std::cout << "Flow modification detected, parsing...\n";
-
-			// Ensure size is correct
-			if (packet.size() < sizeof(ofp_stats_reply)) {
-				std::cout << "[CCPDN-ERROR]: In-complete message, cancelling read." << std::endl;
-				rstControllerFlag();
-				continue;
-			}
-
-			// Cast the message buffer to a stats_reply
-			ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
-
-#ifdef __unix__
-			// Verify this is only flow-related stats
-			if (ntohs(stats_reply->type) != OFPST_FLOW) {
-				std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read." << std::endl;
-				std::cout << ntohs(stats_reply->type) << std::endl;
-				rstControllerFlag();
-				continue;
-			}
-
-			// Calculate body size to help find num of variable objects
-			size_t body_size = packet.size() - sizeof(ofp_stats_reply);
-			// Count the number of flow_stats_reply objects in the body, for each one, parse the flow
-			int count = body_size / sizeof(ofp_flow_stats);
-			// Create pointer for traversal while parsing
-			uint8_t* body_ptr = stats_reply->body;
-
-			while (count > 0) {
-				// Cast the body to a flow_stats_reply object
-				ofp_flow_stats* flow_stats_reply = reinterpret_cast<ofp_flow_stats*>(body_ptr);
-
-				// Ensure we have enough data
-				if (body_size < sizeof(ofp_flow_stats)) {
-					std::cout << "[CCPDN-ERROR]: In-complete flow, cancelling read." << std::endl;
-					break;
-				}
-
-				// Parse the flow stats reply into a flow object
-				flows.push_back(OpenFlowMessage::parseStatsReply(*flow_stats_reply));
-
-				// Adjust traversal variables
-				count--;
-				body_size -= sizeof(ofp_flow_stats);
-				body_ptr += sizeof(ofp_flow_stats);
-			}
-#endif
+		if (packet.empty()) {
+			std::cout << "No packet received.\n";
 		}
 
-		// Iterate through each flow, based on results, determine if we need to run verification
-		for (Flow f : flows) {
-			f.print();
-		}
-		
-		// Update our shared list of flows
-		sharedFlows = flows;
+		// Parse the packet
+		parsePacket(packet);
 
 		// Parse the given flow to determine actions to take
 		// int code = parseFlow(recvFlow);
@@ -94,6 +40,62 @@ void Controller::controllerThread(bool* run)
 		// Action: Do nothing, another method will be handling this
 
 		rstControllerFlag();
+	}
+}
+
+void Controller::parsePacket(std::vector<uint8_t>& packet) {
+	OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
+	std::cout << msg.toString() << std::endl;
+
+	// If we detect a flow modification, flow removed, or multipart reply, we need to parse the flows
+	if (msg.type == OFPT_FLOW_MOD || msg.type == OFPT_MULTIPART_REPLY || msg.type == OFPT_FLOW_REMOVED || msg.type  == OFPT_STATS_REPLY) {
+		std::cout << "Flow modification detected, parsing...\n";
+
+		// Ensure size is correct
+		if (packet.size() < sizeof(ofp_stats_reply)) {
+			std::cout << "[CCPDN-ERROR]: In-complete message, cancelling read." << std::endl;
+			rstControllerFlag();
+			return;
+		}
+
+		// Cast the message buffer to a stats_reply
+		ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
+
+#ifdef __unix__
+		// Verify this is only flow-related stats
+		if (ntohs(stats_reply->type) != OFPST_FLOW) {
+			std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read." << std::endl;
+			std::cout << ntohs(stats_reply->type) << std::endl;
+			rstControllerFlag();
+			continue;
+		}
+
+		// Calculate body size to help find num of variable objects
+		size_t body_size = packet.size() - sizeof(ofp_stats_reply);
+		// Count the number of flow_stats_reply objects in the body, for each one, parse the flow
+		int count = body_size / sizeof(ofp_flow_stats);
+		// Create pointer for traversal while parsing
+		uint8_t* body_ptr = stats_reply->body;
+
+		while (count > 0) {
+			// Cast the body to a flow_stats_reply object
+			ofp_flow_stats* flow_stats_reply = reinterpret_cast<ofp_flow_stats*>(body_ptr);
+
+			// Ensure we have enough data
+			if (body_size < sizeof(ofp_flow_stats)) {
+				std::cout << "[CCPDN-ERROR]: In-complete flow, cancelling read." << std::endl;
+				break;
+			}
+
+			// Parse the flow stats reply into a flow object
+			sharedFlows.push_back(OpenFlowMessage::parseStatsReply(*flow_stats_reply));
+
+			// Adjust traversal variables
+			count--;
+			body_size -= sizeof(ofp_flow_stats);
+			body_ptr += sizeof(ofp_flow_stats);
+		}
+#endif
 	}
 }
 
@@ -538,7 +540,6 @@ void Controller::print()
 void Controller::openFlowHandshake()
 {
 	sendOpenFlowMessage(OpenFlowMessage::helloMessage());
-	sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
 }
 
 void Controller::veriFlowHandshake()

@@ -35,6 +35,7 @@ class Controller {
 
 		// Thread loop functions
 		void controllerThread(bool* run);
+		void parsePacket(std::vector<uint8_t>& packet);
 
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(OpenFlowMessage Message);

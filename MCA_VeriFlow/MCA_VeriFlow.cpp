@@ -451,8 +451,8 @@ int main() {
                 "   Display all commands and their parameters.\n" << std::endl <<
                 " * exit:" << std::endl <<
                 "   Exit the CCPDN App.\n" << std::endl <<
-                " - run:" << std::endl <<
-                "   Start the CCPDN Service. Controller must be linked, and topology initialized.\n" << std::endl <<
+                " - start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
+                "   Start the CCPDN Service by linking to VeriFlow. Controller must be linked, and topology initialized.\n" << std::endl <<
                 " - stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
                 " * rdn [topology_file]:" << std::endl <<
@@ -680,9 +680,11 @@ int main() {
         }
 
         // run command
-        else if (args.at(0) == "run") {
+        else if (args.at(0) == "start") {
             if (!controller_linked || !topology_initialized) {
                 std::cout << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized.\n" << std::endl;
+            } else if (args.size() < 3) {
+                std::cout << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]\n" << std::endl;
             } else {
                 mca_veriflow->run();
                 std::cout << "[CCPDN] App started.\n" << std::endl;
