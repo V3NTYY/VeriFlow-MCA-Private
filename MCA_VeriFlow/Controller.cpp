@@ -227,7 +227,7 @@ bool Controller::startController(bool* thread)
 	*thread = true;
 
 	// Start the controller thread
-	std::thread controllerThread(&Controller::controllerThread, this, &thread);
+	std::thread controllerThread(&Controller::controllerThread, this, thread);
 	controllerThread.detach();
 
 	// Used for linking and confirming controller. Does not start the CCPDN service
@@ -534,22 +534,7 @@ void Controller::print()
 void Controller::openFlowHandshake()
 {
 	sendOpenFlowMessage(OpenFlowMessage::helloMessage());
-	recvControllerMessages(false);
-	rstControllerFlag();
-
-	// Convert our buffer to openflow message format -- first convert to bytes
-	std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
-	OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
-	std::cout << msg.toString() << std::endl;
-
 	sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
-	recvControllerMessages(false);
-	rstControllerFlag();
-
-	// Convert our buffer to openflow message format -- first convert to bytes
-	packet = std::vector<uint8_t>(ofBuffer, ofBuffer + sizeof(ofBuffer));
-	msg = OpenFlowMessage::fromBytes(packet);
-	std::cout << msg.toString() << std::endl;
 }
 
 void Controller::veriFlowHandshake()
