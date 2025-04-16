@@ -25,6 +25,8 @@ void Controller::controllerThread(bool* run)
 
 			// We only care if we have flow information in this
 			if (stats_reply->type != OFPST_FLOW) {
+				std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read." << std::endl;
+				std::cout << stats_reply->type << std::endl;
 				continue;
 			}
 
@@ -497,6 +499,7 @@ std::vector<Node*> Controller::getDomainNodes()
 
 void Controller::rstControllerFlag()
 {
+	std::cout << "[DEBUG]: Resetting controller flag" << std::endl;
 	ofFlag = false;
 }
 
