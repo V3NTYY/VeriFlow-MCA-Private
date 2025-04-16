@@ -638,6 +638,12 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	mod->header.length = ntohs(mod->header.length);
 	mod->header.xid = ntohl(mod->header.xid);
 
+	std::cout << "--Flow mod header--" << std::endl;
+	std::cout << "Version: " << static_cast<int>(mod->header.version) << std::endl;
+	std::cout << "Type: " << static_cast<int>(mod->header.type) << std::endl;
+	std::cout << "Length: " << static_cast<int>(mod->header.length) << std::endl;
+	std::cout << "XID: " << static_cast<int>(mod->header.xid) << std::endl;
+
 	// Ensure our packet matches the minimum size of an ofp_flow_mod
 	if (mod->header.length < sizeof(ofp_flow_mod)) {
 		std::cout << "[CCPDN-ERROR]: Flow mod packet is too small, cancelling read." << std::endl;
