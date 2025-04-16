@@ -566,7 +566,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 	}
 
 	// Calculate pointer and body size information to find current flow_stat object
-	const uint8_t* ofp_flow_stats_ptr = reinterpret_cast<const uint8_t*>(reply) + sizeof(ofp_stats_reply);
+	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(reply) + sizeof(ofp_stats_reply);
 	size_t body_size = ntohs(reply->header.length) - sizeof(ofp_stats_reply);
 	
 	// Iterate through each flow_stat given in the packet
