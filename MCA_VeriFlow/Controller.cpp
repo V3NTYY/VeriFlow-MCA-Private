@@ -582,7 +582,6 @@ void Controller::recvVeriFlowMessages()
 		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
 		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
 		vfFlag = true;
-		break;
 	}
 #endif
 }
