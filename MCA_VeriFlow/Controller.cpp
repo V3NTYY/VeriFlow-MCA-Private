@@ -555,9 +555,9 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 #ifdef __unix__
 	// Fix endian-ness of reply
-	reply->header.length = ntohs(reply->header.length);
-	reply->header.xid = ntohl(reply->header.xid);
-	reply->type = ntohs(reply->type);
+	reply->header.length = reply->header.length;
+	reply->header.xid = reply->header.xid;
+	reply->type = reply->type;
 
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
@@ -568,7 +568,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 	// Calculate pointer and body size information to find current flow_stat object
 	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(reply) + sizeof(ofp_stats_reply);
-	size_t body_size = ntohs(reply->header.length) - sizeof(ofp_stats_reply);
+	size_t body_size = reply->header.length - sizeof(ofp_stats_reply);
 	
 	// Iterate through each flow_stat given in the packet
 	while (body_size >= sizeof(ofp_flow_stats)) {
@@ -577,15 +577,15 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
 
 		// Process length of current entry -- handle end of ptr
-		size_t flow_length = ntohs(flow_stats->length);
+		size_t flow_length = flow_stats->length;
 		if (flow_length == 0 || flow_length > body_size) {
 			break;
 		}
 
 		// Flow processing
-		uint32_t srcIP = ntohl(flow_stats->match.nw_src);
-		uint32_t dstIP = ntohl(flow_stats->match.nw_dst);
-		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
+		uint32_t srcIP = flow_stats->match.nw_src;
+		uint32_t dstIP = flow_stats->match.nw_dst;
+		uint32_t wildcards = flow_stats->match.wildcards;
 
 		// Create string formats
 		std::string targetSwitch = std::to_string(srcIP);
@@ -608,8 +608,8 @@ void Controller::handleHeader(ofp_header* header)
 		return;
 	}
 #ifdef __unix__
-	header->length = ntohs(header->length);
-	header->xid = ntohl(header->xid);
+	header->length = header->length;
+	header->xid = header->xid;
 #endif
 
 	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
