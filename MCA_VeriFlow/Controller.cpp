@@ -556,11 +556,25 @@ std::vector<uint8_t> Controller::recvControllerMessages()
 		if (!ofFlag) {
 			std::memset(ofBuffer, 0, sizeof(ofBuffer)); // Clear the buffer before receiving data
 			ssize_t bytes_received = recv(sockfd, ofBuffer, sizeof(ofBuffer), 0);
+			if (bytes_received < 0) {
+				std::cerr << "[CCPDN-ERROR]: Failed to receive message from controller" << std::endl;
+				ofFlag = true;
+				return packet;
+			}
+			else if (bytes_received == 0) {
+				std::cout << "[CCPDN-ERROR]: Connection closed by controller" << std::endl;
+				ofFlag = true;
+				return packet;
+			}
+
+			// Print received data
 			std::cout << "--- [POX-MESSAGE-CCPDN] ---\n";
 			for (int i = 0; i < bytes_received; ++i) {
 				std::cout << std::hex << static_cast<int>(ofBuffer[i]) << " ";
 			}
 			std::cout << std::dec << std::endl << std::endl;
+
+			// Set packet buffer to the received data
 			packet = std::vector<uint8_t>(ofBuffer, ofBuffer + bytes_received);
 			ofFlag = true;
 		}
