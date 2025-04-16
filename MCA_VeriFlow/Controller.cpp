@@ -638,6 +638,12 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	mod->header.length = ntohs(mod->header.length);
 	mod->header.xid = ntohl(mod->header.xid);
 
+	// Ensure our packet matches the minimum size of an ofp_flow_mod
+	if (mod->header.length < sizeof(ofp_flow_mod)) {
+		std::cout << "[CCPDN-ERROR]: Flow mod packet is too small, cancelling read." << std::endl;
+		return;
+	}
+
 	// Flow processing
 	uint32_t srcIP = ntohl(mod->match.nw_src);
 	uint32_t dstIP = ntohl(mod->match.nw_dst);
@@ -664,6 +670,12 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	// Fix endianness on header, look at header
 	removed->header.length = ntohs(removed->header.length);
 	removed->header.xid = ntohl(removed->header.xid);
+
+	// Ensure our packet matches the minimum size of an ofp_flow_removed
+	if (mod->header.length < sizeof(ofp_flow_removed)) {
+		std::cout << "[CCPDN-ERROR]: Flow removed packet is too small, cancelling read." << std::endl;
+		return;
+	}
 
 	// Flow processing
 	uint32_t srcIP = ntohl(removed->match.nw_src);
