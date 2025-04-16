@@ -161,6 +161,39 @@ struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint16_t tp_dst; /* TCP/UDP destination port. */
 };
 
+// 48 bytes --  required for features reply
+struct ofp_phy_port {
+	uint16_t port_no;
+	uint8_t hw_addr[6];
+	char name[16]; /* Null-terminated */
+	uint32_t config; /* Bitmap of OFPPC_* flags. */
+	uint32_t state; /* Bitmap of OFPPS_* flags. */
+	/* Bitmaps of OFPPF_* that describe features. All bits zeroed if
+	* unsupported or unavailable. */
+	uint32_t curr; /* Current features. */
+	uint32_t advertised; /* Features being advertised by the port. */
+	uint32_t supported; /* Features supported by the port. */
+	uint32_t peer; /* Features advertised by peer. */
+};
+
+// 32 bytes --  required for features reply
+struct ofp_switch_features {
+	struct ofp_header header;
+	uint64_t datapath_id; /* Datapath unique ID. The lower 48-bits are for
+	a MAC address, while the upper 16-bits are
+	implementer-defined. */
+	uint32_t n_buffers; /* Max packets buffered at once. */
+	uint8_t n_tables; /* Number of tables supported by datapath. */
+	uint8_t pad[3]; /* Align to 64-bits. */
+	/* Features. */
+	uint32_t capabilities; /* Bitmap of support "ofp_capabilities". */
+	uint32_t actions; /* Bitmap of supported "ofp_action_type"s. */
+	/* Port info.*/
+	struct ofp_phy_port ports[0]; /* Port definitions. The number of ports
+	is inferred from the length field in
+	the header. */
+};
+
 // 12 bytes -- might not use this? not sure.
 struct ofp_stats_request { // THIS IS THE WRAPPER for sending a request
 	struct ofp_header header;
@@ -217,6 +250,7 @@ class OpenFlowMessage {
 
 		// OpenFlow helper methods
 		static ofp_stats_request createFlowRequest();
+		static ofp_switch_features createFeaturesReply();
 		static Flow parseStatsReply(ofp_flow_stats reply);
 		static std::string ipToString(uint32_t ip);
 		static std::string getRulePrefix(ofp_match match);

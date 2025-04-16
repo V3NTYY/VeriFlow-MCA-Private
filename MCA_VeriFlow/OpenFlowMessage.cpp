@@ -50,6 +50,28 @@ ofp_stats_request OpenFlowMessage::createFlowRequest() {
 	return *request_ptr;
 }
 
+ofp_switch_features OpenFlowMessage::createFeaturesReply()
+{
+	ofp_switch_features reply;
+	std::memset(&reply, 0, sizeof(reply));
+
+	// Set the OF header values
+#ifdef __unix__
+	reply.header.version = OFP_10;
+	reply.header.type = OFPT_FEATURES_REPLY;
+	reply.header.length = htons(sizeof(ofp_switch_features));
+	reply.header.xid = htonl(0);
+#endif
+
+	// Set the features
+	reply.n_buffers = 0xFFFF;
+	reply.n_tables = 0xFF;
+	reply.capabilities = 0xFFFF;
+	reply.actions = 0xFFFF;
+
+	return reply;
+}
+
 Flow OpenFlowMessage::parseStatsReply(ofp_flow_stats reply)
 {
 	Flow returnFlow("", "", "", false);

@@ -39,6 +39,7 @@ class Controller {
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(OpenFlowMessage Message);
 		bool sendOpenFlowMessage(ofp_stats_request Request);
+		bool sendOpenFlowMessage(ofp_switch_features Features);
 		bool sendVeriFlowMessage(std::string message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);

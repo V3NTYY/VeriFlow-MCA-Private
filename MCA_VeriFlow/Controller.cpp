@@ -382,6 +382,22 @@ bool Controller::sendOpenFlowMessage(ofp_stats_request Request)
 	return true;
 }
 
+bool Controller::sendOpenFlowMessage(ofp_switch_features Features)
+{
+#ifdef __unix__
+	// Send the Features reply
+	ssize_t bytes_sent = send(sockfd, &Features, sizeof(Features), 0);
+	if (bytes_sent != sizeof(Features)) {
+		std::cerr << "[CCPDN-ERROR]: Failed to send Features" << std::endl;
+		return false;
+	}
+#endif
+
+	std::cout << "--- [CCPDN-SENDFEATURES-POX] ---\n\n\n";
+
+	return true;
+}
+
 bool Controller::sendVeriFlowMessage(std::string message)
 {
 	// Convert message to sendable format, add null-terminating char
@@ -513,6 +529,7 @@ void Controller::openFlowHandshake()
 	sendOpenFlowMessage(OpenFlowMessage::helloMessage());
 	recvControllerMessages(false);
 	rstControllerFlag();
+	sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
 }
 
 void Controller::veriFlowHandshake()
