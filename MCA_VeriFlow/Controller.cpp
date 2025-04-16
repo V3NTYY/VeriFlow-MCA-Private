@@ -4,6 +4,8 @@
 void Controller::controllerThread(bool* run)
 {
 	while (*run) {
+		std::vector<Flow> flows;
+
 		// Receive next message from our socket
 		recvControllerMessages(false);
 
@@ -11,10 +13,45 @@ void Controller::controllerThread(bool* run)
 		std::vector<uint8_t> packet(ofBuffer, ofBuffer + sizeof(ofBuffer));
 		OpenFlowMessage msg = OpenFlowMessage::fromBytes(packet);
 
-		// Parse any flows attached to the received packet
-		std::vector<Flow> recvFlows = msg.parse();
+		// If we detect a flow modification, flow removed, or multipart reply, we need to parse the flows
+		if (msg.type == OFPT_FLOW_MOD || msg.type == OFPT_MULTIPART_REPLY || msg.type == OFPT_FLOW_REMOVED || msg.type  == OFPT_STATS_REPLY) {
+			// Cast the message buffer to a stats_reply
+			ofp_stats_reply* stats_reply = reinterpret_cast<ofp_stats_reply*>(ofBuffer);
 
-		for (Flow f : recvFlows) {
+			// We only care if we have flow information in this
+			if (stats_reply->type != OFPST_FLOW) {
+				continue;
+			}
+
+			// Calculate body size to help find num of variable objects
+			size_t body_size = packet.size() - sizeof(ofp_stats_reply);
+			// Count the number of flow_stats_reply objects in the body, for each one, parse the flow
+			int count = body_size / sizeof(ofp_flow_stats);
+			// Create pointer for traversal while parsing
+			uint8_t* body_ptr = stats_reply->body;
+
+			while (count > 0) {
+				// Cast the body to a flow_stats_reply object
+				ofp_flow_stats* flow_stats_reply = reinterpret_cast<ofp_flow_stats*>(body_ptr);
+
+				// Ensure we have enough data
+				if (body_size < sizeof(ofp_flow_stats)) {
+					std::cout << "[CCPDN-ERROR]: In-complete flow, cancelling read." << std::endl;
+					break;
+				}
+
+				// Parse the flow stats reply into a flow object
+				flows.push_back(OpenFlowMessage::parseStatsReply(*flow_stats_reply));
+
+				// Adjust traversal variables
+				count--;
+				body_size -= sizeof(ofp_flow_stats);
+				body_ptr += sizeof(ofp_flow_stats);
+			}
+		}
+
+		// Iterate through each flow, based on results, determine if we need to run verification
+		for (Flow f : flows) {
 			f.print();
 		}
 
@@ -314,7 +351,7 @@ bool Controller::sendOpenFlowMessage(OpenFlowMessage msg)
 	return true;
 }
 
-bool Controller::sendOpenFlowMessage(ofp_stats_full_req Request)
+bool Controller::sendOpenFlowMessage(ofp_stats_request Request)
 {
 #ifdef __unix__
 	// Send the OFP_Stats Request

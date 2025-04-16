@@ -59,11 +59,6 @@ enum ofp_type {
 	OFPT_CONTROLLER_STATUS = 35, /* Async message */
 };
 
-// This works since our controller is OF v1.0 -- 1.3 or above should commit to the enum above
-#define OFPT_STATS_REQUEST 16
-#define OFPT_STATS_REPLY 17
-#define OFPST_FLOW 1
-
 enum ofp_version {
 	OFP_10 = 0x01,
 	OFP_11 = 0x02,
@@ -93,9 +88,42 @@ enum ofp_version {
 	OFP_35 = 0x1A,
 };
 
-// I understand this is essentially a copy+paste of the OpenFlowMessage class, but I've only realized
-// That I need other structs as well, so at this point I'd rather
-// Just re-create it if it only takes 5 lines
+enum ofp_stats_types {
+	/* Description of this OpenFlow switch.
+	* The request body is empty.
+	* The reply body is struct ofp_desc_stats. */
+	OFPST_DESC,
+	/* Individual flow statistics.
+	* The request body is struct ofp_flow_stats_request.
+	* The reply body is an array of struct ofp_flow_stats. */
+	OFPST_FLOW,
+	/* Aggregate flow statistics.
+	* The request body is struct ofp_aggregate_stats_request.
+	* The reply body is struct ofp_aggregate_stats_reply. */
+	OFPST_AGGREGATE,
+	/* Flow table statistics.
+	* The request body is empty.
+	* The reply body is an array of struct ofp_table_stats. */
+	OFPST_TABLE,
+	/* Physical port statistics.
+	* The request body is struct ofp_port_stats_request.
+	* The reply body is an array of struct ofp_port_stats. */
+	OFPST_PORT,
+	/* Queue statistics for a port
+	* The request body defines the port
+	* The reply body is an array of struct ofp_queue_stats */
+	OFPST_QUEUE,
+	/* Vendor extension.
+	* The request and reply bodies begin with a 32-bit vendor ID, which takes
+	* the same form as in "struct ofp_vendor_header". The request and reply
+	* bodies are otherwise vendor-defined. */
+	OFPST_VENDOR = 0xffff
+};
+// This works since our controller is OF v1.0
+#define OFPT_STATS_REQUEST 16
+#define OFPT_STATS_REPLY 17
+
+// 8 bytes
 struct ofp_header {
 	uint8_t version;
 	uint8_t type;
@@ -103,82 +131,104 @@ struct ofp_header {
 	uint32_t xid;
 };
 
-struct ofp_stats_req {
+// 8 bytes
+struct ofp_action_header { // Unused but required field
+	uint16_t type; /* One of OFPAT_*. */
+	uint16_t len; /* Length of action, including this
+	header. This is the length of action,
+	including any padding to make it
+	64-bit aligned. */
+	uint8_t pad[4];
+};
+
+// 40 bytes
+struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
+	uint32_t wildcards; /* Wildcard fields. */
+	uint16_t in_port; /* Input switch port. */
+	uint8_t dl_src[6]; /* Ethernet source address. */
+	uint8_t dl_dst[6]; /* Ethernet destination address. */
+	uint16_t dl_vlan; /* Input VLAN id. */
+	uint8_t dl_vlan_pcp; /* Input VLAN priority. */
+	uint8_t pad1[1]; /* Align to 64-bits */
+	uint16_t dl_type; /* Ethernet frame type. */
+	uint8_t nw_tos; /* IP ToS (actually DSCP field, 6 bits). */
+	uint8_t nw_proto; /* IP protocol or lower 8 bits of
+	* ARP opcode. */
+	uint8_t pad2[2]; /* Align to 64-bits */
+	uint32_t nw_src; /* IP source address. */
+	uint32_t nw_dst; /* IP destination address. */
+	uint16_t tp_src; /* TCP/UDP source port. */
+	uint16_t tp_dst; /* TCP/UDP destination port. */
+};
+
+// 12 bytes -- might not use this? not sure.
+struct ofp_stats_request { // THIS IS THE WRAPPER for sending a request
 	struct ofp_header header;
 	uint16_t type;
 	uint16_t flags;
+	uint8_t body[0];
 };
 
-struct ofp_stats_full_req {
-	struct ofp_stats_req stats_req;
-	uint8_t table_id;
-	uint8_t padding[3];
-	uint32_t out_port;
-	uint32_t out_group;
-	uint64_t cookie;
-	uint64_t cookie_mask;
+// 12 bytes
+struct ofp_stats_reply { // THIS IS THE WRAPPER for receiving a response
+	struct ofp_header header;
+	uint16_t type; // Use ofp_stat_types to match, and infer how to process body
+	uint16_t flags; /* OFPSF_REPLY_* flags. */
+	uint8_t body[0]; /* Body of the reply. */
 };
 
-struct ofp_match {
-	uint32_t wildcards;
-	uint16_t in_port;
-	uint8_t dl_src[6];
-	uint8_t dl_dst[6];
-	uint16_t dl_vlan;
-	uint8_t dl_vlan_pcp;
-	uint8_t padding1;
-	uint16_t dl_type;
-	uint8_t nw_tos;
-	uint8_t nw_proto;
-	uint8_t padding2[2];
-	uint32_t nw_src;
-	uint32_t nw_dst;
-	uint16_t tp_src;
-	uint16_t tp_dst;
-};
-
-struct ofp_action_output {
-	uint16_t type;
-	uint16_t len;
-	uint32_t port;
-	uint16_t max_len;
-	uint8_t padding[6];
-};
-
+// 88 bytes -- THIS IS THE RESPONSE for receiving a flow
 struct ofp_flow_stats {
-	uint16_t length;
-	uint8_t table_id;
+	uint16_t length; /* Length of this entry. */
+	uint8_t table_id; /* ID of table flow came from. */
 	uint8_t pad;
-	uint32_t duration_sec;
-	uint32_t duration_nsec;
-	uint16_t priority;
-	uint16_t idle_timeout;
-	uint16_t hard_timeout;
-	uint16_t flags;
-	uint8_t padding2[4];
-	uint64_t cookie;
-	uint64_t packet_count;
-	uint64_t byte_count;
-	struct ofp_match match;
-	struct ofp_action_output actions;
+	struct ofp_match match; /* Description of fields. */
+	uint32_t duration_sec; /* Time flow has been alive in seconds. */
+	uint32_t duration_nsec; /* Time flow has been alive in nanoseconds beyond
+	duration_sec. */
+	uint16_t priority; /* Priority of the entry. Only meaningful
+	when this is not an exact-match entry. */
+	uint16_t idle_timeout; /* Number of seconds idle before expiration. */
+	uint16_t hard_timeout; /* Number of seconds before expiration. */
+	uint8_t pad2[6]; /* Align to 64-bits. */
+	uint64_t cookie; /* Opaque controller-issued identifier. */
+	uint64_t packet_count; /* Number of packets in flow. */
+	uint64_t byte_count; /* Number of bytes in flow. */
+	struct ofp_action_header actions[0]; /* Actions. */
+};
+
+// 44 bytes -- // THIS IS THE BODY REQUEST for sending a flow, match all/no restrictions
+struct ofp_flow_stats_request {
+	struct ofp_match match; /* Fields to match. */
+	uint8_t table_id;		/* ID of table to read (from ofp_table_stats),
+							0xff for all tables or 0xfe for emergency. */
+	uint8_t pad;			/* Align to 32 bits. */
+	uint16_t out_port;		/* Require matching entries to include this
+							as an output port. A value of OFPP_NONE (0xffff)
+							indicates no restriction. */
 };
 
 class OpenFlowMessage {
 	public:
 		OpenFlowMessage(uint8_t type, uint8_t version, uint32_t xid, std::string payload);
 		std::vector<uint8_t> toBytes();
-		std::vector<Flow> parse();
-		std::vector<ofp_flow_stats> parseFlowStats();
+		static OpenFlowMessage fromBytes(std::vector<uint8_t> bytes);
+		static OpenFlowMessage helloMessage();
+
+		// OpenFlow helper methods
+		static ofp_stats_request createFlowRequest();
+		static Flow parseStatsReply(ofp_flow_stats reply);
 		static std::string ipToString(uint32_t ip);
 		static std::string getRulePrefix(ofp_match match);
-		static OpenFlowMessage fromBytes(std::vector<uint8_t> bytes);
-		static ofp_stats_full_req createFlowRequest();
-		static OpenFlowMessage helloMessage();
-	private:
+
+		// Parser methods
+		std::vector<Flow> parse();
+
 		// Header data
 		uint8_t		version;	// 0x01 = 1.0
 		uint8_t		type;		// One of the OFPT constants
 		uint16_t	length;		// Length of this header
 		uint32_t	xid;		// Transaction id associated with this packet
 		std::string	payload;	// Payload of the message
+	private:
 };

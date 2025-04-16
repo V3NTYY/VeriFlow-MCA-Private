@@ -5,31 +5,70 @@
 #define ntohll(x) (((uint64_t)ntohl((uint32_t)((x << 32) >> 32))) << 32) | ntohl(((uint32_t)(x >> 32)))
 #endif
 
-ofp_stats_full_req OpenFlowMessage::createFlowRequest() {
+ofp_stats_request OpenFlowMessage::createFlowRequest() {
 	// Construct our request
 	uint32_t xid = std::rand();
-	ofp_stats_full_req flow_stats_request;
-	std::memset(&flow_stats_request, 0, sizeof(flow_stats_request));
+	ofp_stats_request request;
+	std::memset(&request, 0, sizeof(request));
+
+	// Create our match request
+	ofp_match toMatch;
+	toMatch.wildcards = ((1 << 22) - 1); // Match all fields
+
+	// Create our body of request
+	ofp_flow_stats_request toBody;
+	std::memset(&toBody, 0, sizeof(toBody));
+	toBody.table_id = 0xFF; // Match all tables
+	toBody.match = toMatch;
+
+	// Calculate request size
+	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
 
 #ifdef __unix__
 	// Set the OF header values
-	flow_stats_request.stats_req.header.version = 0x01; // OpenFlow 1.0
-	flow_stats_request.stats_req.header.type = OFPT_STATS_REQUEST;
-	flow_stats_request.stats_req.header.length = htons(sizeof(flow_stats_request));
-	flow_stats_request.stats_req.header.xid = htonl(xid);
+	request.header.version = OFP_VERSION;
+	request.header.type = OFPT_STATS_REQUEST;
+	request.header.length = htons(request_size);
+	request.header.xid = htonl(xid);
 
-	// Request all flows
-	flow_stats_request.stats_req.type = htons(OFPST_FLOW);
-	flow_stats_request.stats_req.flags = 0;
-
-	// We dont care about the specific stats
-	flow_stats_request.table_id = 0xff;
-	flow_stats_request.out_port = htonl(0xffffffff);
-	flow_stats_request.out_group = htonl(0xffffffff);
-	flow_stats_request.cookie = 0;
-	flow_stats_request.cookie_mask = 0;
+	request.type = OFPST_FLOW;
+	request.flags = 0;
+	request.body = toBody;
 #endif
-	return flow_stats_request;
+
+	// Allocate a buffer for the request size
+	std::vector<uint8_t> buffer(request_size);
+	std::memset(buffer.data(), 0, request_size);
+
+	// Copy the request header into the buffer
+	std::memcpy(buffer.data(), &request, sizeof(ofp_stats_request));
+	// Copy the request body into the buffer
+	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &toBody, sizeof(ofp_flow_stats_request));
+
+	// Create new ofp_stats_request object to return
+	ofp_stats_request* request_ptr = reinterpret_cast<ofp_stats_request*>(buffer.data());
+
+	return *request_ptr;
+}
+
+Flow OpenFlowMessage::parseStatsReply(ofp_flow_stats reply)
+{
+	Flow returnFlow("", "", "", false);
+
+	// If there is no length, no reply
+	if (reply.length == 0) {
+		return returnFlow;
+	}
+
+	// Iterate through flow stats, parsing each one into an actual flow object
+	std::string srcIP = ipToString(reply.match.nw_src);
+	std::string nextHopIP = ipToString(reply.match.nw_dst);
+	std::string rulePrefix = getRulePrefix(reply.match);
+	bool action = true;
+
+	returnFlow = Flow(srcIP, rulePrefix, nextHopIP, action);
+
+	return returnFlow;
 }
 
 OpenFlowMessage OpenFlowMessage::helloMessage() {
@@ -80,10 +119,10 @@ std::vector<Flow> OpenFlowMessage::parse()
 		}
 
 		// Parse the flow stats from our message
-		std::vector<ofp_flow_stats> flow_stats = parseFlowStats();
+		std::vector<ofp_flow_stats> flow_stats;
 
 		// Iterate through flow stats, parsing each one into an actual flow object
-		for (const ofp_flow_stats f : flow_stats) {
+		for (const ofp_flow_stats& f : flow_stats) {
 			std::string srcIP = ipToString(f.match.nw_src);
 			std::string nextHopIP = ipToString(f.match.nw_dst);
 			std::string rulePrefix = getRulePrefix(f.match);
@@ -94,66 +133,6 @@ std::vector<Flow> OpenFlowMessage::parse()
 	}
 
 	return returnFlows;
-}
-
-std::vector<ofp_flow_stats> OpenFlowMessage::parseFlowStats()
-{
-	std::vector<ofp_flow_stats> flow_stats;
-	int offset = 0;
-
-	// Find count of amount of flow_stats headers within message
-	int count = (length - sizeof(ofp_header)) / sizeof(ofp_flow_stats);
-	// Loop through each section of message and craft flow_stats headers
-	while (count > 0) {
-		ofp_flow_stats flow_stat;
-		std::memcpy(&flow_stat, payload.data() + offset, sizeof(ofp_flow_stats));
-
-		// Use ntohs to ensure correct byte endian order with struct matching
-#ifdef __unix__
-		flow_stat.length = ntohs(flow_stat.length);
-		// flow_stat.table_id = flow_stat.table_id; // No conversion needed
-		flow_stat.duration_sec = ntohl(flow_stat.duration_sec);
-		flow_stat.duration_nsec = ntohl(flow_stat.duration_nsec);
-		flow_stat.priority = ntohs(flow_stat.priority);
-		flow_stat.idle_timeout = ntohs(flow_stat.idle_timeout);
-		flow_stat.hard_timeout = ntohs(flow_stat.hard_timeout);
-		flow_stat.flags = ntohs(flow_stat.flags);
-		flow_stat.cookie = ntohll(flow_stat.cookie);
-		flow_stat.packet_count = ntohll(flow_stat.packet_count);
-		flow_stat.byte_count = ntohll(flow_stat.byte_count);
-
-		// Handle match field
-		flow_stat.match.wildcards = ntohl(flow_stat.match.wildcards);
-		flow_stat.match.in_port = ntohs(flow_stat.match.in_port);
-		flow_stat.match.dl_vlan = ntohs(flow_stat.match.dl_vlan);
-		flow_stat.match.dl_type = ntohs(flow_stat.match.dl_type);
-		flow_stat.match.nw_src = ntohl(flow_stat.match.nw_src);
-		flow_stat.match.nw_dst = ntohl(flow_stat.match.nw_dst);
-		flow_stat.match.tp_src = ntohs(flow_stat.match.tp_src);
-		flow_stat.match.tp_dst = ntohs(flow_stat.match.tp_dst);
-		// Handle action field
-		flow_stat.actions.type = ntohs(flow_stat.actions.type);
-		flow_stat.actions.len = ntohs(flow_stat.actions.len);
-		flow_stat.actions.port = ntohl(flow_stat.actions.port);
-		flow_stat.actions.max_len = ntohs(flow_stat.actions.max_len);
-
-#endif
-		flow_stats.push_back(flow_stat);
-
-		offset += sizeof(ofp_flow_stats);
-		count--;
-		
-		if (offset >= length) {
-			break;
-		}
-
-		if (flow_stats.size() < count) {
-			break;
-		}
-		
-	}
-
-	return flow_stats;
 }
 
 std::string OpenFlowMessage::ipToString(uint32_t ip)
