@@ -672,7 +672,7 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	removed->header.xid = ntohl(removed->header.xid);
 
 	// Ensure our packet matches the minimum size of an ofp_flow_removed
-	if (mod->header.length < sizeof(ofp_flow_removed)) {
+	if (removed->header.length < sizeof(ofp_flow_removed)) {
 		std::cout << "[CCPDN-ERROR]: Flow removed packet is too small, cancelling read." << std::endl;
 		return;
 	}
