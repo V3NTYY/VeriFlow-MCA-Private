@@ -555,9 +555,9 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 #ifdef __unix__
 	// Fix endian-ness of reply
-	reply->header.length = reply->header.length;
-	reply->header.xid = reply->header.xid;
-	reply->type = reply->type;
+	reply->header.length = ntohs(reply->header.length);
+	reply->header.xid = ntohl(reply->header.xid);
+	reply->type = ntohs(reply->type);
 
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
@@ -577,15 +577,15 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
 
 		// Process length of current entry -- handle end of ptr
-		size_t flow_length = flow_stats->length;
+		size_t flow_length = ntohs(flow_stats->length);
 		if (flow_length == 0 || flow_length > body_size) {
 			break;
 		}
 
 		// Flow processing
-		uint32_t srcIP = flow_stats->match.nw_src;
-		uint32_t dstIP = flow_stats->match.nw_dst;
-		uint32_t wildcards = flow_stats->match.wildcards;
+		uint32_t srcIP = ntohl(flow_stats->match.nw_src);
+		uint32_t dstIP = ntohl(flow_stats->match.nw_dst);
+		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
 
 		// Create string formats
 		std::string targetSwitch = std::to_string(srcIP);
@@ -608,8 +608,8 @@ void Controller::handleHeader(ofp_header* header)
 		return;
 	}
 #ifdef __unix__
-	header->length = header->length;
-	header->xid = header->xid;
+	header->length = ntohs(header->length);
+	header->xid = ntohl(header->xid);
 #endif
 
 	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
