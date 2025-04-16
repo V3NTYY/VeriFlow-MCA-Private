@@ -561,7 +561,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
-		std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read. Code: " << stats_reply->type << std::endl;
+		std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read. Code: " << reply->type << std::endl;
 		return;
 	}
 
