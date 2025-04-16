@@ -564,7 +564,6 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
-		std::cout << "[CCPDN-ERROR]: Not a flow stats reply, cancelling read. Code: " << reply->type << std::endl;
 		return;
 	}
 
@@ -638,15 +637,8 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	mod->header.length = ntohs(mod->header.length);
 	mod->header.xid = ntohl(mod->header.xid);
 
-	std::cout << "--Flow mod header--" << std::endl;
-	std::cout << "Version: " << static_cast<int>(mod->header.version) << std::endl;
-	std::cout << "Type: " << static_cast<int>(mod->header.type) << std::endl;
-	std::cout << "Length: " << static_cast<int>(mod->header.length) << std::endl;
-	std::cout << "XID: " << static_cast<int>(mod->header.xid) << std::endl;
-
 	// Ensure our packet matches the minimum size of an ofp_flow_mod
 	if (mod->header.length < sizeof(ofp_flow_mod)) {
-		std::cout << "[CCPDN-ERROR]: Flow mod packet is too small, cancelling read." << std::endl;
 		return;
 	}
 
@@ -659,6 +651,12 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	std::string targetSwitch = std::to_string(srcIP);
 	std::string nextHop = std::to_string(dstIP);
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, srcIP);
+
+	// Check if the flow rule is valid
+	if (targetSwitch == "0" || nextHop == "0") {
+		std::cout << "[CCPDN]: Parsed flow rule contains no flow information." << std::endl;
+		return;
+	}
 	
 	// Add flow to shared flows -- since it is added, do true
 	sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
@@ -679,7 +677,6 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 
 	// Ensure our packet matches the minimum size of an ofp_flow_removed
 	if (removed->header.length < sizeof(ofp_flow_removed)) {
-		std::cout << "[CCPDN-ERROR]: Flow removed packet is too small, cancelling read." << std::endl;
 		return;
 	}
 
@@ -692,6 +689,12 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	std::string targetSwitch = std::to_string(srcIP);
 	std::string nextHop = std::to_string(dstIP);
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, srcIP);
+
+	// Check if the flow rule is valid
+	if (targetSwitch == "0" || nextHop == "0") {
+		std::cout << "[CCPDN]: Parsed flow rule contains no flow information." << std::endl;
+		return;
+	}
 
 	// Add flow to shared flows -- since it is added, do true
 	sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, false));

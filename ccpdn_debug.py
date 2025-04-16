@@ -6,17 +6,17 @@ from pox.openflow.of_01 import OFP_VERSIONS
 log = core.getLogger()
 
 def _handle_ConnectionUp(event):
-    log.info(f"Connection established with switch: {dpid_to_str(event.dpid)}")
+    log.info("Connection established with switch: {}".format(dpid_to_str(event.dpid)))
 
 def _handle_PacketIn(event):
     packet = event.parsed  # The parsed packet data
-    log.info(f"Packet received: {packet}")
+    log.info("Packet received: {}".format(packet))
     if isinstance(packet, ethernet):
-        log.info(f"Ethernet packet: {packet.src} -> {packet.dst}, type: {packet.type}")
+        log.info("Ethernet packet: {} -> {}, type: {}".format(packet.src, packet.dst, packet.type))
     else:
         log.info("Non-Ethernet packet received")
 
 def launch():
     core.openflow.addListenerByName("ConnectionUp", _handle_ConnectionUp)
     core.openflow.addListenerByName("PacketIn", _handle_PacketIn)
-    log.info("POX controller script loaded and listening for events")
+    log.info("POX/CCPDN controller script loaded and listening for packets...")
