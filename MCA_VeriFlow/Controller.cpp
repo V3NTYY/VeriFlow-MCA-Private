@@ -59,7 +59,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 	while (offset < packet.size()) {
 		// Ensure we have at least a header?
 		if (packet.size() - offset < sizeof(ofp_header)) {
-			return;
+			return false;
 		}
 
 		// Parse the header
@@ -433,6 +433,19 @@ bool Controller::sendOpenFlowMessage(ofp_switch_features Features)
 	std::cout << "--- [CCPDN-SENDFEATURES-POX] ---\n";
 
 	return true;
+}
+
+bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
+{
+#ifdef __unix__
+	// Send the Stats reply
+	ssize_t bytes_sent = send(sockfd, &Stats_Reply, sizeof(Stats_Reply), 0);
+	if (bytes_sent != sizeof(Stats_Reply)) {
+		std::cerr << "[CCPDN-ERROR]: Failed to send Stats Reply" << std::endl;
+		return false;
+	}
+#endif
+    return true;
 }
 
 bool Controller::sendVeriFlowMessage(std::string message)

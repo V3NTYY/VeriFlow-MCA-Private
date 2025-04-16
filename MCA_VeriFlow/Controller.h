@@ -52,6 +52,7 @@ class Controller {
 		bool sendOpenFlowMessage(ofp_header Header);
 		bool sendOpenFlowMessage(ofp_stats_request Request);
 		bool sendOpenFlowMessage(ofp_switch_features Features);
+		bool sendOpenFlowMessage(ofp_stats_reply Stats_Reply);
 		bool sendVeriFlowMessage(std::string message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
