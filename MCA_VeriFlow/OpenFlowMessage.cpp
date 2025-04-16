@@ -26,14 +26,13 @@ ofp_stats_request OpenFlowMessage::createFlowRequest() {
 
 #ifdef __unix__
 	// Set the OF header values
-	request.header.version = OFP_VERSION;
+	request.header.version = OFP_10;
 	request.header.type = OFPT_STATS_REQUEST;
 	request.header.length = htons(request_size);
 	request.header.xid = htonl(xid);
 
 	request.type = OFPST_FLOW;
 	request.flags = 0;
-	request.body = toBody;
 #endif
 
 	// Allocate a buffer for the request size
