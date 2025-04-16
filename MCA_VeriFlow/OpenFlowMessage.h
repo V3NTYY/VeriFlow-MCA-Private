@@ -296,12 +296,25 @@ struct ofp_flow_removed {
 };
 OFP_ASSERT(sizeof(struct ofp_flow_removed) == 88);
 
+#define DESC_STR_LEN 256
+#define SERIAL_NUM_LEN 32
+struct ofp_desc_stats {
+	char mfr_desc[DESC_STR_LEN]; /* Manufacturer description. */
+	char hw_desc[DESC_STR_LEN]; /* Hardware description. */
+	char sw_desc[DESC_STR_LEN]; /* Software description. */
+	char serial_num[SERIAL_NUM_LEN]; /* Serial number. */
+	char dp_desc[DESC_STR_LEN]; /* Human readable description of datapath. */
+};
+OFP_ASSERT(sizeof(struct ofp_desc_stats) == 1056);
+
 class OpenFlowMessage {
 	public:
 		// Message creation
 		static ofp_header createHello();
 		static ofp_stats_request createFlowRequest();
 		static ofp_switch_features createFeaturesReply(uint32_t XID);
+		static ofp_stats_reply createDescStatsReply(uint32_t XID);
+		static ofp_header createBarrierReply(uint32_t XID);
 
 		// Helper methods
 		static std::string ipToString(uint32_t ip);

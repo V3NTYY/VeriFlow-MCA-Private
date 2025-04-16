@@ -23,8 +23,11 @@ class _OpenFlowMessageHandler(object):
     def _handle_FlowRemoved(self, event):
         log.debug("FlowRemoved event received from CCPDN: {}".format(event.ofp))
 
-    def _handle_StatsReply(self, event):
-        log.debug("StatsReply event received from CCPDN: {}".format(event.ofp))
+    def _handle_StatsRequest(self, event):
+        log.debug("StatsRequest event received from CCPDN: {}".format(event.ofp))
+
+    def _handle_FeaturesReply(self, event):
+        log.debug("FeaturesReply event received from CCPDN: {}".format(event.ofp))
 
     def _handle_Unknown(self, event):
         log.debug("Unknown event received from CCPDN: {}".format(event.ofp))

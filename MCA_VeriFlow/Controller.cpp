@@ -19,30 +19,31 @@ void Controller::controllerThread(bool* run)
 		// For now, print any flows received
 		for (Flow f : sharedFlows) {
 			f.print();
+			parseFlow(f);
 		}
-
-		// Parse the given flow to determine actions to take
-		// int code = parseFlow(recvFlow);
-
-		// Case 0:
-		// Flow rule (target IP and forward hops) is within host topology
-		// Action: run verification on flow rule
-
-		// Case 1:
-		// Flow rule (target IP and forward hops) are NOT ALL within host topology
-		// Action: run inter-topology verification method on flow rule
-
-		// Case 3:
-		// For whatever reason, flow rule belongs to separate topology
-		// Action: cross-reference global topology -- if it doesn't exist at all, its a black hole and deny
-
-		// Case 4:
-		// We are receiving an openflow message with return flow list.
-		// Action: Do nothing, another method will be handling this
 
 		// Reset the flag once we are finished parsing everything
 		rstControllerFlag();
 	}
+}
+
+void Controller::parseFlow(Flow f)
+{
+	// Case 0:
+	// Flow rule (target IP and forward hops) is within host topology
+	// Action: run verification on flow rule
+
+	// Case 1:
+	// Flow rule (target IP and forward hops) are NOT ALL within host topology
+	// Action: run inter-topology verification method on flow rule
+
+	// Case 3:
+	// For whatever reason, flow rule belongs to separate topology
+	// Action: cross-reference global topology -- if it doesn't exist at all, its a black hole and deny
+
+	// Case 4:
+	// We are receiving an openflow message with return flow list.
+	// Action: Do nothing, another method will be handling this
 }
 
 bool Controller::parsePacket(std::vector<uint8_t>& packet) {
@@ -53,17 +54,84 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		return false;
 	}
 
-	// Create solid copies of packet data w/ pointer cast
-	ofp_header ofHeader = *reinterpret_cast<ofp_header*>(packet.data());
-	ofp_stats_reply ofStatsReply = *reinterpret_cast<ofp_stats_reply*>(packet.data());
-	ofp_flow_mod flowMod = *reinterpret_cast<ofp_flow_mod*>(packet.data());
-	ofp_flow_removed flowRemoved = *reinterpret_cast<ofp_flow_removed*>(packet.data());
+	size_t offset = 0;
+#ifdef __unix
+	while (offset < packet.size()) {
+		// Ensure we have at least a header?
+		if (packet.size() - offset < sizeof(ofp_header)) {
+			return;
+		}
 
-	// Attempt to parse each packet type
-	handleHeader(&ofHeader); // utilized for giving a features reply
-	handleStatsReply(&ofStatsReply); // utilized for getting list of flows (needs work)
-	handleFlowMod(&flowMod); // utilized for verifying an added flow
-	handleFlowRemoved(&flowRemoved); // utilized for verifying any removed flows
+		// Parse the header
+		ofp_header* header = reinterpret_cast<ofp_header*>(packet.data() + offset);
+		uint16_t msg_length = ntohs(header->length);
+
+		// Reverse network endian order of length & xid to host order
+		header->length = ntohs(header->length);
+		header->xid = ntohl(header->xid);
+
+		// For debugging purposes, print out the contents
+		std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
+		std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
+		std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
+		std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
+
+		// Ensure our message has valid length
+		if (msg_length < sizeof(ofp_header) || msg_length > packet.size() - offset) {
+			return false;
+		}
+
+		// Based on header type, process our packet
+		switch (header->type) {
+			case OFPT_HELLO: {
+				// Confirms connection was established
+				break;
+			}
+			case OFPT_FEATURES_REQUEST: {
+				// Send a features reply -- required for OF protocol
+				std::cout << "[CCPDN]: Received Features_Request." << std::endl;
+				sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(header->xid));
+			}
+			case OFPT_STATS_REQUEST: {
+				// Send a stats reply -- required for OF protocol
+				std::cout << "[CCPDN]: Received Stats_Request." << std::endl;
+				sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(header->xid));
+			}
+			case OFPT_BARRIER_REQUEST: {
+				// Send a barrier reply -- required for OF protocol
+				std::cout << "[CCPDN]: Received Barrier_Request." << std::endl;
+				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(header->xid));
+				break;
+			}
+			case OFPT_STATS_REPLY: {
+				// Handle stats reply -- used for listing flows
+				std::cout << "[CCPDN]: Received Stats_Reply." << std::endl;
+				ofp_stats_reply* reply = reinterpret_cast<ofp_stats_reply*>(packet.data() + offset);
+				handleStatsReply(reply);
+				break;
+			}
+			case OFPT_FLOW_MOD: {
+				// Handle flow modification -- used for verification
+				std::cout << "[CCPDN]: Received Flow_Mod." << std::endl;
+				ofp_flow_mod* mod = reinterpret_cast<ofp_flow_mod*>(packet.data() + offset);
+				handleFlowMod(mod);
+				break;
+			}
+			case OFPT_FLOW_REMOVED: {
+				// Handle flow removal -- used for verification
+				std::cout << "[CCPDN]: Received Flow_Removed." << std::endl;
+				ofp_flow_removed* removed = reinterpret_cast<ofp_flow_removed*>(packet.data() + offset);
+				handleFlowRemoved(removed);
+				break;
+			}
+			default:
+				std::cout << "[CCPDN]: Unknown message type received." << std::endl;
+		}
+
+		// Move to next message
+		offset += msg_length;
+	}
+#endif
 
 	return true;
 }
@@ -601,28 +669,6 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		body_size -= flow_length;
 	}
 #endif
-}
-
-void Controller::handleHeader(ofp_header* header)
-{
-	if (header == nullptr) {
-		return;
-	}
-#ifdef __unix__
-	header->length = ntohs(header->length);
-	header->xid = ntohl(header->xid);
-#endif
-
-	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
-	if (header->type == OFPT_FEATURES_REQUEST) {
-		sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(header->xid));
-	} 
-
-	// For debugging purposes, print out the contents
-	std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
-	std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
-	std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
-	std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
 }
 
 void Controller::handleFlowMod(ofp_flow_mod *mod)

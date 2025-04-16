@@ -93,6 +93,61 @@ ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
 	return reply;
 }
 
+ofp_stats_reply OpenFlowMessage::createDescStatsReply(uint32_t XID) {
+    // Create the stats reply
+    ofp_stats_reply reply;
+    std::memset(&reply, 0, sizeof(reply));
+
+#ifdef __unix__
+    // Set the OpenFlow header
+    reply.header.version = OFP_10;
+    reply.header.type = OFPT_STATS_REPLY;
+    reply.header.xid = htonl(XID);
+
+    // Set the stats reply type to OFPST_DESC
+    reply.type = htons(OFPST_DESC);
+    reply.flags = 0; // No more replies (set OFPSF_REPLY_MORE if there are more parts)
+
+    // Create the ofp_desc_stats structure
+    ofp_desc_stats desc;
+    std::memset(&desc, 0, sizeof(desc));
+
+    // Populate the description fields
+    std::strncpy(desc.mfr_desc, "BensingtonInc", sizeof(desc.mfr_desc) - 1);
+    std::strncpy(desc.hw_desc, "BensingtonRouter", sizeof(desc.hw_desc) - 1);
+    std::strncpy(desc.sw_desc, "BensingtonSoftware", sizeof(desc.sw_desc) - 1);
+    std::strncpy(desc.serial_num, "111111111", sizeof(desc.serial_num) - 1);
+    std::strncpy(desc.dp_desc, "BensingtonPath", sizeof(desc.dp_desc) - 1);
+
+    // Calculate the total size of the reply
+    uint16_t reply_size = sizeof(ofp_stats_reply) + sizeof(ofp_desc_stats);
+    reply.header.length = htons(reply_size);
+
+    // Copy body of reply into buffer
+    std::vector<uint8_t> buffer(reply_size);
+    std::memcpy(buffer.data(), &reply, sizeof(ofp_stats_reply));
+    std::memcpy(buffer.data() + sizeof(ofp_stats_reply), &desc, sizeof(ofp_desc_stats));
+#endif
+
+    return reply;
+}
+
+ofp_header OpenFlowMessage::createBarrierReply(uint32_t XID)
+{
+    ofp_header header;
+	std::memset(&header, 0, sizeof(header));
+
+	// Set the OF header values
+#ifdef __unix__
+	header.version = OFP_10;
+	header.type = OFPT_BARRIER_REPLY;
+	header.length = htons(sizeof(ofp_header));
+	header.xid = htonl(XID);
+#endif
+	
+    return header;
+}
+
 std::string OpenFlowMessage::ipToString(uint32_t ip)
 {
 	// Output string. This method expects host-endian order

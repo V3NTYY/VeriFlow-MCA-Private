@@ -41,10 +41,10 @@ class Controller {
 		bool parsePacket(std::vector<uint8_t>& packet);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
+		void parseFlow(Flow f);
 
 		// OpenFlow packet decode functions
 		void handleStatsReply(ofp_stats_reply* reply);
-		void handleHeader(ofp_header* header);
 		void handleFlowMod(ofp_flow_mod* mod);
 		void handleFlowRemoved(ofp_flow_removed* removed);
 
