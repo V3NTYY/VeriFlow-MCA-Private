@@ -59,7 +59,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 	ofp_stats_reply* ofStatsReply = nullptr;
 
 	// If our packet data exceeds ofp_header size, it's an ofp_stats_reply
-	if (packet.size() >= sizeof(ofp_header)) {
+	if (packet.size() >= sizeof(ofp_stats_reply)) {
 		ofStatsReply = reinterpret_cast<ofp_stats_reply*>(packet.data());
 	} else { // Otherwise its just a header
 		ofHeader = reinterpret_cast<ofp_header*>(packet.data());
@@ -610,6 +610,9 @@ void Controller::handleHeader(ofp_header* header)
 	header->length = ntohs(header->length);
 	header->xid = ntohl(header->xid);
 #endif
+
+	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
+	sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply());
 
 	// For debugging purposes, print out the contents
 	std::cout << "Version: " << header->version << std::endl;

@@ -79,13 +79,13 @@ ofp_switch_features OpenFlowMessage::createFeaturesReply()
 	reply.header.type = OFPT_FEATURES_REPLY;
 	reply.header.length = htons(sizeof(ofp_switch_features));
 	reply.header.xid = htonl(0);
-#endif
 
-	// Set the features
-	reply.n_buffers = 0xFFFF;
+	// Set the features -- buffers/tables should NOT be in network-endian order
+	reply.n_buffers = 256;
 	reply.n_tables = 0xFF;
-	reply.capabilities = 0xFFFF;
-	reply.actions = 0xFFFF;
+	reply.capabilities = htonl(0xFFFF);
+	reply.actions = htonl(0xFFFF);
+#endif
 
 	return reply;
 }
