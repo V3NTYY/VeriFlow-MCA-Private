@@ -45,6 +45,8 @@ class Controller {
 		// OpenFlow packet decode functions
 		void handleStatsReply(ofp_stats_reply* reply);
 		void handleHeader(ofp_header* header);
+		void handleFlowMod(ofp_flow_mod* mod);
+		void handleFlowRemoved(ofp_flow_removed* removed);
 
 		// Command functions (for controller)
 		bool sendOpenFlowMessage(ofp_header Header);

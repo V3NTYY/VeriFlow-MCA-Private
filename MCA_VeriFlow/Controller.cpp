@@ -59,9 +59,11 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 	ofp_flow_mod flowMod = *reinterpret_cast<ofp_flow_mod*>(packet.data());
 	ofp_flow_removed flowRemoved = *reinterpret_cast<ofp_flow_removed*>(packet.data());
 
-	// Parse the header first
-	handleHeader(&ofHeader);
-	handleStatsReply(&ofStatsReply);
+	// Attempt to parse each packet type
+	handleHeader(&ofHeader); // utilized for giving a features reply
+	handleStatsReply(&ofStatsReply); // utilized for getting list of flows (needs work)
+	handleFlowMod(&flowMod); // utilized for verifying an added flow
+	handleFlowRemoved(&flowRemoved); // utilized for verifying any removed flows
 
 	return true;
 }
@@ -615,13 +617,67 @@ void Controller::handleHeader(ofp_header* header)
 	// If we receive type OFPT_FEATURES_REQUEST, automatically send our features
 	if (header->type == OFPT_FEATURES_REQUEST) {
 		sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(header->xid));
-	}
+	} 
 
 	// For debugging purposes, print out the contents
 	std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
 	std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
 	std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
 	std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
+}
+
+void Controller::handleFlowMod(ofp_flow_mod *mod)
+{
+	// Null check
+	if (mod == nullptr) {
+		return;
+	}
+
+#ifdef __unix__
+	// Fix endianness on header, look at header
+	mod->header.length = ntohs(mod->header.length);
+	mod->header.xid = ntohl(mod->header.xid);
+
+	// Flow processing
+	uint32_t srcIP = ntohl(mod->match.nw_src);
+	uint32_t dstIP = ntohl(mod->match.nw_dst);
+	uint32_t wildcards = ntohl(mod->match.wildcards);
+
+	// Create string formats
+	std::string targetSwitch = std::to_string(srcIP);
+	std::string nextHop = std::to_string(dstIP);
+	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, srcIP);
+	
+	// Add flow to shared flows -- since it is added, do true
+	sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
+#endif
+}
+
+void Controller::handleFlowRemoved(ofp_flow_removed *removed)
+{
+	// Null check
+	if (removed == nullptr) {
+		return;
+	}
+
+#ifdef __unix__
+	// Fix endianness on header, look at header
+	removed->header.length = ntohs(removed->header.length);
+	removed->header.xid = ntohl(removed->header.xid);
+
+	// Flow processing
+	uint32_t srcIP = ntohl(removed->match.nw_src);
+	uint32_t dstIP = ntohl(removed->match.nw_dst);
+	uint32_t wildcards = ntohl(removed->match.wildcards);
+
+	// Create string formats
+	std::string targetSwitch = std::to_string(srcIP);
+	std::string nextHop = std::to_string(dstIP);
+	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, srcIP);
+
+	// Add flow to shared flows -- since it is added, do true
+	sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, false));
+#endif
 }
 
 std::string Controller::readBuffer(char* buf)
