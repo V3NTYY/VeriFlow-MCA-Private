@@ -13,6 +13,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest() {
 
 	// Create our match request
 	ofp_match toMatch;
+	std::memset(&toMatch, 0, sizeof(toMatch));
 	toMatch.wildcards = ((1 << 22) - 1); // Match all fields
 
 	// Create our body of request
@@ -31,7 +32,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest() {
 	request.header.length = htons(request_size);
 	request.header.xid = htonl(xid);
 
-	request.type = OFPST_FLOW;
+	request.type = htons(OFPST_FLOW);
 	request.flags = 0;
 #endif
 
