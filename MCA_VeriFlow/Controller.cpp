@@ -357,6 +357,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		// Timeout
 		if (localCount > 10) {
 			std::cout << "[CCPDN-ERROR]: Timeout waiting for flow list from controller" << std::endl;
+			rstControllerFlag();
 			return flows;
 		}
 		if (!sent) {
