@@ -91,7 +91,6 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	loggy << "Match wildcards: " << ntohl(flow_stats->match.wildcards) << std::endl;
 	loggy << "Match in_port: " << ntohs(flow_stats->match.in_port) << std::endl;
 
-	loggy << "Flow stats length: " << flow_length << std::endl;
 	loggy << "Flow stats table_id: " << flow_stats->table_id << std::endl;
 	loggy << "Flow stats duration_sec: " << flow_stats->duration_sec << std::endl;
 	loggy << "Flow stats duration_nsec: " << flow_stats->duration_nsec << std::endl;
