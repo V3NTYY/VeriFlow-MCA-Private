@@ -70,12 +70,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		header->length = ntohs(header->length);
 		header->xid = ntohl(header->xid);
 
-		// For debugging purposes, print out the contents
-		std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
-		std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
-		std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
-		std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
-
 		// Ensure our message has valid length
 		if (msg_length < sizeof(ofp_header) || msg_length > packet.size() - offset) {
 			return false;
@@ -127,6 +121,12 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			default:
 				std::cout << "[CCPDN]: Unknown message type received." << std::endl;
 		}
+
+		// For debugging purposes, print out the contents
+		std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
+		std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
+		std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
+		std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
 
 		// Move to next message
 		offset += msg_length;
@@ -227,7 +227,7 @@ bool Controller::linkVeriFlow()
 	// Setup socket
 	sockvf = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockvf < 0) {
-		std::cout << "Error creating socket" << std::endl;
+		std::cout << "[CCPDN-ERROR]: Could not create veriflow socket." << std::endl;
 		return false;
 	}
 
@@ -239,7 +239,7 @@ bool Controller::linkVeriFlow()
 
 	// Connect to the controller
 	if (connect(sockvf, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-		std::cout << "Error connecting to veriflow" << std::endl;
+		std::cout << "[CCPDN-ERROR]: Could not connect to veriflow." << std::endl;
 		return false;
 	}
 #endif
@@ -252,7 +252,7 @@ bool Controller::linkController() {
 		// Setup socket
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd < 0) {
-			std::cout << "Error creating socket" << std::endl;
+			std::cout << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
 			return false;
 		}
 
@@ -264,7 +264,7 @@ bool Controller::linkController() {
 
 		// Connect to the controller
 		if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-			std::cout << "Error connecting to controller" << std::endl;
+			std::cout << "[CCPDN-ERROR]: Could not connect to controller." << std::endl;
 			return false;
 		}
 	#endif
@@ -290,12 +290,6 @@ bool Controller::startController(bool* thread)
 
 bool Controller::start()
 {
-	// Prompt user for veriflow ip and port
-	std::cout << "Enter VeriFlow IP: ";
-	std::cin >> veriflowIP;
-	std::cout << "Enter VeriFlow Port: ";
-	std::cin >> veriflowPort;
-
 	if (linkVeriFlow()) {
 		// Send hello to VeriFlow, and wait for response. If received, we're good to start our thread
 		veriFlowHandshake();
@@ -350,7 +344,7 @@ bool Controller::removeFlowFromTable(Flow f)
     }
     
     // No matching flow found
-    std::cout << "[CCPDN]: No matching flow found to remove" << std::endl;
+    std::cout << "[CCPDN-ERROR]: No matching flow found to remove" << std::endl;
     return false;
 }
 
@@ -364,7 +358,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		if (!sent) {
 			// Send this request to controller
 			if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
-				std::cout << "[CCPDN]: Failed to send flow list request to controller" << std::endl;
+				std::cout << "[CCPDN-ERROR]: Failed to send flow list request to controller" << std::endl;
 				return flows;
 			}
 			else {
@@ -389,6 +383,7 @@ bool Controller::addDomainNode(Node* n)
 
 bool Controller::sendOpenFlowMessage(ofp_header Header)
 {
+	std::string msg = "";
 #ifdef __unix__
 	// Send the header
 	ssize_t bytes_sent = send(sockfd, &Header, sizeof(Header), 0);
@@ -396,9 +391,71 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 		std::cerr << "[CCPDN-ERROR]: Failed to send OpenFlow Header" << std::endl;
 		return false;
 	}
+
+	// Based on type, print specific message
+	Header.type = ntohs(Header.type);
+	switch (Header.type) {
+		case OFPT_HELLO:
+			msg = "Hello";
+			break;
+		case OFPT_ECHO_REQUEST:
+			msg = "Echo Request";
+			break;
+		case OFPT_ECHO_REPLY:
+			msg = "Echo Reply";
+			break;
+		case OFPT_VENDOR:
+			msg = "Vendor";
+			break;
+		case OFPT_FEATURES_REQUEST:
+			msg = "Features Request";
+			break;
+		case OFPT_FEATURES_REPLY:
+			msg = "Features Reply";
+			break;
+		case OFPT_GET_CONFIG_REQUEST:
+			msg = "Get Config Request";
+			break;
+		case OFPT_GET_CONFIG_REPLY:
+			msg = "Get Config Reply";
+			break;
+		case OFPT_SET_CONFIG:
+			msg = "Set Config";
+			break;
+		case OFPT_PACKET_IN:
+			msg = "Packet In";
+			break;
+		case OFPT_FLOW_REMOVED:
+			msg = "Flow Removed";
+			break;
+		case OFPT_PORT_STATUS:
+			msg = "Port Status";
+			break;
+		case OFPT_PACKET_OUT:
+			msg = "Packet Out";
+			break;
+		case OFPT_FLOW_MOD:
+			msg = "Flow Mod";
+			break;
+		case OFPT_PORT_MOD:
+			msg = "Port Mod";
+			break;
+		case OFPT_STATS_REQUEST:
+			msg = "Stats Request";
+			break;
+		case OFPT_STATS_REPLY:
+			msg = "Stats Reply";
+			break;
+		case OFPT_BARRIER_REQUEST:
+			msg = "Barrier Request";
+			break;
+		case OFPT_BARRIER_REPLY:
+			msg = "Barrier Reply";
+			break;
+	}
 #endif
 
-	std::cout << "--- [CCPDN-MESSAGEHEADER-POX] ---\n";
+	std::cout << "[CCPDN]: Sent " + msg + " message.\n";
 
 	return true;
 }
@@ -414,7 +471,7 @@ bool Controller::sendOpenFlowMessage(ofp_stats_request Request)
 	}
 #endif
 
-	std::cout << "--- [CCPDN-REQUESTFLOWS-POX] ---\n";
+	std::cout << "[CCPDN]: Sent Stats Request.\n";
 
 	return true;
 }
@@ -430,7 +487,7 @@ bool Controller::sendOpenFlowMessage(ofp_switch_features Features)
 	}
 #endif
 
-	std::cout << "--- [CCPDN-SENDFEATURES-POX] ---\n";
+	std::cout << "[CCPDN]: Sent Switch Features.\n";
 
 	return true;
 }
@@ -446,7 +503,7 @@ bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
 	}
 #endif
 
-	std::cout << "--- [CCPDN-STATSREPLY-POX] ---\n";
+	std::cout << "[CCPDN]: Sent Stats Reply.\n";
     return true;
 }
 
@@ -462,7 +519,7 @@ bool Controller::sendVeriFlowMessage(std::string message)
 #endif
 
 	// Print send message
-	std::cout << "--- [CCPDN-MESSAGE-VERIFLOW] --- \n";
+	std::cout << "[CCPDN]: Sent VeriFlow Message.\n";
 	for (int i = 0; i < Msg.size(); ++i) {
 		std::cout << Msg[i];
 	}
@@ -476,7 +533,7 @@ bool Controller::synchTopology(Digest d)
 	std::vector<Node> topologyData = Topology::string_toTopology(d.getPayload());
 
 	if (topologyData.empty()) {
-		std::cout << "[CCPDN]: ERROR. Failed to parse topology data from payload." << std::endl;
+		std::cout << "[CCPDN-ERROR]: Failed to parse topology data from payload." << std::endl;
 		return false;
 	}
 
@@ -501,7 +558,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	int hostIndex = referenceTopology->hostIndex;
 
 	if (hostIndex == destinationIndex) {
-		std::cout << "[CCPDN]: ERROR. Cannot send update to self.\n";
+		std::cout << "[CCPDN-ERROR]: Cannot send update to self.\n";
 		return false;
 	}
 
@@ -509,7 +566,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	std::string topOutput = referenceTopology->topology_toString(hostIndex);
 
 	if (topOutput.empty()) {
-		std::cout << "[CCPDN]: ERROR. Failed to convert topology to string." << std::endl;
+		std::cout << "[CCPDN-ERROR]: Failed to convert topology to string." << std::endl;
 		return false;
 	}
 
@@ -542,7 +599,7 @@ std::vector<Node*> Controller::getDomainNodes()
 
 void Controller::rstControllerFlag()
 {
-	std::cout << "[DEBUG]: Resetting controller flag" << std::endl;
+	std::cout << "[CCPDN-DEBUG]: Resetting controller flag" << std::endl;
 	ofFlag = false;
 }
 
@@ -618,7 +675,7 @@ void Controller::recvVeriFlowMessages()
 	if (!vfFlag) {
 		std::memset(vfBuffer, 0, sizeof(vfBuffer)); // Clear the buffer before receiving data
 		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
-		std::cout << "--- [VERIFLOW-MESSAGE-CCPDN] --- \n";
+		std::cout << "[CCPDN]: Message from VeriFlow\n";
 		std::cout << readBuffer(vfBuffer) << std::endl << std::endl;
 		vfFlag = true;
 	}
@@ -708,7 +765,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
-		std::cout << "[CCPDN]: Parsed flow rule contains no flow information." << std::endl;
+		std::cout << "[CCPDN-ERROR]: Parsed flow rule contains no flow information." << std::endl;
 		return;
 	}
 	
@@ -746,7 +803,7 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
-		std::cout << "[CCPDN]: Parsed flow rule contains no flow information." << std::endl;
+		std::cout << "[CCPDN-ERROR]: Parsed flow rule contains no flow information." << std::endl;
 		return;
 	}
 
