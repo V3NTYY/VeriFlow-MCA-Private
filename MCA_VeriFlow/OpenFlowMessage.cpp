@@ -24,37 +24,38 @@ ofp_header OpenFlowMessage::createHello()
 // TODO: FULLY FORMAT TO FIX PSH,ACK
 ofp_stats_request OpenFlowMessage::createFlowRequest()
 {
+	// Construct our stats_request, match and flow_stats_request structs
 	ofp_stats_request request;
+	std::memset(&request, 0, sizeof(request));
 	ofp_match toMatch;
+	std::memset(&toMatch, 0, sizeof(toMatch));
 	ofp_flow_stats_request toBody;
+	std::memset(&toBody, 0, sizeof(toBody));
+
+	// XID can be random
+	uint32_t XID = (100 + (std::rand() % 4095 - 99));
 
 	// Calculate request size
 	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
-	loggyMsg("request size for flow req: ");
-	loggyMsg(request_size);
-	loggyMsg("\n");
+	loggy << "Request size: " << request_size << std::endl;
 
 #ifdef __unix__
-    // Construct our wrapper request
-	uint32_t XID = (100 + (std::rand() % 4095 - 99));
-	std::memset(&request, 0, sizeof(request));
 
-	// Create our match request
-	std::memset(&toMatch, 0, sizeof(toMatch));
+	// Set our match wildcards
 	toMatch.wildcards = htonl((1 << 22) - 1); // Match all fields
 
-	// Create our body of request
-	std::memset(&toBody, 0, sizeof(toBody));
+	// Set our body values (and attach match to body)
 	toBody.table_id = 0xFF; // Match all tables
 	toBody.out_port = htons(0xFFFF); // Match all output ports
 	toBody.match = toMatch;
 
-	// Set the OF header values
+	// Set the values of our request header
 	request.header.version = OFP_10;
 	request.header.type = OFPT_STATS_REQUEST;
 	request.header.length = htons(request_size);
 	request.header.xid = htonl(XID);
 
+	// Set the values of our request
 	request.type = htons(OFPST_FLOW);
 	request.flags = 0;
 #endif
@@ -63,15 +64,53 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	std::vector<uint8_t> buffer(request_size);
 	std::memset(buffer.data(), 0, request_size);
 
-	// Copy the request header into the buffer
+	// Copy the request into the buffer
 	std::memcpy(buffer.data(), &request, sizeof(ofp_stats_request));
-	// Copy the request body into the buffer
+	// Copy our body (flow_stats_request) into buffer
 	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &toBody, sizeof(ofp_flow_stats_request));
 
 	// Create new ofp_stats_request object to return
-	ofp_stats_request* request_ptr = reinterpret_cast<ofp_stats_request*>(buffer.data());
+	ofp_stats_request requestReturn = *reinterpret_cast<ofp_stats_request*>(buffer.data());
 
-	return *request_ptr;
+#ifdef __unix__
+	// DEBUG: Print requestReturn data to ensure its correct
+	loggy << "Request header version: " << requestReturn.header.version << std::endl;
+	loggy << "Request header type: " << requestReturn.header.type << std::endl;
+	loggy << "Request header length: " << ntohs(requestReturn.header.length) << std::endl;
+	loggy << "Request header xid: " << ntohl(requestReturn.header.xid) << std::endl;
+	loggy << "Request type: " << ntohs(requestReturn.type) << std::endl;
+	loggy << "Request flags: " << ntohs(requestReturn.flags) << std::endl;
+
+	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(&requestReturn) + sizeof(ofp_stats_reply);
+
+	// Cast ptr to access flow_stats struct
+	ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
+
+	// Process length of current entry -- handle end of ptr
+	size_t flow_length = ntohs(flow_stats->length);
+	if (flow_length == 0 || flow_length > body_size) {
+		break;
+	}
+
+	// Debug print our flow 2 send
+	loggy << "Match fields: " << std::endl;
+	loggy << "Match wildcards: " << ntohl(flow_stats->match.wildcards) << std::endl;
+	loggy << "Match in_port: " << ntohs(flow_stats->match.in_port) << std::endl;
+
+	loggy << "Flow stats length: " << flow_length << std::endl;
+	loggy << "Flow stats table_id: " << flow_stats->table_id << std::endl;
+	loggy << "Flow stats duration_sec: " << flow_stats->duration_sec << std::endl;
+	loggy << "Flow stats duration_nsec: " << flow_stats->duration_nsec << std::endl;
+	loggy << "Flow stats priority: " << flow_stats->priority << std::endl;
+	loggy << "Flow stats idle_timeout: " << flow_stats->idle_timeout << std::endl;
+	loggy << "Flow stats hard_timeout: " << flow_stats->hard_timeout << std::endl;
+	loggy << "Flow stats cookie: " << flow_stats->cookie << std::endl;
+	loggy << "Flow stats packet_count: " << flow_stats->packet_count << std::endl;
+	loggy << "Flow stats byte_count: " << flow_stats->byte_count << std::endl;
+	loggy << "Flow stats actions: " << flow_stats->actions[0].type << std::endl;
+#endif
+
+	return requestReturn;
 }
 
 ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
