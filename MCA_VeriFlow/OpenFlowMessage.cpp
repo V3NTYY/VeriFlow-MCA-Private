@@ -36,8 +36,8 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	request.flags = htons(0); // No flags set
 #endif
 
-	// Create a byte vector to store our struct
-	std::vector<std::byte> buffer(sizeof(ofp_stats_request));
+	// Create an unsigned char (blessed casting type) vector to store our struct
+	std::vector<unsigned char> buffer(sizeof(ofp_stats_request));
 	std::memcpy(buffer.data(), &request, sizeof(ofp_stats_request));
 
 	// Create new ofp_stats_request object to return
