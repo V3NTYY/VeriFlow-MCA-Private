@@ -55,6 +55,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 	}
 
 	size_t offset = 0;
+	int count = 1;
 #ifdef __unix
 	while (offset < packet.size()) {
 		// Ensure we have at least a header?
@@ -75,10 +76,19 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			return false;
 		}
 
+		// For debugging purposes, print out the contents
+		count++;
+		std::cout << "Packet contents: " << count << std::endl;
+		std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
+		std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
+		std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
+		std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
+
 		// Based on header type, process our packet
 		switch (header->type) {
 			case OFPT_HELLO: {
 				// Confirms connection was established
+				std::cout << "[CCPDN]: Received Hello." << std::endl;
 				break;
 			}
 			case OFPT_FEATURES_REQUEST: {
@@ -121,12 +131,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			default:
 				std::cout << "[CCPDN]: Unknown message type received." << std::endl;
 		}
-
-		// For debugging purposes, print out the contents
-		std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
-		std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
-		std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
-		std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
 
 		// Move to next message
 		offset += msg_length;
@@ -391,9 +395,19 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 		std::cerr << "[CCPDN-ERROR]: Failed to send OpenFlow Header" << std::endl;
 		return false;
 	}
+#endif
+
+	// Print out the header contents for debugging
+	std::cout << "Packet contents TRANSMITTED: " << std::endl;
+	std::cout << "Version: " << static_cast<int>(Header.version) << std::endl;
+	std::cout << "Type: " << static_cast<int>(Header.type) << std::endl;
+#ifdef __unix__
+	std::cout << "Length: " << static_cast<int>(ntohl(Header.length)) << std::endl;
+	std::cout << "XID: " << static_cast<int>(ntohl(Header.xid)) << std::endl;
+#endif
+
 
 	// Based on type, print specific message
-	Header.type = ntohs(Header.type);
 	switch (Header.type) {
 		case OFPT_HELLO:
 			msg = "Hello";
@@ -453,7 +467,6 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 			msg = "Barrier Reply";
 			break;
 	}
-#endif
 
 	std::cout << "[CCPDN]: Sent " + msg + " message.\n";
 
