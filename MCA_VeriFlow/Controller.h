@@ -5,6 +5,7 @@
 #include "OpenFlowMessage.h"
 #include "Node.h"
 #include "Digest.h"
+#include "Log.h"
 #include "Topology.h"
 #include <iostream>
 #include <vector>

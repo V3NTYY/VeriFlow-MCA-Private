@@ -29,7 +29,9 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 
 	// Calculate request size
 	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
-	std::cout << "request size for flow req: " << request_size << std::endl;
+	loggyMsg("request size for flow req: ");
+	loggyMsg(request_size);
+	loggyMsg("\n");
 
 #ifdef __unix__
     // Construct our wrapper request

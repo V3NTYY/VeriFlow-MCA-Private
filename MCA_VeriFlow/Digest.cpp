@@ -41,7 +41,9 @@ void Digest::fromJson(const std::string& json_str) {
         appendedFlow = *Flow::strToFlow(flow_data);
 
     } catch (const std::exception& e) {
-        std::cerr << "JSON parsing error: " << e.what() << std::endl;
+        loggyErr("JSON parsing error: ");
+        loggyErr(e.what());
+        loggyErr("\n");
     }
 }
 
@@ -61,7 +63,10 @@ bool Digest::sendDigest(void* sendC) {
     }
     
     if (!destinationNode) {
-        std::cerr << "Error: No domain node found" << destinationIndex << std::endl;
+        loggyErr("Error: No domain node found ");
+        loggyErr(destinationIndex);
+        loggyErr("\n");
+
         return false;
     }
     
@@ -73,7 +78,7 @@ bool Digest::sendDigest(void* sendC) {
     #ifdef __unix__
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
-            std::cerr << "Error creating socket" << std::endl;
+            loggyErr("Error creating socket\n");
             return false;
         }
 
@@ -83,14 +88,16 @@ bool Digest::sendDigest(void* sendC) {
         inet_pton(AF_INET, destination_ip.c_str(), &server_address.sin_addr);
 
         if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-            std::cerr << "Error connecting to destination controller at " << destination_ip << std::endl;
+            loggyErr("Error connecting to destination controller at ");
+            loggyErr(destination_ip);
+            loggyErr("\n");
             close(sockfd);
             return false;
         }
 
         ssize_t bytes_sent = send(sockfd, jsonData.c_str(), jsonData.size(), 0);
         if (bytes_sent < 0) {
-            std::cerr << "Error sending data" << std::endl;
+            loggyErr("Error sending data\n");
             close(sockfd);
             return false;
         }

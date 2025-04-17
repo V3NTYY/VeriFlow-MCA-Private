@@ -76,10 +76,21 @@ bool Flow::actionType()
 
 void Flow::print()
 {
-	std::cout << "Switch IP: " << switchIP << std::endl;
-	std::cout << "Rule Prefix: " << rulePrefix << std::endl;
-	std::cout << "Next Hop IP: " << nextHopIP << std::endl;
-	std::cout << "Action: " << (action ? "Add" : "Remove") << std::endl;
+	loggyMsg("Switch IP: ");
+	loggyMsg(switchIP);
+	loggyMsg("\n");
+
+	loggyMsg("Rule Prefix: ");
+	loggyMsg(rulePrefix);
+	loggyMsg("\n");
+
+	loggyMsg("Next Hop IP: ");
+	loggyMsg(nextHopIP);
+	loggyMsg("\n");
+
+	loggyMsg("Action: ");
+	loggyMsg((action ? "Add" : "Remove"));
+	loggyMsg("\n");
 }
 
 std::string Flow::getSwitchIP()

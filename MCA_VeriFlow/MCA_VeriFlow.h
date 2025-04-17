@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "Topology.h"
 #include "Controller.h"
+#include "Log.h"
 
 #ifdef __unix__
 	#include <sys/socket.h>

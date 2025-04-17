@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstring>
 #include "Flow.h"
+#include "Log.h"
 #ifdef __unix__
 #include <arpa/inet.h>
 #endif

@@ -7,6 +7,7 @@
 #include "json.hpp"
 #include "Node.h"
 #include "Flow.h"
+#include "Log.h"
 
 class Digest {
 private:

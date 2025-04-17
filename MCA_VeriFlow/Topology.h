@@ -2,6 +2,7 @@
 #define TOPOLOGY_H
 
 #include "Node.h"
+#include "Log.h"
 #include <fstream>
 #include <sstream>
 

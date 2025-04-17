@@ -12,7 +12,7 @@ endif()
 project ("MCA_VeriFlow")
 
 # Add source to this project's executable.
-add_executable (MCA_VeriFlow "MCA_VeriFlow.cpp" "MCA_VeriFlow.h"  "Controller.cpp" "Controller.h" "Flow.cpp" "Flow.h" "OpenFlowMessage.h" "OpenFlowMessage.cpp" "Topology.h" "Topology.cpp" "Node.h" "Node.cpp" "json.hpp" "Digest.h" "Digest.cpp" )
+add_executable (MCA_VeriFlow "MCA_VeriFlow.cpp" "MCA_VeriFlow.h"  "Controller.cpp" "Controller.h" "Flow.cpp" "Flow.h" "OpenFlowMessage.h" "OpenFlowMessage.cpp" "Topology.h" "Topology.cpp" "Node.h" "Node.cpp" "json.hpp" "Digest.h" "Digest.cpp" "Log.h" )
 
 # Link pthread library
 find_package(Threads REQUIRED)

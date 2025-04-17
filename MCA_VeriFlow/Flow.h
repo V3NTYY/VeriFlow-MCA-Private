@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include "Log.h"
 
 class Flow {
 	public:
