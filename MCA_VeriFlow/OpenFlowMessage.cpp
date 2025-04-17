@@ -5,24 +5,29 @@
 #define ntohll(x) (((uint64_t)ntohl((uint32_t)((x << 32) >> 32))) << 32) | ntohl(((uint32_t)(x >> 32)))
 #endif
 
-ofp_header OpenFlowMessage::createHello()
+std::vector<unsigned char> OpenFlowMessage::createHello()
 {
+	// Initialize header struct
 	ofp_header header;
 	std::memset(&header, 0, sizeof(header));
 
-	// Set the OF header values
 #ifdef __unix__
+	// Set the OF header values
 	header.version = OFP_10;
 	header.type = OFPT_HELLO;
 	header.length = htons(sizeof(ofp_header));
 	header.xid = htonl(100 + (std::rand() % 4095 - 99)); // XID is not used in hello message
 #endif
 	
-    return header;
+    // Create an unsigned char (blessed casting type) vector to store our struct
+	std::vector<unsigned char> buffer(sizeof(ofp_header));
+	// Store the first 8 bytes (ofp_header struct, byte 1-8)
+	std::memcpy(buffer.data(), &header, sizeof(ofp_header));
+
+	return buffer;
 }
 
-// TODO: FULLY FORMAT TO FIX PSH,ACK
-ofp_stats_request OpenFlowMessage::createFlowRequest()
+std::vector<unsigned char> OpenFlowMessage::createFlowRequest()
 {
 	// Construct our ofp_stats_request struct, and initialize it
 	ofp_stats_request request;
@@ -56,58 +61,17 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	// Store the next 44 bytes (ofp_flow_stats_request struct, byte 13-56)
 	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &flow_request, sizeof(ofp_flow_stats_request));
 
-	// Create new ofp_stats_request object to return
-	ofp_stats_request* requestReturn = new ofp_stats_request();
-	std::memset(requestReturn, 0, sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
-	std::memcpy(requestReturn, buffer.data(), sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
-
-	// Print raw buffer data
-	loggy << "Raw buffer data: " << std::endl;
-	for (size_t i = 0; i < buffer.size(); ++i) {
-		loggy << std::hex << static_cast<int>(buffer[i]) << " ";
-	}
-
-#ifdef __unix__
-	// DEBUG: Print requestReturn data to ensure its correct
-	loggy << "\nRequest header version: " << requestReturn->header.version << std::endl;
-	loggy << "Request header type: " << requestReturn->header.type << std::endl;
-	loggy << "Request header length: " << ntohs(requestReturn->header.length) << std::endl;
-	loggy << "Request header xid: " << ntohl(requestReturn->header.xid) << std::endl;
-	loggy << "Request type: " << ntohs(requestReturn->type) << std::endl;
-	loggy << "Request flags: " << ntohs(requestReturn->flags) << std::endl;
-
-	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(requestReturn) + sizeof(ofp_stats_reply);
-
-	// Cast ptr to access flow_stats struct
-	ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
-
-	// Debug print our flow 2 send
-	loggy << "Match fields: " << std::endl;
-	loggy << "Match wildcards: " << ntohl(flow_stats->match.wildcards) << std::endl;
-	loggy << "Match in_port: " << ntohs(flow_stats->match.in_port) << std::endl;
-
-	loggy << "Flow stats table_id: " << flow_stats->table_id << std::endl;
-	loggy << "Flow stats duration_sec: " << flow_stats->duration_sec << std::endl;
-	loggy << "Flow stats duration_nsec: " << flow_stats->duration_nsec << std::endl;
-	loggy << "Flow stats priority: " << flow_stats->priority << std::endl;
-	loggy << "Flow stats idle_timeout: " << flow_stats->idle_timeout << std::endl;
-	loggy << "Flow stats hard_timeout: " << flow_stats->hard_timeout << std::endl;
-	loggy << "Flow stats cookie: " << flow_stats->cookie << std::endl;
-	loggy << "Flow stats packet_count: " << flow_stats->packet_count << std::endl;
-	loggy << "Flow stats byte_count: " << flow_stats->byte_count << std::endl;
-	loggy << "Flow stats actions: " << flow_stats->actions[0].type << std::endl;
-#endif
-
-	return *requestReturn;
+	return buffer;
 }
 
-ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
+std::vector<unsigned char> OpenFlowMessage::createFeaturesReply(uint32_t XID)
 {
+	// Initialize ofp_switch_features struct
 	ofp_switch_features reply;
 	std::memset(&reply, 0, sizeof(reply));
 
-	// Set the OF header values
 #ifdef __unix__
+	// Set the OF header values
 	reply.header.version = OFP_10;
 	reply.header.type = OFPT_FEATURES_REPLY;
 	reply.header.length = htons(sizeof(ofp_switch_features));
@@ -120,28 +84,33 @@ ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
 	reply.actions = htonl(0xFFFF);
 #endif
 
-	return reply;
+	// Create an unsigned char (blessed casting type) vector to store our struct
+	std::vector<unsigned char> buffer(sizeof(ofp_switch_features));
+	// Store the bytes (ofp_switch_features struct)
+	std::memcpy(buffer.data(), &reply, sizeof(ofp_switch_features));
+
+	return buffer;
 }
 
-// TODO: FULLY FORMAT TO FIX PSH,ACK
-ofp_stats_reply OpenFlowMessage::createDescStatsReply(uint32_t XID) {
-    // Create the stats reply
+std::vector<unsigned char> OpenFlowMessage::createDescStatsReply(uint32_t XID) {
+    // Initialize the stats_reply struct
     ofp_stats_reply reply;
     std::memset(&reply, 0, sizeof(reply));
+
+	// Initialize the ofp_desc_stats struct
+    ofp_desc_stats desc;
+    std::memset(&desc, 0, sizeof(desc));
 
 #ifdef __unix__
     // Set the OpenFlow header
     reply.header.version = OFP_10;
     reply.header.type = OFPT_STATS_REPLY;
     reply.header.xid = htonl(XID);
+	reply.header.length = htons(sizeof(ofp_stats_reply) + sizeof(ofp_desc_stats));
 
     // Set the stats reply type to OFPST_DESC
     reply.type = htons(OFPST_DESC);
     reply.flags = 0; // No more replies (set OFPSF_REPLY_MORE if there are more parts)
-
-    // Create the ofp_desc_stats structure
-    ofp_desc_stats desc;
-    std::memset(&desc, 0, sizeof(desc));
 
     // Populate the description fields
     std::strncpy(desc.mfr_desc, "BensingtonInc", sizeof(desc.mfr_desc) - 1);
@@ -149,22 +118,19 @@ ofp_stats_reply OpenFlowMessage::createDescStatsReply(uint32_t XID) {
     std::strncpy(desc.sw_desc, "BensingtonSoftware", sizeof(desc.sw_desc) - 1);
     std::strncpy(desc.serial_num, "111111111", sizeof(desc.serial_num) - 1);
     std::strncpy(desc.dp_desc, "BensingtonPath", sizeof(desc.dp_desc) - 1);
-
-    // Calculate the total size of the reply
-    uint16_t reply_size = sizeof(ofp_stats_reply) + sizeof(ofp_desc_stats);
-    reply.header.length = htons(reply_size);
-
-    // Copy body of reply into buffer
-    std::vector<uint8_t> buffer(reply_size);
-    std::memcpy(buffer.data(), &reply, sizeof(ofp_stats_reply));
-    std::memcpy(buffer.data() + sizeof(ofp_stats_reply), &desc, sizeof(ofp_desc_stats));
 #endif
 
-    return reply;
+    // Create an unsigned char (blessed casting type) vector to store our struct
+	std::vector<unsigned char> buffer(sizeof(ofp_stats_reply) + sizeof(ofp_desc_stats));
+	// Store the bytes (ofp_stats_reply struct)
+	std::memcpy(buffer.data(), &reply, sizeof(ofp_stats_reply));
+	// Store the extra bytes (ofp_desc_stats struct)
+	std::memcpy(buffer.data() + sizeof(ofp_stats_reply), &desc, sizeof(ofp_desc_stats));
+
+	return buffer;
 }
 
-// TODO: FULLY FORMAT TO FIX PSH,ACK
-ofp_header OpenFlowMessage::createBarrierReply(uint32_t XID)
+std::vector<unsigned char> OpenFlowMessage::createBarrierReply(uint32_t XID)
 {
     ofp_header header;
 	std::memset(&header, 0, sizeof(header));
@@ -177,7 +143,12 @@ ofp_header OpenFlowMessage::createBarrierReply(uint32_t XID)
 	header.xid = htonl(XID);
 #endif
 	
-    return header;
+    // Create an unsigned char (blessed casting type) vector to store our struct
+	std::vector<unsigned char> buffer(sizeof(ofp_header));
+	// Store the first 8 bytes (ofp_header struct, byte 1-8)
+	std::memcpy(buffer.data(), &header, sizeof(ofp_header));
+
+	return buffer;
 }
 
 std::string OpenFlowMessage::ipToString(uint32_t ip)

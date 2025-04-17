@@ -50,10 +50,7 @@ class Controller {
 		void handleFlowRemoved(ofp_flow_removed* removed);
 
 		// Command functions (for controller)
-		bool sendOpenFlowMessage(ofp_header Header);
-		bool sendOpenFlowMessage(ofp_stats_request Request);
-		bool sendOpenFlowMessage(ofp_switch_features Features);
-		bool sendOpenFlowMessage(ofp_stats_reply Stats_Reply);
+		bool sendOpenFlowMessage(std::vector<unsigned char> data);
 		bool sendVeriFlowMessage(std::string message);
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);

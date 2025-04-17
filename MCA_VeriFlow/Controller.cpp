@@ -55,7 +55,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 	}
 
 	size_t offset = 0;
-	int count = 1;
 #ifdef __unix
 	while (offset < packet.size()) {
 		// Ensure we have at least a header?
@@ -75,11 +74,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		if (msg_length < sizeof(ofp_header) || msg_length > packet.size() - offset) {
 			return false;
 		}
-
-
-		// For debugging purposes, print the packet number
-		std::cout << "OF MSG #" << count << " of packet." << std::endl; 
-		count++;
 
 		// Based on header type, process our packet
 		switch (header->type) {
@@ -387,17 +381,23 @@ bool Controller::addDomainNode(Node* n)
 	return false;
 }
 
-bool Controller::sendOpenFlowMessage(ofp_header Header)
+bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 {
 	std::string msg = "";
 #ifdef __unix__
 	// Send the header
-	ssize_t bytes_sent = send(sockfd, &Header, sizeof(Header), 0);
-	if (bytes_sent != sizeof(Header)) {
+	ssize_t bytes_sent = send(sockfd, data.data(), data.size(), 0);
+	if (bytes_sent != data.size()) {
 		loggyErr("[CCPDN-ERROR]: Failed to send OpenFlow Header\n");
 		return false;
 	}
 #endif
+
+	// Grab header (unsafe, only for logs)
+	ofp_header Header;
+	if (!(data.size() < sizeof(ofp_header))) { // Only copy if we have 8 bytes or more
+		std::memcpy(&Header, data.data(), sizeof(ofp_header));
+	}
 
 	// Based on type, print specific message
 	switch (Header.type) {
@@ -458,58 +458,14 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 		case OFPT_BARRIER_REPLY:
 			msg = "Barrier Reply";
 			break;
+		default:
+			msg = "Unknown-Type";
+			break;
 	}
 
 	loggyMsg("[CCPDN]: Sent " + msg + " message.\n");
 
 	return true;
-}
-
-bool Controller::sendOpenFlowMessage(ofp_stats_request Request)
-{
-#ifdef __unix__
-	// Send the OFP_Stats Request
-	ssize_t bytes_sent = send(sockfd, &Request, sizeof(Request), 0);
-	if (bytes_sent != sizeof(Request)) {
-		loggyErr("[CCPDN-ERROR]: Failed to send Flow Request\n");
-		return false;
-	}
-#endif
-
-	loggyMsg("[CCPDN]: Sent Stats Request.\n");
-
-	return true;
-}
-
-bool Controller::sendOpenFlowMessage(ofp_switch_features Features)
-{
-#ifdef __unix__
-	// Send the Features reply
-	ssize_t bytes_sent = send(sockfd, &Features, sizeof(Features), 0);
-	if (bytes_sent != sizeof(Features)) {
-		loggyErr("[CCPDN-ERROR]: Failed to send Features\n");
-		return false;
-	}
-#endif
-
-	loggyMsg("[CCPDN]: Sent Switch Features.\n");
-
-	return true;
-}
-
-bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
-{
-#ifdef __unix__
-	// Send the Stats reply
-	ssize_t bytes_sent = send(sockfd, &Stats_Reply, sizeof(Stats_Reply), 0);
-	if (bytes_sent != sizeof(Stats_Reply)) {
-		loggyErr("[CCPDN-ERROR]: Failed to send Stats Reply\n");
-		return false;
-	}
-#endif
-
-	loggyMsg("[CCPDN]: Sent Stats Reply.\n");
-    return true;
 }
 
 bool Controller::sendVeriFlowMessage(std::string message)

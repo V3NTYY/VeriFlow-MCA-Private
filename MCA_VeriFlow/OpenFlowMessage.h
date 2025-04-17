@@ -311,11 +311,11 @@ OFP_ASSERT(sizeof(struct ofp_desc_stats) == 1056);
 class OpenFlowMessage {
 	public:
 		// Message creation
-		static ofp_header createHello();
-		static ofp_stats_request createFlowRequest();
-		static ofp_switch_features createFeaturesReply(uint32_t XID);
-		static ofp_stats_reply createDescStatsReply(uint32_t XID);
-		static ofp_header createBarrierReply(uint32_t XID);
+		static std::vector<unsigned char> createHello();
+		static std::vector<unsigned char> createFlowRequest();
+		static std::vector<unsigned char> createFeaturesReply(uint32_t XID);
+		static std::vector<unsigned char> createDescStatsReply(uint32_t XID);
+		static std::vector<unsigned char> createBarrierReply(uint32_t XID);
 
 		// Helper methods
 		static std::string ipToString(uint32_t ip);
