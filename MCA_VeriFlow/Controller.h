@@ -12,6 +12,8 @@
 #include <string>
 #include <cstring>
 #include <cstddef>
+#include <chrono>
+#include <thread>
 
 #ifdef __unix__
 	#include <sys/socket.h>
@@ -78,7 +80,6 @@ class Controller {
 		std::string				  veriflowPort;
 		std::vector<Node*>		  domainNodes;
 		std::vector<Flow>		  sharedFlows;
-		bool					  activeThread;
 		Topology*				  referenceTopology;
 		char					  vfBuffer[1024];
 		bool					  vfFlag;

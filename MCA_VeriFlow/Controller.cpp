@@ -50,7 +50,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 
 	// Ensure we have a valid packet
 	if (packet.empty()) {
-		std::cout << "[CCPDN-ERROR]: Empty packet, cancelling read." << std::endl;
+		loggyErr("[CCPDN-ERROR]: Empty packet, cancelling read.\n");
 		return false;
 	}
 
@@ -79,48 +79,48 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		switch (header->type) {
 			case OFPT_HELLO: {
 				// Confirms connection was established
-				std::cout << "[CCPDN]: Received Hello." << std::endl;
+				loggy << "[CCPDN]: Received Hello." << std::endl;
 				break;
 			}
 			case OFPT_FEATURES_REQUEST: {
 				// Send a features reply -- required for OF protocol
-				std::cout << "[CCPDN]: Received Features_Request." << std::endl;
+				loggy << "[CCPDN]: Received Features_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(header->xid));
 			}
 			case OFPT_STATS_REQUEST: {
 				// Send a stats reply -- required for OF protocol
-				std::cout << "[CCPDN]: Received Stats_Request." << std::endl;
+				loggy << "[CCPDN]: Received Stats_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(header->xid));
 			}
 			case OFPT_BARRIER_REQUEST: {
 				// Send a barrier reply -- required for OF protocol
-				std::cout << "[CCPDN]: Received Barrier_Request." << std::endl;
+				loggy << "[CCPDN]: Received Barrier_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(header->xid));
 				break;
 			}
 			case OFPT_STATS_REPLY: {
 				// Handle stats reply -- used for listing flows
-				std::cout << "[CCPDN]: Received Stats_Reply." << std::endl;
+				loggy << "[CCPDN]: Received Stats_Reply." << std::endl;
 				ofp_stats_reply* reply = reinterpret_cast<ofp_stats_reply*>(packet.data() + offset);
 				handleStatsReply(reply);
 				break;
 			}
 			case OFPT_FLOW_MOD: {
 				// Handle flow modification -- used for verification
-				std::cout << "[CCPDN]: Received Flow_Mod." << std::endl;
+				loggy << "[CCPDN]: Received Flow_Mod." << std::endl;
 				ofp_flow_mod* mod = reinterpret_cast<ofp_flow_mod*>(packet.data() + offset);
 				handleFlowMod(mod);
 				break;
 			}
 			case OFPT_FLOW_REMOVED: {
 				// Handle flow removal -- used for verification
-				std::cout << "[CCPDN]: Received Flow_Removed." << std::endl;
+				loggy << "[CCPDN]: Received Flow_Removed." << std::endl;
 				ofp_flow_removed* removed = reinterpret_cast<ofp_flow_removed*>(packet.data() + offset);
 				handleFlowRemoved(removed);
 				break;
 			}
 			default:
-				std::cout << "[CCPDN]: Unknown message type received. Type: " << header->type << std::endl;
+				loggy << "[CCPDN]: Unknown message type received. Type: " << header->type << std::endl;
 		}
 
 		// Move to next message
@@ -178,7 +178,6 @@ Controller::Controller()
 	veriflowPort = "";
 	sockfd = -1;
 	sockvf = -1;
-	activeThread = false;
 	referenceTopology = nullptr;
 	ofFlag = false;
 }
@@ -191,7 +190,6 @@ Controller::Controller(Topology* t) {
 	veriflowPort = "";
 	sockfd = -1;
 	sockvf = -1;
-	activeThread = false;
 	referenceTopology = t;
 	ofFlag = false;
 }
@@ -383,6 +381,9 @@ bool Controller::addDomainNode(Node* n)
 
 bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 {
+	// Add a 50ms delay to prevent controller flooding
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
 	std::string msg = "";
 #ifdef __unix__
 	// Send the header
