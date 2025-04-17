@@ -260,6 +260,11 @@ bool Controller::linkController() {
 			std::cout << "[CCPDN-ERROR]: Could not connect to controller." << std::endl;
 			return false;
 		}
+
+		// Display successful connection with client sockaddr ip and port
+		char ip_str[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &server_address.sin_addr, ip_str, sizeof(ip_str));
+		loggy << "[CCPDN]: Successfully connected to controller at " << ip_str << ":" << ntohs(server_address.sin_port) << std::endl;
 	#endif
 
 	return true;
@@ -381,8 +386,8 @@ bool Controller::addDomainNode(Node* n)
 
 bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 {
-	// Add a 50ms delay to prevent controller flooding
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	// Add a 5ms delay to ensure we don't send too fast
+	std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
 	std::string msg = "";
 #ifdef __unix__
@@ -465,6 +470,9 @@ bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 	}
 
 	loggyMsg("[CCPDN]: Sent " + msg + " message.\n");
+#ifdef __unix__
+	loggy << "XID: " << ntohl(Header.xid) << std::endl;
+#endif
 
 	return true;
 }
