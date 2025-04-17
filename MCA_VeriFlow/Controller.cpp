@@ -4,7 +4,7 @@
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
 {
-	std::cout << "Start thread...\n";
+	loggy << "[CCPDN]: Starting controller thread...\n";
 	while (*run) {
 
 		// Clear our current flow list
@@ -57,9 +57,16 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 	size_t offset = 0;
 #ifdef __unix
 	while (offset < packet.size()) {
+
 		// Ensure we have at least a header?
 		if (packet.size() - offset < sizeof(ofp_header)) {
 			return false;
+		}
+
+		// Print the raw bytes that we are reading for this message
+		loggy << "[CCPDN]: Reading bytes: ";
+		for (size_t i = offset; i < packet.size(); ++i) {
+			loggy << std::hex << static_cast<int>(packet[i]) << " ";
 		}
 
 		// Parse the header
@@ -67,11 +74,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		uint8_t header_type = header->type;
 		uint16_t msg_length = ntohs(header->length);
 		uint32_t host_endian_XID = ntohl(header->xid);
-
-		// Ensure our message has valid length
-		if (msg_length < sizeof(ofp_header) || msg_length > packet.size() - offset) {
-			return false;
-		}
 
 		// Based on header type, process our packet
 		switch (header_type) {
