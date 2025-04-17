@@ -69,20 +69,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		uint16_t msg_length = ntohs(header->length);
 		uint32_t host_endian_XID = ntohl(header->xid);
 
-		// Print the raw bytes that we are reading for this message
-		loggy << "[CCPDN]: Reading bytes: ";
-		for (size_t i = offset; i < (msg_length + offset); ++i) {
-			loggy << std::hex << static_cast<int>(packet[i]) << " ";
-		}
-		loggy << std::endl;
-
-		// Print the header info
-		loggy << "[CCPDN]: Header Type: " << static_cast<int>(header_type) << std::endl;
-		loggy << "[CCPDN]: Header Length: " << msg_length << std::endl;
-		loggy << "[CCPDN]: Header XID: " << host_endian_XID << std::endl;
-		loggy << "[CCPDN]: Header Length (apply ntohs): " << ntohs(msg_length) << std::endl;
-		loggy << "[CCPDN]: Header Length (apply htons): " << htons(msg_length) << std::endl;
-
 		// Based on header type, process our packet
 		switch (header_type) {
 			case OFPT_HELLO: {
@@ -366,7 +352,13 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	bool sent = false;
+	int localCount = 0;
 	while (!ofFlag) {
+		// Timeout
+		if (localCount > 10) {
+			std::cout << "[CCPDN-ERROR]: Timeout waiting for flow list from controller" << std::endl;
+			return flows;
+		}
 		if (!sent) {
 			// Send this request to controller
 			if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
@@ -377,6 +369,8 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 				sent = true;
 			}
 		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		localCount++;
 	}
 
 	for (Flow f : sharedFlows) {
@@ -400,9 +394,6 @@ bool Controller::addDomainNode(Node* n)
 
 bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 {
-	// Add a 5ms delay to ensure we don't send too fast
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
 	std::string msg = "";
 #ifdef __unix__
 	// Send the header
@@ -484,9 +475,6 @@ bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 	}
 
 	loggyMsg("[CCPDN]: Sent " + msg + " message.\n");
-#ifdef __unix__
-	loggy << "XID: " << ntohl(Header.xid) << std::endl;
-#endif
 
 	return true;
 }
