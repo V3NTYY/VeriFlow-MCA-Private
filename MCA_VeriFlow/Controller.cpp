@@ -368,7 +368,12 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		}
 	}
 
-	flows = sharedFlows;
+	for (Flow f : sharedFlows) {
+		if (f.getSwitchIP() == IP) {
+			flows.push_back(f);
+		}
+	}
+
 	rstControllerFlag();
 	return flows;
 }
