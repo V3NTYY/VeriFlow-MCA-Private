@@ -15,6 +15,9 @@
 #include <stdint.h>
 #endif
 
+// Define CCPDN identifier
+#define CCPDN_IDENTIFIER 0x1CCC56BA9ABCDEF0
+
 // OpenFlow macros
 #ifdef SWIG
 #define OFP_ASSERT(EXPR)        /* SWIG can't handle OFP_ASSERT. */

@@ -5,6 +5,11 @@
 #define ntohll(x) (((uint64_t)ntohl((uint32_t)((x << 32) >> 32))) << 32) | ntohl(((uint32_t)(x >> 32)))
 #endif
 
+// Define htonll macro for host-byte conversion
+#ifndef htonll
+#define htonll(x) (((uint64_t)htonl((uint32_t)((x << 32) >> 32))) << 32) | htonl(((uint32_t)(x >> 32)))
+#endif
+
 std::vector<unsigned char> OpenFlowMessage::createHello()
 {
 	// Initialize header struct
@@ -78,6 +83,7 @@ std::vector<unsigned char> OpenFlowMessage::createFeaturesReply(uint32_t XID)
 	reply.header.xid = XID;
 
 	// Set the features -- buffers/tables should NOT be in network-endian order
+	reply.datapath_id = htonll(CCPDN_IDENTIFIER);
 	reply.n_buffers = 256;
 	reply.n_tables = 0xFF;
 	reply.capabilities = htonl(0xFFFF);
