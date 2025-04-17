@@ -58,6 +58,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 
 	// Create new ofp_stats_request object to return
 	ofp_stats_request* requestReturn;
+	std::memset(requestReturn, 0, sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
 	std::memcpy(requestReturn, buffer.data(), sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
 
 	// Print raw buffer data
