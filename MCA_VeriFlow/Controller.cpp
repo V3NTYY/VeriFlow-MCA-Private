@@ -62,15 +62,11 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			return false;
 		}
 
-		loggy << "Pre-XID: " << header->xid << std::endl;
-
 		// Parse the header
 		ofp_header* header = reinterpret_cast<ofp_header*>(packet.data() + offset);
 		uint8_t header_type = header->type;
 		uint16_t msg_length = ntohs(header->length);
 		uint32_t host_endian_XID = ntohl(header->xid);
-
-		loggy << "Post-XID: " << host_endian_XID << std::endl;
 
 		// Ensure our message has valid length
 		if (msg_length < sizeof(ofp_header) || msg_length > packet.size() - offset) {
