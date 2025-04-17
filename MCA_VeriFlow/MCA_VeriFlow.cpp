@@ -427,6 +427,9 @@ int main() {
 
     bool controller_linked = false;
     bool topology_initialized = false;
+
+    loggyMsg("Welcome to the CCPDN. If you do not see >>>, it may have been overshadowed by console output.\n");
+    loggyMsg("Type 'help' for a list of commands.\n\n");
    
     while (true) {
 
