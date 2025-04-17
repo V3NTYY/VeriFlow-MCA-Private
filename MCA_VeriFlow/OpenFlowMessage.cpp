@@ -24,54 +24,28 @@ ofp_header OpenFlowMessage::createHello()
 // TODO: FULLY FORMAT TO FIX PSH,ACK
 ofp_stats_request OpenFlowMessage::createFlowRequest()
 {
-	// Construct our stats_request, match and flow_stats_request structs
+	// Construct our ofp_stats_request struct, and populate it
 	ofp_stats_request request;
 	std::memset(&request, 0, sizeof(request));
-	ofp_match toMatch;
-	std::memset(&toMatch, 0, sizeof(toMatch));
-	ofp_flow_stats_request toBody;
-	std::memset(&toBody, 0, sizeof(toBody));
-
-	// XID can be random
-	uint32_t XID = (100 + (std::rand() % 4095 - 99));
-
-	// Calculate request size
-	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
-
 #ifdef __unix__
-	// Set our match wildcards
-	toMatch.wildcards = htonl((1 << 22) - 1); // Match all fields
-
-	// Set our body values (and attach match to body)
-	toBody.table_id = 0xFF; // Match all tables
-	toBody.out_port = htons(0xFFFF); // Match all output ports
-	toBody.match = toMatch;
-
-	// Set the values of our request header
 	request.header.version = OFP_10;
 	request.header.type = OFPT_STATS_REQUEST;
-	request.header.length = htons(request_size);
-	request.header.xid = htonl(XID);
-
-	// Set the values of our request
+	request.header.length = htons(sizeof(ofp_stats_request));
+	request.header.xid = htonl(100 + (std::rand() % 4095 - 99)); // XID is not used in hello message
 	request.type = htons(OFPST_FLOW);
-	request.flags = 0;
+	request.flags = htons(0); // No flags set
 #endif
 
-	// Allocate a buffer for the request size -- USE STD::BYTE OR THIS IS NOT LEGAL!
-	std::vector<std::byte> buffer(request_size);
-	std::memset(buffer.data(), 0, request_size);
-	// Copy the request into the buffer
+	// Create a byte vector to store our struct
+	std::vector<std::byte> buffer(sizeof(ofp_stats_request));
 	std::memcpy(buffer.data(), &request, sizeof(ofp_stats_request));
-	// Copy our body (flow_stats_request) into buffer
-	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &toBody, sizeof(ofp_flow_stats_request));
 
 	// Create new ofp_stats_request object to return
 	ofp_stats_request* requestReturn = reinterpret_cast<ofp_stats_request*>(buffer.data());
 
 	// Print raw buffer data
 	loggy << "Raw buffer data: " << std::endl;
-	for (size_t i = 0; i < request_size; ++i) {
+	for (size_t i = 0; i < buffer.size(); ++i) {
 		loggy << std::hex << static_cast<int>(buffer[i]) << " ";
 	}
 
