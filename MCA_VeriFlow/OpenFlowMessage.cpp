@@ -80,7 +80,7 @@ std::vector<unsigned char> OpenFlowMessage::createFeaturesReply(uint32_t XID)
 	reply.header.version = OFP_10;
 	reply.header.type = OFPT_FEATURES_REPLY;
 	reply.header.length = htons(sizeof(ofp_switch_features));
-	reply.header.xid = XID;
+	reply.header.xid = htonl(XID);
 
 	// Set the features -- buffers/tables should NOT be in network-endian order
 	reply.datapath_id = htonll(CCPDN_IDENTIFIER);

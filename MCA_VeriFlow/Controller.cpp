@@ -95,11 +95,13 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				// Send a features reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Features_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(host_endian_XID));
+				break;
 			}
 			case OFPT_STATS_REQUEST: {
 				// Send a stats reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Stats_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(host_endian_XID));
+				break;
 			}
 			case OFPT_BARRIER_REQUEST: {
 				// Send a barrier reply -- required for OF protocol
@@ -130,6 +132,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			}
 			default:
 				loggy << "[CCPDN]: Unknown message type received. Type: " << header_type << std::endl;
+				break;
 		}
 
 		// Move to next message
