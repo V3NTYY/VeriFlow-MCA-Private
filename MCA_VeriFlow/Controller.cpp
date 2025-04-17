@@ -394,7 +394,7 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 	}
 #endif
 
-#ifdef ___unix__
+#ifdef __unix__
 	std::cout << "Test header statistics (normal)\n";
 	std::cout << "Length: " << Header.length << std::endl;
 	std::cout << "XID: " << Header.xid << std::endl;
@@ -515,7 +515,7 @@ bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
 	}
 #endif
 
-#ifdef ___unix__
+#ifdef __unix__
 	std::cout << "Test header statistics (normal)\n";
 	std::cout << "Length: " << Stats_Reply.header.length << std::endl;
 	std::cout << "XID: " << Stats_Reply.header.xid << std::endl;
