@@ -37,7 +37,6 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 
 	// Calculate request size
 	uint16_t request_size = sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request);
-	loggy << "Request size: " << request_size << std::endl;
 
 #ifdef __unix__
 	// Set our match wildcards
@@ -59,10 +58,9 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	request.flags = 0;
 #endif
 
-	// Allocate a buffer for the request size
-	std::vector<uint8_t> buffer(request_size);
+	// Allocate a buffer for the request size -- USE STD::BYTE OR THIS IS NOT LEGAL!
+	std::vector<std::byte> buffer(request_size);
 	std::memset(buffer.data(), 0, request_size);
-
 	// Copy the request into the buffer
 	std::memcpy(buffer.data(), &request, sizeof(ofp_stats_request));
 	// Copy our body (flow_stats_request) into buffer
