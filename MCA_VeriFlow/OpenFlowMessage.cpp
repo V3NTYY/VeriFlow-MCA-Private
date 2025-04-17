@@ -21,6 +21,7 @@ ofp_header OpenFlowMessage::createHello()
     return header;
 }
 
+// TODO: FULLY FORMAT TO FIX PSH,ACK
 ofp_stats_request OpenFlowMessage::createFlowRequest()
 {
 	ofp_stats_request request;
@@ -95,6 +96,7 @@ ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
 	return reply;
 }
 
+// TODO: FULLY FORMAT TO FIX PSH,ACK
 ofp_stats_reply OpenFlowMessage::createDescStatsReply(uint32_t XID) {
     // Create the stats reply
     ofp_stats_reply reply;
@@ -134,6 +136,7 @@ ofp_stats_reply OpenFlowMessage::createDescStatsReply(uint32_t XID) {
     return reply;
 }
 
+// TODO: FULLY FORMAT TO FIX PSH,ACK
 ofp_header OpenFlowMessage::createBarrierReply(uint32_t XID)
 {
     ofp_header header;
