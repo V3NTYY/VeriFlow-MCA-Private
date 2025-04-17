@@ -56,17 +56,11 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 
 	size_t offset = 0;
 #ifdef __unix
-	while (offset < packet.size()) {
+	while (offset <= packet.size()) {
 
 		// Ensure we have at least a header?
 		if (packet.size() - offset < sizeof(ofp_header)) {
 			return false;
-		}
-
-		// Print the raw bytes that we are reading for this message
-		loggy << "[CCPDN]: Reading bytes: ";
-		for (size_t i = offset; i < packet.size(); ++i) {
-			loggy << std::hex << static_cast<int>(packet[i]) << " ";
 		}
 
 		// Parse the header
@@ -74,6 +68,20 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		uint8_t header_type = header->type;
 		uint16_t msg_length = ntohs(header->length);
 		uint32_t host_endian_XID = ntohl(header->xid);
+
+		// Print the raw bytes that we are reading for this message
+		loggy << "[CCPDN]: Reading bytes: ";
+		for (size_t i = offset; i < (msg_length + offset); ++i) {
+			loggy << std::hex << static_cast<int>(packet[i]) << " ";
+		}
+		loggy << std::endl;
+
+		// Print the header info
+		loggy << "[CCPDN]: Header Type: " << static_cast<int>(header_type) << std::endl;
+		loggy << "[CCPDN]: Header Length: " << msg_length << std::endl;
+		loggy << "[CCPDN]: Header XID: " << host_endian_XID << std::endl;
+		loggy << "[CCPDN]: Header Length (apply ntohs): " << ntohs(msg_length) << std::endl;
+		loggy << "[CCPDN]: Header Length (apply htons): " << htons(msg_length) << std::endl;
 
 		// Based on header type, process our packet
 		switch (header_type) {
