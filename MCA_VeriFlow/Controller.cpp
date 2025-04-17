@@ -76,13 +76,10 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			return false;
 		}
 
-		// For debugging purposes, print out the contents
+
+		// For debugging purposes, print the packet number
+		std::cout << "OF MSG #" << count << " of packet." << std::endl; 
 		count++;
-		std::cout << "Packet contents: " << count << std::endl;
-		std::cout << "Version: " << static_cast<int>(header->version) << std::endl;
-		std::cout << "Type: " << static_cast<int>(header->type) << std::endl;
-		std::cout << "Length: " << static_cast<int>(header->length) << std::endl;
-		std::cout << "XID: " << static_cast<int>(header->xid) << std::endl;
 
 		// Based on header type, process our packet
 		switch (header->type) {
@@ -129,7 +126,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				break;
 			}
 			default:
-				std::cout << "[CCPDN]: Unknown message type received." << std::endl;
+				std::cout << "[CCPDN]: Unknown message type received. Type: " << header->type << std::endl;
 		}
 
 		// Move to next message
@@ -397,15 +394,17 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 	}
 #endif
 
-	// Print out the header contents for debugging
-	std::cout << "Packet contents TRANSMITTED: " << std::endl;
-	std::cout << "Version: " << static_cast<int>(Header.version) << std::endl;
-	std::cout << "Type: " << static_cast<int>(Header.type) << std::endl;
-#ifdef __unix__
-	std::cout << "Length: " << static_cast<int>(ntohl(Header.length)) << std::endl;
-	std::cout << "XID: " << static_cast<int>(ntohl(Header.xid)) << std::endl;
+#ifdef ___unix__
+	std::cout << "Test header statistics (normal)\n";
+	std::cout << "Length: " << Header.length << std::endl;
+	std::cout << "XID: " << Header.xid << std::endl;
+	std::cout << "Test header statistics (ntohl)\n";
+	std::cout << "Length: " << ntohl(Header.length) << std::endl;
+	std::cout << "XID: " << ntohl(Header.xid) << std::endl;
+	std::cout << "Test header statistics (htonl)\n";
+	std::cout << "Length: " << htonl(Header.length) << std::endl;
+	std::cout << "XID: " << htonl(Header.xid) << std::endl;
 #endif
-
 
 	// Based on type, print specific message
 	switch (Header.type) {
@@ -514,6 +513,18 @@ bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
 		std::cerr << "[CCPDN-ERROR]: Failed to send Stats Reply" << std::endl;
 		return false;
 	}
+#endif
+
+#ifdef ___unix__
+	std::cout << "Test header statistics (normal)\n";
+	std::cout << "Length: " << Stats_Reply.header.length << std::endl;
+	std::cout << "XID: " << Stats_Reply.header.xid << std::endl;
+	std::cout << "Test header statistics (ntohl)\n";
+	std::cout << "Length: " << ntohl(Stats_Reply.header.length) << std::endl;
+	std::cout << "XID: " << ntohl(Stats_Reply.header.xid) << std::endl;
+	std::cout << "Test header statistics (htonl)\n";
+	std::cout << "Length: " << htonl(Stats_Reply.header.length) << std::endl;
+	std::cout << "XID: " << htonl(Stats_Reply.header.xid) << std::endl;
 #endif
 
 	std::cout << "[CCPDN]: Sent Stats Reply.\n";
