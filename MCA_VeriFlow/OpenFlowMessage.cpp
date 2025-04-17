@@ -36,7 +36,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	// Populate ofp_stats_request struct fields
 	request.header.version = OFP_10;
 	request.header.type = OFPT_STATS_REQUEST;
-	request.header.length = htons(sizeof(ofp_stats_request));
+	request.header.length = htons(sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
 	request.header.xid = htonl(100 + (std::rand() % 4095 - 99)); // XID is not used in hello message
 	request.type = htons(OFPST_FLOW);
 	request.flags = htons(0); // No flags set
@@ -57,7 +57,8 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &flow_request, sizeof(ofp_flow_stats_request));
 
 	// Create new ofp_stats_request object to return
-	ofp_stats_request* requestReturn = reinterpret_cast<ofp_stats_request*>(buffer.data());
+	ofp_stats_request* requestReturn;
+	std::memcpy(requestReturn, buffer.data(), sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
 
 	// Print raw buffer data
 	loggy << "Raw buffer data: " << std::endl;
@@ -67,7 +68,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 
 #ifdef __unix__
 	// DEBUG: Print requestReturn data to ensure its correct
-	loggy << "Request header version: " << requestReturn->header.version << std::endl;
+	loggy << "\nRequest header version: " << requestReturn->header.version << std::endl;
 	loggy << "Request header type: " << requestReturn->header.type << std::endl;
 	loggy << "Request header length: " << ntohs(requestReturn->header.length) << std::endl;
 	loggy << "Request header xid: " << ntohl(requestReturn->header.xid) << std::endl;
