@@ -61,7 +61,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 #endif
 
 	// Allocate a buffer for the request size
-	std::vector<uint8_t> buffer(request_size);
+	std::vector<ofp_stats_request> buffer(request_size);
 	std::memset(buffer.data(), 0, request_size);
 
 	// Copy the request into the buffer
