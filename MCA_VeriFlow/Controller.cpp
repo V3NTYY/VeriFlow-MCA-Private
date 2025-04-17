@@ -399,10 +399,10 @@ bool Controller::sendOpenFlowMessage(ofp_header Header)
 	std::cout << "Length: " << Header.length << std::endl;
 	std::cout << "XID: " << Header.xid << std::endl;
 	std::cout << "Test header statistics (ntohl)\n";
-	std::cout << "Length: " << ntohl(Header.length) << std::endl;
+	std::cout << "Length: " << ntohs(Header.length) << std::endl;
 	std::cout << "XID: " << ntohl(Header.xid) << std::endl;
 	std::cout << "Test header statistics (htonl)\n";
-	std::cout << "Length: " << htonl(Header.length) << std::endl;
+	std::cout << "Length: " << htons(Header.length) << std::endl;
 	std::cout << "XID: " << htonl(Header.xid) << std::endl;
 #endif
 
@@ -520,10 +520,10 @@ bool Controller::sendOpenFlowMessage(ofp_stats_reply Stats_Reply)
 	std::cout << "Length: " << Stats_Reply.header.length << std::endl;
 	std::cout << "XID: " << Stats_Reply.header.xid << std::endl;
 	std::cout << "Test header statistics (ntohl)\n";
-	std::cout << "Length: " << ntohl(Stats_Reply.header.length) << std::endl;
+	std::cout << "Length: " << ntohs(Stats_Reply.header.length) << std::endl;
 	std::cout << "XID: " << ntohl(Stats_Reply.header.xid) << std::endl;
 	std::cout << "Test header statistics (htonl)\n";
-	std::cout << "Length: " << htonl(Stats_Reply.header.length) << std::endl;
+	std::cout << "Length: " << htons(Stats_Reply.header.length) << std::endl;
 	std::cout << "XID: " << htonl(Stats_Reply.header.xid) << std::endl;
 #endif
 
