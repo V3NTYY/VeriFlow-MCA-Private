@@ -313,8 +313,8 @@ OFP_ASSERT(sizeof(struct ofp_desc_stats) == 1056);
 
 class OpenFlowMessage {
 	public:
-		// Message creation
-		static std::vector<unsigned char> createHello();
+		// Message creation -- all XIDS are expected to be passed in as host-endian order
+		static std::vector<unsigned char> createHello(uint32_t XID);
 		static std::vector<unsigned char> createFlowRequest();
 		static std::vector<unsigned char> createFeaturesReply(uint32_t XID);
 		static std::vector<unsigned char> createDescStatsReply(uint32_t XID);

@@ -62,13 +62,15 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			return false;
 		}
 
+		loggy << "Pre-XID: " << header->xid << std::endl;
+
 		// Parse the header
 		ofp_header* header = reinterpret_cast<ofp_header*>(packet.data() + offset);
+		uint8_t header_type = header->type;
 		uint16_t msg_length = ntohs(header->length);
+		uint32_t host_endian_XID = ntohl(header->xid);
 
-		// Reverse network endian order of length & xid to host order
-		header->length = ntohs(header->length);
-		header->xid = ntohl(header->xid);
+		loggy << "Post-XID: " << host_endian_XID << std::endl;
 
 		// Ensure our message has valid length
 		if (msg_length < sizeof(ofp_header) || msg_length > packet.size() - offset) {
@@ -76,26 +78,27 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		}
 
 		// Based on header type, process our packet
-		switch (header->type) {
+		switch (header_type) {
 			case OFPT_HELLO: {
 				// Confirms connection was established
 				loggy << "[CCPDN]: Received Hello." << std::endl;
+				sendOpenFlowMessage(OpenFlowMessage::createHello(host_endian_XID));
 				break;
 			}
 			case OFPT_FEATURES_REQUEST: {
 				// Send a features reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Features_Request." << std::endl;
-				sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(header->xid));
+				sendOpenFlowMessage(OpenFlowMessage::createFeaturesReply(host_endian_XID));
 			}
 			case OFPT_STATS_REQUEST: {
 				// Send a stats reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Stats_Request." << std::endl;
-				sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(header->xid));
+				sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(host_endian_XID));
 			}
 			case OFPT_BARRIER_REQUEST: {
 				// Send a barrier reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Barrier_Request." << std::endl;
-				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(header->xid));
+				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(host_endian_XID));
 				break;
 			}
 			case OFPT_STATS_REPLY: {
@@ -120,7 +123,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				break;
 			}
 			default:
-				loggy << "[CCPDN]: Unknown message type received. Type: " << header->type << std::endl;
+				loggy << "[CCPDN]: Unknown message type received. Type: " << header_type << std::endl;
 		}
 
 		// Move to next message
@@ -261,10 +264,13 @@ bool Controller::linkController() {
 			return false;
 		}
 
-		// Display successful connection with client sockaddr ip and port
-		char ip_str[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &server_address.sin_addr, ip_str, sizeof(ip_str));
-		loggy << "[CCPDN]: Successfully connected to controller at " << ip_str << ":" << ntohs(server_address.sin_port) << std::endl;
+		// Display successful connection with host sockaddr ip and port
+		struct sockaddr_in local_address;
+		socklen_t address_length = sizeof(local_address);
+		if (getsockname(sockfd, (struct sockaddr*)&local_address, &address_length) == 0) {
+			loggy << "[CCPDN]: Successfully connected to controller using port " << ntohs(local_address.sin_port) << std::endl;
+		}
+
 	#endif
 
 	return true;
@@ -280,7 +286,6 @@ bool Controller::startController(bool* thread)
 
 	// Used for linking and confirming controller. Does not start the CCPDN service
 	if (linkController()) {
-		sendOpenFlowMessage(OpenFlowMessage::createHello());
 		return true;
 	}
 	return false;

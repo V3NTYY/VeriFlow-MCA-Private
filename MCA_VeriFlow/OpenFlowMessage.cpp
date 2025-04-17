@@ -10,7 +10,7 @@
 #define htonll(x) (((uint64_t)htonl((uint32_t)((x << 32) >> 32))) << 32) | htonl(((uint32_t)(x >> 32)))
 #endif
 
-std::vector<unsigned char> OpenFlowMessage::createHello()
+std::vector<unsigned char> OpenFlowMessage::createHello(uint32_t XID)
 {
 	// Initialize header struct
 	ofp_header header;
@@ -21,7 +21,7 @@ std::vector<unsigned char> OpenFlowMessage::createHello()
 	header.version = OFP_10;
 	header.type = OFPT_HELLO;
 	header.length = htons(sizeof(ofp_header));
-	header.xid = htonl(100 + (std::rand() % 4095 - 99)); // XID is not used in hello message
+	header.xid = htonl(XID);
 #endif
 	
     // Create an unsigned char (blessed casting type) vector to store our struct
