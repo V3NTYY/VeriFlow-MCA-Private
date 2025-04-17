@@ -40,7 +40,6 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	loggy << "Request size: " << request_size << std::endl;
 
 #ifdef __unix__
-
 	// Set our match wildcards
 	toMatch.wildcards = htonl((1 << 22) - 1); // Match all fields
 
@@ -61,7 +60,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 #endif
 
 	// Allocate a buffer for the request size
-	std::vector<ofp_stats_request> buffer(request_size);
+	std::vector<uint8_t> buffer(request_size);
 	std::memset(buffer.data(), 0, request_size);
 
 	// Copy the request into the buffer
@@ -70,18 +69,24 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &toBody, sizeof(ofp_flow_stats_request));
 
 	// Create new ofp_stats_request object to return
-	ofp_stats_request requestReturn = *reinterpret_cast<ofp_stats_request*>(buffer.data());
+	ofp_stats_request* requestReturn = reinterpret_cast<ofp_stats_request*>(buffer.data());
+
+	// Print raw buffer data
+	loggy << "Raw buffer data: " << std::endl;
+	for (size_t i = 0; i < request_size; ++i) {
+		loggy << std::hex << static_cast<int>(buffer[i]) << " ";
+	}
 
 #ifdef __unix__
 	// DEBUG: Print requestReturn data to ensure its correct
-	loggy << "Request header version: " << requestReturn.header.version << std::endl;
-	loggy << "Request header type: " << requestReturn.header.type << std::endl;
-	loggy << "Request header length: " << ntohs(requestReturn.header.length) << std::endl;
-	loggy << "Request header xid: " << ntohl(requestReturn.header.xid) << std::endl;
-	loggy << "Request type: " << ntohs(requestReturn.type) << std::endl;
-	loggy << "Request flags: " << ntohs(requestReturn.flags) << std::endl;
+	loggy << "Request header version: " << requestReturn->header.version << std::endl;
+	loggy << "Request header type: " << requestReturn->header.type << std::endl;
+	loggy << "Request header length: " << ntohs(requestReturn->header.length) << std::endl;
+	loggy << "Request header xid: " << ntohl(requestReturn->header.xid) << std::endl;
+	loggy << "Request type: " << ntohs(requestReturn->type) << std::endl;
+	loggy << "Request flags: " << ntohs(requestReturn->flags) << std::endl;
 
-	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(&requestReturn) + sizeof(ofp_stats_reply);
+	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(requestReturn) + sizeof(ofp_stats_reply);
 
 	// Cast ptr to access flow_stats struct
 	ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
@@ -103,7 +108,7 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	loggy << "Flow stats actions: " << flow_stats->actions[0].type << std::endl;
 #endif
 
-	return requestReturn;
+	return *requestReturn;
 }
 
 ofp_switch_features OpenFlowMessage::createFeaturesReply(uint32_t XID)
