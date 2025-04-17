@@ -86,12 +86,6 @@ ofp_stats_request OpenFlowMessage::createFlowRequest()
 	// Cast ptr to access flow_stats struct
 	ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(ofp_flow_stats_ptr);
 
-	// Process length of current entry -- handle end of ptr
-	size_t flow_length = ntohs(flow_stats->length);
-	if (flow_length == 0 || flow_length > body_size) {
-		break;
-	}
-
 	// Debug print our flow 2 send
 	loggy << "Match fields: " << std::endl;
 	loggy << "Match wildcards: " << ntohl(flow_stats->match.wildcards) << std::endl;
