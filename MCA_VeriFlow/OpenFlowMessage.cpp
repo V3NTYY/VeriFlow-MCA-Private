@@ -24,21 +24,37 @@ ofp_header OpenFlowMessage::createHello()
 // TODO: FULLY FORMAT TO FIX PSH,ACK
 ofp_stats_request OpenFlowMessage::createFlowRequest()
 {
-	// Construct our ofp_stats_request struct, and populate it
+	// Construct our ofp_stats_request struct, and initialize it
 	ofp_stats_request request;
-	std::memset(&request, 0, sizeof(request));
+	std::memset(&request, 0, sizeof(ofp_stats_request));
+
+	// Construct our ofp_flow_stats_request struct, and initialize it as well
+	ofp_flow_stats_request flow_request;
+	std::memset(&flow_request, 0, sizeof(ofp_flow_stats_request));
+
 #ifdef __unix__
+	// Populate ofp_stats_request struct fields
 	request.header.version = OFP_10;
 	request.header.type = OFPT_STATS_REQUEST;
 	request.header.length = htons(sizeof(ofp_stats_request));
 	request.header.xid = htonl(100 + (std::rand() % 4095 - 99)); // XID is not used in hello message
 	request.type = htons(OFPST_FLOW);
 	request.flags = htons(0); // No flags set
+
+	// Populate our ofp_flow_stats_request struct fields
+	flow_request.match.wildcards = htonl((1 << 22) - 1); // Match all fields
+	flow_request.match.in_port = htons(0); // Match all ports
+	flow_request.table_id = 0xFF; // Match all tables
+	flow_request.pad = 0; // Padding to align to 32 bits
+	flow_request.out_port = 0xFFFF; // Match all ports. HTONL not necessary since all bytes are the same here.
 #endif
 
 	// Create an unsigned char (blessed casting type) vector to store our struct
-	std::vector<unsigned char> buffer(sizeof(ofp_stats_request));
+	std::vector<unsigned char> buffer(sizeof(ofp_stats_request) + sizeof(ofp_flow_stats_request));
+	// Store the first 12 bytes (ofp_stats_request struct, byte 1-12)
 	std::memcpy(buffer.data(), &request, sizeof(ofp_stats_request));
+	// Store the next 44 bytes (ofp_flow_stats_request struct, byte 13-56)
+	std::memcpy(buffer.data() + sizeof(ofp_stats_request), &flow_request, sizeof(ofp_flow_stats_request));
 
 	// Create new ofp_stats_request object to return
 	ofp_stats_request* requestReturn = reinterpret_cast<ofp_stats_request*>(buffer.data());
