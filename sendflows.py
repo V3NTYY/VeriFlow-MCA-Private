@@ -5,11 +5,13 @@ from pox.lib.util import dpid_to_str
 log = core.getLogger()
 
 def _handle_ConnectionUp(event):
+    log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.dpid))
     # handle flow stat requests
     event.connection.addListeners(_OpenFlowMessageHandler())
 
 class _OpenFlowMessageHandler(object):
     def __init__(self):
+        log.debug("OpenFlowMessageHandler initialized")
         pass
 
     def _handle_PacketIn(self, event):
