@@ -762,6 +762,7 @@ int main() {
                 loggy << "Action: " << (f.actionType() ? "Forward" : "Drop") << std::endl;
                 loggy << std::endl;
             }
+            loggy << std::endl;
         }
 
         // Invalid response

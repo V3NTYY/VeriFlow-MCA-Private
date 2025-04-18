@@ -4,11 +4,6 @@ from pox.lib.util import dpid_to_str
 
 log = core.getLogger()
 
-def _handle_ConnectionUp(event):
-    log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.dpid))
-    # handle flow stat requests
-    event.connection.addListeners(_OpenFlowMessageHandler())
-
 class _OpenFlowMessageHandler(object):
     def __init__(self):
         log.debug("OpenFlowMessageHandler initialized")
@@ -33,5 +28,5 @@ class _OpenFlowMessageHandler(object):
         log.debug("Unknown event received from CCPDN: {}".format(event.ofp))
 
 def launch():
-    core.openflow.addListenerByName("ConnectionUp", _handle_ConnectionUp)
+    core.registerNew(_OpenFlowMessageHandler)
     log.info("POX/CCPDN controller script loaded and listening for packets...")
