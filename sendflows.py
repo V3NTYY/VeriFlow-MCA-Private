@@ -5,9 +5,7 @@ from pox.lib.util import dpid_to_str
 log = core.getLogger()
 
 def _handle_ConnectionUp(event):
-    log.info("CONNECTION established with switch: {}".format(dpid_to_str(event.dpid)))
-
-    # intercept flow messages
+    # handle flow stat requests
     event.connection.addListeners(_OpenFlowMessageHandler())
 
 class _OpenFlowMessageHandler(object):
