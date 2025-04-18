@@ -433,6 +433,11 @@ int main() {
    
     while (true) {
 
+        // If link_controller is sending packets/receiving packets, wait for that to finish
+        while (mca_veriflow->controller.linking) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
         std::string input;
         loggyMsg(">>> ");
         std::getline(std::cin, input);

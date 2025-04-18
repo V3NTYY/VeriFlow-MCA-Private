@@ -71,6 +71,8 @@ class Controller {
 		void rstVeriFlowFlag();
 		Flow adjustCrossTopFlow(Flow f);
 
+		bool					  linking;
+
 	private:
 		int						  sockfd;
 		int						  sockvf;

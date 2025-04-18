@@ -93,6 +93,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				// Send a barrier reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Barrier_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(host_endian_XID));
+				linking = false;
 				break;
 			}
 			case OFPT_STATS_REPLY: {
@@ -178,6 +179,7 @@ Controller::Controller()
 	sockvf = -1;
 	referenceTopology = nullptr;
 	ofFlag = false;
+	linking = false;
 }
 
 // Constructor
@@ -190,6 +192,7 @@ Controller::Controller(Topology* t) {
 	sockvf = -1;
 	referenceTopology = t;
 	ofFlag = false;
+	linking = false;
 }
 
 // Destructor
@@ -239,10 +242,12 @@ bool Controller::linkVeriFlow()
 
 bool Controller::linkController() {
 
+	linking = true;
 	#ifdef __unix__
 		// Setup socket
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd < 0) {
+			linking = false;
 			std::cout << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
 			return false;
 		}
@@ -255,6 +260,7 @@ bool Controller::linkController() {
 
 		// Connect to the controller
 		if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			linking = false;
 			std::cout << "[CCPDN-ERROR]: Could not connect to controller." << std::endl;
 			return false;
 		}

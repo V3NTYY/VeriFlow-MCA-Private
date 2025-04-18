@@ -7,10 +7,14 @@ log = core.getLogger()
 class _OpenFlowMessageHandler(object):
     def __init__(self):
         core.openflow.addListeners(self)
+        core.openflow.addListenerByName("StatsRequest", self._handle_StatsRequest)
         log.debug("OpenFlowMessageHandler initialized")
 
     def _handle_ConnectionUp (self, event):
         log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.connection))
+
+    def _inspect_raw_message(self, event):
+        log.debug("Raw message received from CCPDN: {}".format(event.raw))
 
     def _handle_PacketIn(self, event):
         log.debug("PacketIn event received from CCPDN: {}".format(event.parsed))
