@@ -7,7 +7,7 @@ log = core.getLogger()
 
 class _OpenFlowMessageHandler(object):
     def __init__(self):
-        self.connections() = set()
+        self.connections = set()
         core.openflow.addListeners(self)
         log.debug("OpenFlowMessageHandler initialized")
 
