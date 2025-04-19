@@ -179,7 +179,6 @@ class PacketIn (Event):
     self.data = ofp.data
     self._parsed = None
     self.dpid = connection.dpid
-    print("PacketIn: data={}".format(self.data))
 
   def parse (self):
     if self._parsed is None:
@@ -325,6 +324,12 @@ class ConnectionDict (dict):
   def iter_dpids (self):
     return iter(self.keys())
 
+class StatsRequest(Event):
+    def __init__(self, connection, ofp):
+        self.connection = connection
+        self.ofp = ofp
+        print("StatsRequest: ", ofp)
+
 
 class OpenFlowNexus (EventMixin):
   """
@@ -352,6 +357,7 @@ class OpenFlowNexus (EventMixin):
     QueueStatsReceived,
     FlowRemoved,
     ConfigurationReceived,
+    StatsRequest,
   ])
 
   # Bytes to send to controller when a packet misses all flows

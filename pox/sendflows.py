@@ -9,17 +9,11 @@ class _OpenFlowMessageHandler(object):
     def __init__(self):
         core.openflow.addListeners(self)
         core.openflow.addListenerByName("ConnectionUp", self._handle_ConnectionUp)
-        core.openflow.addListenerByName("PacketIn", self._handle_PacketIn)
+        core.openflow.addListenerByName("StatsRequest", self._handle_StatsRequest)
         log.debug("OpenFlowMessageHandler initialized")
 
     def _handle_ConnectionUp (self, event):
         log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.connection))
-
-    def _handle_OpenFlow_Packet(self, event):
-        log.debug("OpenFlow Packet event received from CCPDN: {}".format(event.ofp))
-
-    def _handle_PacketIn(self, event):
-        log.debug("PacketIn event received from CCPDN: {}".format(event.parsed))
 
     def _handle_FlowMod(self, event):
         log.debug("FlowMod event received from CCPDN: {}".format(event.ofp))

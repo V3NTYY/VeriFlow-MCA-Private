@@ -2595,6 +2595,7 @@ class ofp_stats_request (ofp_header):
     self._body = b''
     self._body_packed = None # Cache
 
+    print("stats request!")
     initHelper(self, kw)
 
   def pack (self):
@@ -3759,7 +3760,6 @@ class ofp_packet_in (ofp_header):
       self._total_len = kw.pop('total_len')
 
     initHelper(self, kw)
-    print("ofp_packet_in init", self._buffer_id, self._total_len)
 
   def _validate (self):
     if self.data and (self.total_len < len(self.data)):
