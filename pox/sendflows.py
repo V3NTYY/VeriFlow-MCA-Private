@@ -7,11 +7,13 @@ log = core.getLogger()
 
 class _OpenFlowMessageHandler(object):
     def __init__(self):
+        self.connections() = set()
         core.openflow.addListeners(self)
         log.debug("OpenFlowMessageHandler initialized")
 
     def _handle_ConnectionUp (self, event):
         log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.connection))
+        self.connections.add(event.connection)
 
     def _handle_FlowMod(self, event):
         log.debug("FlowMod event received from CCPDN: {}".format(event.ofp))
@@ -27,6 +29,9 @@ class _OpenFlowMessageHandler(object):
 
     def _handle_FeaturesReply(self, event):
         log.debug("FeaturesReply event received from CCPDN: {}".format(event.ofp))
+
+    def _handle_BarrierIn(self, event):
+        log.debug("BarrierIn event received from CCPDN: {}".format(event.ofp))
 
     def _handle_Unknown(self, event):
         log.debug("Unknown event received from CCPDN: {}".format(event.ofp))
