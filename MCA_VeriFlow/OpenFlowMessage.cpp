@@ -136,6 +136,38 @@ std::vector<unsigned char> OpenFlowMessage::createDescStatsReply(uint32_t XID) {
 	return buffer;
 }
 
+std::vector<unsigned char> OpenFlowMessage::createFlowStatsReply(uint32_t XID)
+{
+	// Initialize the stats_reply struct
+    ofp_stats_reply reply;
+    std::memset(&reply, 0, sizeof(reply));
+
+	// Initialize the ofp_flow_stats struct
+    ofp_flow_stats flow;
+    std::memset(&flow, 0, sizeof(flow));
+
+#ifdef __unix__
+    // Set the OpenFlow header
+    reply.header.version = OFP_10;
+    reply.header.type = OFPT_STATS_REPLY;
+    reply.header.xid = htonl(XID);
+	reply.header.length = htons(sizeof(ofp_stats_reply) + sizeof(ofp_flow_stats));
+
+    // Set the stats reply type to OFPST_FLOW
+    reply.type = htons(OFPST_FLOW);
+    reply.flags = 0; // No more replies (set OFPSF_REPLY_MORE if there are more parts)
+#endif
+
+    // Create an unsigned char (blessed casting type) vector to store our struct
+	std::vector<unsigned char> buffer(sizeof(ofp_stats_reply) + sizeof(ofp_flow_stats));
+	// Store the bytes (ofp_stats_reply struct)
+	std::memcpy(buffer.data(), &reply, sizeof(ofp_stats_reply));
+	// Store the extra bytes (ofp_desc_stats struct)
+	std::memcpy(buffer.data() + sizeof(ofp_stats_reply), &flow, sizeof(ofp_flow_stats));
+
+	return buffer;
+}
+
 std::vector<unsigned char> OpenFlowMessage::createBarrierReply(uint32_t XID)
 {
     ofp_header header;

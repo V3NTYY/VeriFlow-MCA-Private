@@ -318,6 +318,7 @@ class OpenFlowMessage {
 		static std::vector<unsigned char> createFlowRequest();
 		static std::vector<unsigned char> createFeaturesReply(uint32_t XID);
 		static std::vector<unsigned char> createDescStatsReply(uint32_t XID);
+		static std::vector<unsigned char> createFlowStatsReply(uint32_t XID);
 		static std::vector<unsigned char> createBarrierReply(uint32_t XID);
 
 		// Helper methods
