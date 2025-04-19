@@ -12,6 +12,7 @@ class _OpenFlowMessageHandler(object):
 
     def _handle_ConnectionUp (self, event):
         log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.connection))
+        event.connection.addListeners(self)
 
     def _handle_FlowMod(self, event):
         log.debug("FlowMod event received from CCPDN: {}".format(event.ofp))
@@ -19,7 +20,7 @@ class _OpenFlowMessageHandler(object):
     def _handle_FlowRemoved(self, event):
         log.debug("FlowRemoved event received from CCPDN: {}".format(event.ofp))
 
-    def _handle_stats_request(self, event):
+    def _handle_StatsRequest(self, event):
         log.debug("StatsRequest event received from CCPDN: {}".format(event.ofp))
 
     def _handle_StatsReply(self, event):
