@@ -8,8 +8,6 @@ log = core.getLogger()
 class _OpenFlowMessageHandler(object):
     def __init__(self):
         core.openflow.addListeners(self)
-        core.openflow.addListenerByName("ConnectionUp", self._handle_ConnectionUp)
-        core.openflow.addListenerByName("StatsRequest", self._handle_StatsRequest)
         log.debug("OpenFlowMessageHandler initialized")
 
     def _handle_ConnectionUp (self, event):
@@ -23,6 +21,9 @@ class _OpenFlowMessageHandler(object):
 
     def _handle_StatsRequest(self, event):
         log.debug("StatsRequest event received from CCPDN: {}".format(event.ofp))
+
+    def _handle_StatsReply(self, event):
+        log.debug("StatsReply event received from CCPDN: {}".format(event.ofp))
 
     def _handle_FeaturesReply(self, event):
         log.debug("FeaturesReply event received from CCPDN: {}".format(event.ofp))
