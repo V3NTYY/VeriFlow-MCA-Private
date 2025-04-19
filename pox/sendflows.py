@@ -1,6 +1,7 @@
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
 from pox.lib.util import dpid_to_str
+from pox.lib.revent import EventMixin
 
 log = core.getLogger()
 

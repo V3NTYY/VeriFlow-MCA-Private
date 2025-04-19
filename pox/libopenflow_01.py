@@ -3747,6 +3747,7 @@ class ofp_barrier_request (ofp_header):
 class ofp_packet_in (ofp_header):
   _MIN_LENGTH = 18
   def __init__ (self, **kw):
+    _log.debug("ofp_packet_in!")
     ofp_header.__init__(self)
 
     self.in_port = OFPP_NONE

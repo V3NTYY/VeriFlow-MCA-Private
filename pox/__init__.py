@@ -174,7 +174,7 @@ class PacketIn (Event):
   """
   def __init__ (self, connection, ofp):
     log = connection.log
-    log.debug("PacketIn: %s" % ofp.show())
+    log.debug("PacketIn!")
 
     self.connection = connection
     self.ofp = ofp
