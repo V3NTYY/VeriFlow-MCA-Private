@@ -124,7 +124,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				break;
 			}
 			default:
-				loggy << "[CCPDN]: Unknown message type received. Type: " << header_type << std::endl;
+				loggy << "[CCPDN]: Unknown message type received. Type: " << std::to_string(static_cast<int>(header_type)) << std::endl;
 				break;
 		}
 
