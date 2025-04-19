@@ -86,6 +86,7 @@ class Controller {
 		char					  vfBuffer[1024];
 		bool					  vfFlag;
 		bool					  ofFlag;
+		bool					  pause_rst;
 
 		// Private Functions
 		bool linkVeriFlow();

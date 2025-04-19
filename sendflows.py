@@ -36,6 +36,12 @@ class _OpenFlowMessageHandler(object):
     def _handle_Unknown(self, event):
         log.debug("Unknown event received from CCPDN: {}".format(event.ofp))
 
+def raw_message_handler(event):
+    log.debug("Raw message: {}".format(event.raw))
+    core.openflow.raw_message(event)
+
 def launch():
+    core.openflow.addListenerByName("RawOFMessage", raw_message_handler)
+
     core.registerNew(_OpenFlowMessageHandler)
     log.info("POX/CCPDN controller script loaded and listening for packets...")

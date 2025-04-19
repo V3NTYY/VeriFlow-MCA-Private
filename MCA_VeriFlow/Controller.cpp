@@ -22,6 +22,12 @@ void Controller::controllerThread(bool* run)
 			parseFlow(f);
 		}
 
+		// Use pause flag to hold off on using rstControllerFlag until command says its ok
+		// Only command that does this is "retrieveFlows"
+		while(pause_rst) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+
 		// Reset the flag once we are finished parsing everything
 		rstControllerFlag();
 	}
@@ -180,6 +186,7 @@ Controller::Controller()
 	referenceTopology = nullptr;
 	ofFlag = false;
 	linking = false;
+	pause_rst = false;
 }
 
 // Constructor
@@ -193,6 +200,7 @@ Controller::Controller(Topology* t) {
 	referenceTopology = t;
 	ofFlag = false;
 	linking = false;
+	pause_rst = false;
 }
 
 // Destructor
@@ -359,17 +367,19 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	bool sent = false;
 	int localCount = 0;
+	pause_rst = true;
 	while (!ofFlag) {
 		// Timeout
 		if (localCount > 10) {
 			std::cout << "[CCPDN-ERROR]: Timeout waiting for flow list from controller" << std::endl;
-			rstControllerFlag();
+			pause_rst = false;
 			return flows;
 		}
 		if (!sent) {
 			// Send this request to controller
 			if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
 				std::cout << "[CCPDN-ERROR]: Failed to send flow list request to controller" << std::endl;
+				pause_rst = false;
 				return flows;
 			}
 			else {
@@ -386,7 +396,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		}
 	}
 
-	rstControllerFlag();
+	pause_rst = false;
 	return flows;
 }
 
@@ -578,7 +588,6 @@ std::vector<Node*> Controller::getDomainNodes()
 
 void Controller::rstControllerFlag()
 {
-	loggyMsg("[CCPDN-DEBUG]: Resetting controller flag\n");
 	ofFlag = false;
 }
 
