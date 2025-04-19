@@ -99,12 +99,12 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				switch (request_type) {
 					case OFPST_DESC: {
 						loggy << "[CCPDN]: Received Desc Stats Request." << std::endl;
-						OpenFlowMessage::createDescStatsReply(host_endian_XID);
+						sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(host_endian_XID));
 						break;
 					}
 					case OFPST_FLOW: {
 						loggy << "[CCPDN]: Received Flow Stats Request." << std::endl;
-						OpenFlowMessage::createFlowStatsReply(host_endian_XID);
+						sendOpenFlowMessage(OpenFlowMessage::createFlowStatsReply(host_endian_XID));
 						break;
 					}
 					default:
