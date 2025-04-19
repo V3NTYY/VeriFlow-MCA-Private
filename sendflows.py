@@ -7,13 +7,18 @@ log = core.getLogger()
 class _OpenFlowMessageHandler(object):
     def __init__(self):
         core.openflow.addListeners(self)
+        core.openflow.addListenerByName("ConnectionUp", self._handle_ConnectionUp)
+        core.openflow.addListenerByName("PacketIn", self._handle_PacketIn)
+        core.openflow.addListenerByName("FlowMod", self._handle_FlowMod)
+        core.openflow.addListenerByName("FlowRemoved", self._handle_FlowRemoved)
+        core.openflow.addListenerByName("StatsRequest", self._handle_StatsRequest)
+        core.openflow.addListenerByName("FeaturesReply", self._handle_FeaturesReply)
+        core.openflow.addListenerByName("Unknown", self._handle_Unknown)
+        core.openflow.addListenerByName("OpenFlow_Packet", self._handle_OpenFlow_Packet)
         log.debug("OpenFlowMessageHandler initialized")
 
     def _handle_ConnectionUp (self, event):
         log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.connection))
-
-    def _inspect_raw_message(self, event):
-        log.debug("Raw message received from CCPDN: {}".format(event.raw))
 
     def _handle_OpenFlow_Packet(self, event):
         log.debug("OpenFlow Packet event received from CCPDN: {}".format(event.ofp))
@@ -36,12 +41,6 @@ class _OpenFlowMessageHandler(object):
     def _handle_Unknown(self, event):
         log.debug("Unknown event received from CCPDN: {}".format(event.ofp))
 
-def raw_message_handler(event):
-    log.debug("Raw message: {}".format(event.raw))
-    core.openflow.raw_message(event)
-
 def launch():
-    core.openflow.addListenerByName("RawOFMessage", raw_message_handler)
-
     core.registerNew(_OpenFlowMessageHandler)
     log.info("POX/CCPDN controller script loaded and listening for packets...")
