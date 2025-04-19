@@ -9,7 +9,6 @@ class _OpenFlowMessageHandler(object):
         core.openflow.addListeners(self)
         core.openflow.addListenerByName("ConnectionUp", self._handle_ConnectionUp)
         core.openflow.addListenerByName("PacketIn", self._handle_PacketIn)
-        core.openflow.addListenerByName("OpenFlow_Packet", self._handle_OpenFlow_Packet)
         log.debug("OpenFlowMessageHandler initialized")
 
     def _handle_ConnectionUp (self, event):
