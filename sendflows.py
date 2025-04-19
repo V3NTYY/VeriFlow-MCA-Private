@@ -9,11 +9,6 @@ class _OpenFlowMessageHandler(object):
         core.openflow.addListeners(self)
         core.openflow.addListenerByName("ConnectionUp", self._handle_ConnectionUp)
         core.openflow.addListenerByName("PacketIn", self._handle_PacketIn)
-        core.openflow.addListenerByName("FlowMod", self._handle_FlowMod)
-        core.openflow.addListenerByName("FlowRemoved", self._handle_FlowRemoved)
-        core.openflow.addListenerByName("StatsRequest", self._handle_StatsRequest)
-        core.openflow.addListenerByName("FeaturesReply", self._handle_FeaturesReply)
-        core.openflow.addListenerByName("Unknown", self._handle_Unknown)
         core.openflow.addListenerByName("OpenFlow_Packet", self._handle_OpenFlow_Packet)
         log.debug("OpenFlowMessageHandler initialized")
 
