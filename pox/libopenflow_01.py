@@ -3747,7 +3747,6 @@ class ofp_barrier_request (ofp_header):
 class ofp_packet_in (ofp_header):
   _MIN_LENGTH = 18
   def __init__ (self, **kw):
-    _log.debug("ofp_packet_in!")
     ofp_header.__init__(self)
 
     self.in_port = OFPP_NONE
@@ -3760,6 +3759,7 @@ class ofp_packet_in (ofp_header):
       self._total_len = kw.pop('total_len')
 
     initHelper(self, kw)
+    print("ofp_packet_in init", self._buffer_id, self._total_len)
 
   def _validate (self):
     if self.data and (self.total_len < len(self.data)):

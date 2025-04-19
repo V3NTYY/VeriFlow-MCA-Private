@@ -173,15 +173,13 @@ class PacketIn (Event):
   parsed (packet subclasses) - pox.lib.packet's parsed version
   """
   def __init__ (self, connection, ofp):
-    log = connection.log
-    log.debug("PacketIn!")
-
     self.connection = connection
     self.ofp = ofp
     self.port = ofp.in_port
     self.data = ofp.data
     self._parsed = None
     self.dpid = connection.dpid
+    print("PacketIn: data={}".format(self.data))
 
   def parse (self):
     if self._parsed is None:
