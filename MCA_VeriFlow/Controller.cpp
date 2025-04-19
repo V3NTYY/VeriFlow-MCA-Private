@@ -105,7 +105,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 					case OFPST_FLOW: {
 						loggy << "[CCPDN]: Received Flow Stats Request." << std::endl;
 						sendOpenFlowMessage(OpenFlowMessage::createFlowStatsReply(host_endian_XID));
-						linking = false;
 						break;
 					}
 					default:
@@ -118,6 +117,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				// Send a barrier reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Barrier_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(host_endian_XID));
+				linking = false;
 				break;
 			}
 			case OFPT_STATS_REPLY: {

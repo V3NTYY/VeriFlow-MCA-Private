@@ -19,7 +19,7 @@ class _OpenFlowMessageHandler(object):
     def _handle_FlowRemoved(self, event):
         log.debug("FlowRemoved event received from CCPDN: {}".format(event.ofp))
 
-    def _handle_StatsRequest(self, event):
+    def _handle_stats_request(self, event):
         log.debug("StatsRequest event received from CCPDN: {}".format(event.ofp))
 
     def _handle_StatsReply(self, event):
