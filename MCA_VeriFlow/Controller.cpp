@@ -92,6 +92,13 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 			case OFPT_STATS_REQUEST: {
 				// Send a stats reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Stats_Request." << std::endl;
+
+				ofp_stats_request* request = reinterpret_cast<ofp_stats_request*>(packet.data() + offset);
+				uint16_t request_type = ntohs(request->type);
+				uint16_t request_flags = ntohs(request->flags);
+				loggy << "[CCPDN]: Stats request type: " << std::to_string(static_cast<int>(request_type)) << std::endl;
+				loggy << "[CCPDN]: Stats request flags: " << std::to_string(static_cast<int>(request_flags)) << std::endl;
+
 				sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(host_endian_XID));
 				break;
 			}
