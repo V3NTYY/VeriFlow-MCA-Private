@@ -12,7 +12,6 @@ class _OpenFlowMessageHandler(object):
 
     def _handle_ConnectionUp (self, event):
         log.debug("ConnectionUp event received from possible CCPDN: {}".format(event.connection))
-        event.connection.addListeners(self)
 
     def _handle_FlowMod(self, event):
         log.debug("FlowMod event received from CCPDN: {}".format(event.ofp))
