@@ -721,6 +721,7 @@ class Connection (EventMixin):
     ConnectionUp,
     ConnectionDown,
     PortStatus,
+    StatsRequest,
     PacketIn,
     ErrorIn,
     BarrierIn,
