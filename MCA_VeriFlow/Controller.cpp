@@ -217,6 +217,9 @@ Controller::Controller()
 	ofFlag = false;
 	linking = false;
 	pause_rst = false;
+
+	sharedFlows.clear();
+	domainNodes.clear();
 }
 
 // Constructor
@@ -231,6 +234,9 @@ Controller::Controller(Topology* t) {
 	ofFlag = false;
 	linking = false;
 	pause_rst = false;
+
+	sharedFlows.clear();
+	domainNodes.clear();
 }
 
 // Destructor
