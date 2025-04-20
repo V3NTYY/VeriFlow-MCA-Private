@@ -767,6 +767,12 @@ int Controller::getDPID(std::string IP)
 	std::string sysCommand = command1;
     std::string output = exec(sysCommand.c_str(), IP);
 	// Use ' ' as delimiter, only take everything before the delimiter
+	if (output.empty()) {
+		return -1;
+	}
+	if (output.find(' ') == std::string::npos) {
+		return -1;
+	}
 	std::string interface = output.substr(0, output.find(' '));
 	
 	// Run sudo ovs-ofctl and parse output for dpid
