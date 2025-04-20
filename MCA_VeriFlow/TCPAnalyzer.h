@@ -39,25 +39,20 @@ class TCPAnalyzer {
 		// Cast userData back to TCPAnalyzer instance
 		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
 
+		// Ensure valid ptrs
+		if (!analyzer || !analyzer->con) {
+			return;
+		}
+
 		int ETHERNET_HEADER_SIZE = 14;
 		// Extract IP Frame
 		const u_char* ipHeader = packet + ETHERNET_HEADER_SIZE;
 		int IP_HEADER_SIZE = ((ipHeader[0] & 0x0F) * 4);
-		if (IP_HEADER_SIZE < 20) {
-			return;
-		}
 
-		// Extract TCP Frame and validate TCP header size
+		// Extract TCP Frame
 		const u_char* tcpHeader = ipHeader + (IP_HEADER_SIZE);
 		int TCP_HEADER_SIZE = ((tcpHeader[12] & 0xF0) >> 4) * 4;
-		if (TCP_HEADER_SIZE < 20) {
-			return;
-		}
-		// Calculate total payload size, validate it
 		int TOTAL_PAYLOAD_SIZE = pkthdr->len - (ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + TCP_HEADER_SIZE);
-		if (TOTAL_PAYLOAD_SIZE < 54) {
-			return;
-		}
 
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
