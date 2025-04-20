@@ -56,9 +56,12 @@ class TCPAnalyzer {
 
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
+		// Extract DST IP Address from header, convert and pass to controller
+		uint32_t dstIP = ntohl(*(reinterpret_cast<const uint32_t*>(ipHeader + 16)));
+		std::string DstIP = OpenFlowMessage::ipToString(dstIP);
 
 		// Utilize parsing methods from controller, and update controller remotely
-		analyzer->con->parsePacket(payload);
+		analyzer->con->parsePacket(payload, DstIP);
 
 		// For now, print any flows received
 		for (Flow f : analyzer->con->sharedFlows) {

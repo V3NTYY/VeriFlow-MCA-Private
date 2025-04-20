@@ -68,6 +68,8 @@ class FlowInterface:
         except Exception as e:
             log.error("Error parsing rule prefix: %s", e)
             return None
+        
+        
 
         # Returns a dictionary with {command, {flow_data}}
 
