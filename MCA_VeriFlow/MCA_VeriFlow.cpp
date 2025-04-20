@@ -477,38 +477,38 @@ int main() {
             continue;
 		}
 
-        // Help command, * means implemented, - means work in progress, x means nothing started on it yet
+        // Help command, - means implemented, * means work in progress, x means nothing started on it yet
         else if (args.at(0) == "help") {
             loggy << "Commands:" << std::endl <<
-                " * help:" << std::endl <<
+                " - help:" << std::endl <<
                 "   Display all commands and their parameters.\n" << std::endl <<
-                " * exit:" << std::endl <<
+                " - exit:" << std::endl <<
                 "   Exit the CCPDN App.\n" << std::endl <<
-                " * start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
+                " - start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
                 "   Start the CCPDN Service by linking to VeriFlow. Controller must be linked, and topology initialized.\n" << std::endl <<
-                " * stop:" << std::endl <<
+                " - stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
-                " * rdn [topology_file]:" << std::endl <<
+                " - rdn [topology_file]:" << std::endl <<
                 "   Identifies and links all candidates for domain nodes based on given topology file.\n" << std::endl <<
-                " * refactor-top [file-name]:" << std::endl <<
+                " - refactor-top [file-name]:" << std::endl <<
                 "   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
-                " * output-top [file-name]:" << std::endl <<
+                " - output-top [file-name]:" << std::endl <<
                 "   Output the current topology list to a new file.\n" << std::endl <<
-                " * link-controller [ip-address] [port]:" << std::endl <<
+                " - link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app.\n" << std::endl <<
-                " * reset-controller:" << std::endl <<
+                " - reset-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
                 " - link-flowhandler [ip-address] [port]:" << std::endl <<
                 "   Link this app to the flow handler, allowing for dynamic flow access (list-flows, add-flow, remove-flow).\n" << std::endl <<
                 " - reset-fh" << std::endl <<
                 "   Free the flowhandler connection from this app.\n" << std::endl <<
-                " - list-flows [switch-ip-address]:" << std::endl <<
+                " * list-flows [switch-ip-address]:" << std::endl <<
                 "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
-                " - add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                " * add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                " * del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - run-tcp-test" << std::endl <<
+                " * run-tcp-test" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
                 "";
         }
