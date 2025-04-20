@@ -10,17 +10,12 @@ class CCPDNHandler:
     def _handle_ConnectionUp(self, event):
         log.info("Switch %s has connected", event.connection.dpid)
         # Add listeners for our custom events to the connection
-        event.connection.addListener(of.stats_request, self._handle_stats_request)
         event.connection.addListener(of.packet_in, self._handle_packet_in)
 
     def _handle_ConnectionDown(self, event):
         log.info("Switch %s has disconnected", event.connection.dpid)
 
-    def _handle_stats_request(self, event):
-        msg = event.ofp  # The received stats request message
-        log.debug("Received stats request from %s: %s", event.dpid, msg)
-
-    def _handle_packet_in(self, event):
+    def _handle_Packet_In(self, event):
         # Intercept all OpenFlow messages
         raw_data = event.data
         log.debug("Received OpenFlow message: %s", raw_data)
