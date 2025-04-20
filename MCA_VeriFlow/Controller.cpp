@@ -448,12 +448,15 @@ bool Controller::addDomainNode(Node* n)
 bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 {
 	std::string msg = "";
+	std::string warningString = "";
 #ifdef __unix__
 	// Send the header
 	ssize_t bytes_sent = send(sockfd, data.data(), data.size(), 0);
-	if (bytes_sent != data.size()) {
+	if (bytes_sent < 0) {
 		loggyErr("[CCPDN-ERROR]: Failed to send OpenFlow Header\n");
 		return false;
+	} else if (bytes_sent != data.size()) {
+		warningString = std::to_string(bytes_sent) + " bytes transmitted but expected " << std::to_string(data.size()) + " bytes.";
 	}
 #endif
 
@@ -527,7 +530,10 @@ bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 			break;
 	}
 
-	loggyMsg("[CCPDN]: Sent " + msg + " message.\n");
+	bool warning = warningString.empty() ? false : true;
+	std::string CCPDN_Type = warning ? "[CCPDN-WARNING]: " : "[CCPDN]: ";
+
+	loggyMsg(CCPDN_Type + "Sent " + msg + " message. " + warningString + "\n");
 
 	return true;
 }
