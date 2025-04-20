@@ -25,22 +25,24 @@ class TCPAnalyzer {
 		}
 
 #ifdef __unix__
-	// Callback function to process captured packets
-	void packetHandler(u_char* userData, const struct pcap_pkthdr* pkthdr, const u_char* packet) {
-		loggy << "Captured a packet with length: " << pkthdr->len << " bytes" << std::endl;
+	static void packetHandler(u_char* userData, const struct pcap_pkthdr* pkthdr, const u_char* packet) {
+		// Cast userData back to TCPAnalyzer instance
+		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
+
+		// Log packet details
+		analyzer->loggy << "Captured a packet with length: " << pkthdr->len << " bytes" << std::endl;
 
 		// Example: Print the first 16 bytes of the packet
 		for (int i = 0; i < 16 && i < pkthdr->len; i++) {
-			loggy << std::hex << (int)packet[i] << " ";
+			analyzer->loggy << std::hex << (int)packet[i] << " ";
 		}
-		loggy << std::endl;
+		analyzer->loggy << std::endl;
 
 		// TODO: Add logic to parse OpenFlow messages (e.g., FlowMod, FlowRemoved)
 	}
 #endif
 
 	void startPacketCapture(const std::string& interface, const std::string& filterExp, bool* run) {
-
 #ifdef __unix
 		char errbuf[PCAP_ERRBUF_SIZE];
 		pcap_t* handle;
@@ -76,7 +78,7 @@ class TCPAnalyzer {
 			pcap_breakloop(handle);
 		});
 
-		pcap_loop(handle, 0, packetHandler, nullptr);
+		pcap_loop(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
 
 		// Close the handle
 		pcap_close(handle);
