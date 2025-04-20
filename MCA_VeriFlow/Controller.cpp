@@ -824,7 +824,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply, std::string dstIP)
 
 		// Create string formats
 		std::string targetSwitch = dstIP;
-		std::string nextHop = std::to_string(dstIP);
+		std::string nextHop = "";
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 		
 		// Add flow to shared flows
@@ -855,12 +855,12 @@ void Controller::handleFlowMod(ofp_flow_mod *mod, std::string dstIP)
 	}
 
 	// Flow processing -- HANDLE GETTING DST IP FROM ACTION
-	uint32_t rulePrefixIP = ntohl(flow_stats->match.nw_src);
-	uint32_t wildcards = ntohl(flow_stats->match.wildcards);
+	uint32_t rulePrefixIP = ntohl(mod->match.nw_src);
+	uint32_t wildcards = ntohl(mod->match.wildcards);
 
 	// Create string formats
 	std::string targetSwitch = dstIP;
-	std::string nextHop = std::to_string(dstIP);
+	std::string nextHop = "";
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
@@ -892,12 +892,12 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed, std::string dstIP)
 	}
 
 	// Flow processing -- HANDLE GETTING DST IP FROM ACTION
-	uint32_t rulePrefixIP = ntohl(flow_stats->match.nw_src);
-	uint32_t wildcards = ntohl(flow_stats->match.wildcards);
+	uint32_t rulePrefixIP = ntohl(removed->match.nw_src);
+	uint32_t wildcards = ntohl(removed->match.wildcards);
 
 	// Create string formats
 	std::string targetSwitch = dstIP;
-	std::string nextHop = std::to_string(dstIP);
+	std::string nextHop = "";
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
