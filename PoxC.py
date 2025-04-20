@@ -9,8 +9,9 @@ class CCPDNHandler:
 
     def _handle_ConnectionUp(self, event):
         log.info("Switch %s has connected", event.connection.dpid)
-        # Add listener once per connection
-        event.connection.addListeners(self)
+        # Add listeners for our custom events to the connection
+        event.connection._eventHandlers[of.ofp_stats_request].append(self._handle_ofp_stats_request)
+        event.connection._eventHandlers[of.ofp_packet_in].append(self._handle_ofp_packet_in)
 
     def _handle_ConnectionDown(self, event):
         log.info("Switch %s has disconnected", event.connection.dpid)
