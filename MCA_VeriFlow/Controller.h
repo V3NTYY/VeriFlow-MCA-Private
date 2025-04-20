@@ -31,14 +31,17 @@ class Controller {
 		// Setters
 		void setControllerIP(std::string Controller_IP, std::string Controller_Port);
 		void setVeriFlowIP(std::string VeriFlow_IP, std::string VeriFlow_Port);
+		void setFlowHandlerIP(std::string fh_IP, std::string fh_Port);
 
 		// Controller setup/freeing functions
 		bool startController(bool* thread);
+		bool startFlow(bool* thread);
 		bool start();
 		bool freeLink();
 
 		// Thread loop functions
 		void controllerThread(bool* run);
+		void flowHandlerThread(bool* run);
 
 		// Reading + Parsing functions
 		bool parsePacket(std::vector<uint8_t>& packet);
@@ -51,14 +54,19 @@ class Controller {
 		void handleFlowMod(ofp_flow_mod* mod);
 		void handleFlowRemoved(ofp_flow_removed* removed);
 
-		// Command functions (for controller)
+		// Send msg functions (for controller)
 		bool sendOpenFlowMessage(std::vector<unsigned char> data);
 		bool sendVeriFlowMessage(std::string message);
+
+		// Update functions
+		bool synchTopology(Digest d);
+		bool sendUpdate(bool global, int destinationIndex);
+
+		// Flow functions
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
 		std::vector<Flow> retrieveFlows(std::string IP);
-		bool synchTopology(Digest d);
-		bool sendUpdate(bool global, int destinationIndex);
+		Flow adjustCrossTopFlow(Flow f);
 
 		// Verification functions
 		bool requestVerification(int destinationIndex, Flow f);
@@ -69,18 +77,20 @@ class Controller {
 		std::vector<Node*> getDomainNodes();
 		void rstControllerFlag();
 		void rstVeriFlowFlag();
-		Flow adjustCrossTopFlow(Flow f);
 
 		bool					  linking;
 		std::string				  controllerPort;
 		std::string				  veriflowPort;
+		std::string				  flowPort;
 		std::vector<Flow>		  sharedFlows;
 
 	private:
 		int						  sockfd;
 		int						  sockvf;
+		int						  sockfh;
 		std::string				  controllerIP;
 		std::string				  veriflowIP;
+		std::string				  flowIP;
 		std::vector<Node*>		  domainNodes;
 		Topology*				  referenceTopology;
 		char					  vfBuffer[1024];
@@ -91,6 +101,7 @@ class Controller {
 		// Private Functions
 		bool linkVeriFlow();
 		bool linkController();
+		bool linkFlow();
 		void veriFlowHandshake();
 		std::string readBuffer(char* buf);
 };

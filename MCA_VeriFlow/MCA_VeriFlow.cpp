@@ -484,9 +484,9 @@ int main() {
                 "   Display all commands and their parameters.\n" << std::endl <<
                 " * exit:" << std::endl <<
                 "   Exit the CCPDN App.\n" << std::endl <<
-                " - start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
+                " * start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
                 "   Start the CCPDN Service by linking to VeriFlow. Controller must be linked, and topology initialized.\n" << std::endl <<
-                " - stop:" << std::endl <<
+                " * stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
                 " * rdn [topology_file]:" << std::endl <<
                 "   Identifies and links all candidates for domain nodes based on given topology file.\n" << std::endl <<
@@ -498,6 +498,10 @@ int main() {
                 "   Link a currently running Pox Controller to this app.\n" << std::endl <<
                 " * reset-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
+                " - link-flowhandler [ip-address] [port]:" << std::endl <<
+                "   Link this app to the flow handler, allowing for dynamic flow access (list-flows, add-flow, remove-flow).\n" << std::endl <<
+                " - reset-fh" << std::endl <<
+                "   Free the flowhandler connection from this app.\n" << std::endl <<
                 " - list-flows [switch-ip-address]:" << std::endl <<
                 "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
                 " - add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
@@ -506,14 +510,35 @@ int main() {
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - run-tcp-test" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
-                " * test-method" << std::endl <<
-                "   Run's a current method that needs to be tested. For development purposes only.\n" << std::endl <<
                 "";
         }
 
+        else if (args.at(0) == "link-flowhandler") {
+            if (args.size() < 3) {
+                loggy << "Not enough arguments. Usage: link-flowhandler [ip-address] [port]\n" << std::endl;
+            } else if (mca_veriflow->flowhandler_linked) {
+                loggy << "FlowHandler already linked. Try reset-fh first\n" << std::endl;
+            } else if (!mca_veriflow->controller_linked) {
+                loggy << "Controller not linked! Try link-controller first\n" << std::endl;
+            } else {
+                mca_veriflow->controller.setFlowHandlerIP(args.at(1), args.at(2));
+                mca_veriflow->flowhandler_linked = mca_veriflow->controller.startFlow(&(mca_veriflow->flowhandler_linked));
+            }
+        }
+
+        else if (args.at(0) == "reset-fh") {
+            if (!mca_veriflow->flowhandler_linked) {
+                loggy << "FlowHandler not linked. Try link-flowhandler first\n" << std::endl;
+            }
+            else {
+                // Once this is false, thread will auto-cleanup
+                mca_veriflow->flowhandler_linked = false;
+            }
+        }
+
         else if (args.at(0) == "list-flows") {
-            if (!mca_veriflow->runTCPDump) {
-                loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
+            if (!mca_veriflow->flowhandler_linked) {
+                loggy << "Ensure Flow Handler is started first.\n" << std::endl;
             }
             else if (args.size() < 2) {
                 loggy << "Not enough arguments. Usage: list-flows [switch-ip-address]\n" << std::endl;
@@ -541,8 +566,8 @@ int main() {
         }
 
         else if (args.at(0) == "add-flow") {
-			if (!mca_veriflow->runTCPDump) {
-				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
+			if (!mca_veriflow->flowhandler_linked) {
+				loggy << "Ensure Flow Handler is started first.\n" << std::endl;
 			}
 			else if (args.size() < 4) {
 				loggy << "Not enough arguments. Usage: add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
@@ -563,8 +588,8 @@ int main() {
 		}
 
 		else if (args.at(0) == "del-flow") {
-			if (mca_veriflow->runTCPDump) {
-				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
+			if (mca_veriflow->flowhandler_linked) {
+				loggy << "Ensure Flow Handler started first.\n" << std::endl;
 			}
             else if (args.size() < 4) {
 				loggy << "Not enough arguments. Usage: del-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
@@ -589,7 +614,7 @@ int main() {
 				loggy << "Not enough arguments. Usage: link-controller [ip-address] [port]\n" << std::endl;
 			}
             else if (mca_veriflow->controller_linked) {
-                loggy << "Controller already linked. Try unlink-controller first\n" << std::endl;
+                loggy << "Controller already linked. Try reset-controller first\n" << std::endl;
             }
             else {
 				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));

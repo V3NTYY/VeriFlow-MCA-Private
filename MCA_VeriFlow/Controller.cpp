@@ -41,6 +41,14 @@ void Controller::controllerThread(bool* run)
 	}
 }
 
+void Controller::flowHandlerThread(bool *run)
+{
+	loggy << "[CCPDN]: Starting flow handler thread...\n";
+	while (*run) {
+		// Recv is not necessary, since we only issue commands from this interface
+	}
+}
+
 void Controller::parseFlow(Flow f)
 {
 	// Case 0:
@@ -259,6 +267,12 @@ void Controller::setVeriFlowIP(std::string VeriFlow_IP, std::string VeriFlow_Por
 	veriflowPort = VeriFlow_Port;
 }
 
+void Controller::setFlowHandlerIP(std::string fh_IP, std::string fh_Port)
+{
+	flowIP = fh_IP;
+	flowPort = fh_Port;
+}
+
 bool Controller::linkVeriFlow()
 {
 #ifdef __unix__
@@ -292,7 +306,7 @@ bool Controller::linkController() {
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd < 0) {
 			linking = false;
-			std::cout << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
+			loggy << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
 			return false;
 		}
 
@@ -305,7 +319,7 @@ bool Controller::linkController() {
 		// Connect to the controller
 		if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 			linking = false;
-			std::cout << "[CCPDN-ERROR]: Could not connect to controller." << std::endl;
+			loggy << "[CCPDN-ERROR]: Could not connect to controller." << std::endl;
 			return false;
 		}
 
@@ -318,6 +332,40 @@ bool Controller::linkController() {
 
 	#endif
 
+	return true;
+}
+
+bool Controller::linkFlow()
+{
+    #ifdef __unix__
+		// Setup socket
+		sockfd = socket(AF_INET, SOCK_STREAM, 0);
+		if (sockfd < 0) {
+			loggy << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
+			return false;
+		}
+
+		// Setup the address to connect to
+		struct sockaddr_in server_address;
+		server_address.sin_family = AF_INET;
+		server_address.sin_port = htons(std::stoi(flowPort));
+		inet_pton(AF_INET, flowIP.c_str(), &server_address.sin_addr);
+
+		// Connect to the controller
+		if (connect(sockfh, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			linking = false;
+			loggy << "[CCPDN-ERROR]: Could not connect to FlowHandler." << std::endl;
+			return false;
+		}
+
+		// Display successful connection with host sockaddr ip and port
+		struct sockaddr_in local_address;
+		socklen_t address_length = sizeof(local_address);
+		if (getsockname(sockfh, (struct sockaddr*)&local_address, &address_length) == 0) {
+			loggy << "[CCPDN]: Successfully connected to FlowHandler using port " << ntohs(local_address.sin_port) << std::endl;
+		}
+
+	#endif
 	return true;
 }
 
@@ -334,6 +382,21 @@ bool Controller::startController(bool* thread)
 		return true;
 	}
 	return false;
+}
+
+bool Controller::startFlow(bool *thread)
+{
+	*thread = true;
+
+	// Start the flow handler thread
+	std::thread flowThread(&Controller::flowHandlerThread, this, thread);
+	flowThread.detach();
+
+	if (linkFlow()) {
+		return true;
+	}
+
+    return false;
 }
 
 bool Controller::start()
