@@ -341,7 +341,7 @@ bool Controller::start()
 	return false;
 }
 
-// Free the link to the domain node
+// Kill the controller thread, free the socket, and reset the flag
 bool Controller::freeLink()
 {
 	if (sockfd != -1) {
@@ -351,6 +351,7 @@ bool Controller::freeLink()
 		sockfd = -1;
 		return true;
 	}
+	rstControllerFlag();
 	return false;
 }
 

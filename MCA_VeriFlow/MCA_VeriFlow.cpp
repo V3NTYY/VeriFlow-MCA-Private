@@ -1,5 +1,6 @@
 ﻿#include "MCA_VeriFlow.h"
 #include "Log.h"
+#include "TCPAnalyzer.h"
 
 // Function to split a string into a vector of words based on delimiters
 std::vector<std::string> splitInput(std::string input, std::vector<std::string> delimiters) {
@@ -61,7 +62,10 @@ MCA_VeriFlow::MCA_VeriFlow()
     Topology t;
     topology = t;
     controller = Controller(&topology);
-    isRunning = false;
+    controller_running = false;
+    controller_linked = false;
+    topology_initialized = false;
+    runTCPDump = false;
 }
 
 void MCA_VeriFlow::run() 
@@ -71,10 +75,18 @@ void MCA_VeriFlow::run()
 		std::cerr << "Error linking to VeriFlow server." << std::endl;
 		return;
 	}
+
+    // Start TCPDump thread
+    runTCPDump = true;
+    std::thread tcpDumpThread(&TCPAnalyzer::thread, this, &runTCPDump);
+    tcpDumpThread.detach();
 }
 
 void MCA_VeriFlow::stop() {
-    isRunning = false;
+    runTCPDump = false;
+    controller_running = false;
+	controller_linked = false;
+    topology_initialized = false;
 }
 
 bool MCA_VeriFlow::registerTopologyFile(std::string file) {
@@ -425,8 +437,12 @@ int main() {
     loggyMsg("WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n\n");
     #endif
 
-    bool controller_linked = false;
-    bool topology_initialized = false;
+    // Check if we are running with root privileges
+    #ifdef __unix__
+        if (getuid() != 0) {
+            loggyMsg("WARNING: This app requires root privileges to run properly.\n\n");
+        }
+    #endif
 
     loggyMsg("Welcome to the CCPDN. If you do not see >>>, it may have been overshadowed by console output.\n");
     loggyMsg("Type 'help' for a list of commands.\n\n");
@@ -472,7 +488,7 @@ int main() {
                 "   Output the current topology list to a new file.\n" << std::endl <<
                 " * link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app.\n" << std::endl <<
-                " - unlink-controller:" << std::endl <<
+                " * reset-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
                 " - list-flows [switch-ip-address]:" << std::endl <<
                 "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
@@ -488,7 +504,7 @@ int main() {
         }
 
         else if (args.at(0) == "list-flows") {
-            if (!mca_veriflow->isRunning) {
+            if (!mca_veriflow->controller_running) {
                 loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
             }
             else if (args.size() < 2) {
@@ -517,7 +533,7 @@ int main() {
         }
 
         else if (args.at(0) == "add-flow") {
-			if (!mca_veriflow->isRunning) {
+			if (!mca_veriflow->controller_running) {
 				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
 			}
 			else if (args.size() < 4) {
@@ -539,7 +555,7 @@ int main() {
 		}
 
 		else if (args.at(0) == "del-flow") {
-			if (mca_veriflow->isRunning) {
+			if (mca_veriflow->controller_running) {
 				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
 			}
             else if (args.size() < 4) {
@@ -564,20 +580,29 @@ int main() {
             if (args.size() < 3) {
 				loggy << "Not enough arguments. Usage: link-controller [ip-address] [port]\n" << std::endl;
 			}
-            else if (controller_linked) {
+            else if (mca_veriflow->controller_linked) {
                 loggy << "Controller already linked. Try unlink-controller first\n" << std::endl;
             }
             else {
 				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
-				controller_linked = mca_veriflow->controller.startController(&(mca_veriflow->isRunning));
+				mca_veriflow->controller_linked = mca_veriflow->controller.startController(&(mca_veriflow->controller_running));
 			}
         }
 
-
+        // reset-controller command
+        else if (args.at(0) == "reset-controller") {
+            if (!mca_veriflow->controller_linked) {
+                loggy << "Controller not linked. Try link-controller first\n" << std::endl;
+            }
+            else {
+                mca_veriflow->controller.freeLink();
+                mca_veriflow->controller_linked = false;
+            }
+        }
 
         // output-top command
         else if (args.at(0) == "output-top") {
-			if (!topology_initialized) {
+			if (!mca_veriflow->topology_initialized) {
 				loggy << "Topology not initialized. Try rdn first.\n" << std::endl;
 			}
 			else if (args.size() < 2) {
@@ -595,7 +620,7 @@ int main() {
 
         // refactor-top command
         else if (args.at(0) == "refactor-top") {
-            if (!topology_initialized) {
+            if (!mca_veriflow->topology_initialized) {
                 loggy << "Topology not initialized. Try rdn first.\n" << std::endl;
             }
 			else if (args.size() < 2) {
@@ -622,7 +647,7 @@ int main() {
 
         // rdn command
         else if (args.at(0) == "rdn") {
-            if (!controller_linked) {
+            if (!mca_veriflow->controller_linked) {
                 loggy << "Controller not linked. Try link-controller first\n" << std::endl;
             }
             else if (args.size() < 2) {
@@ -673,28 +698,13 @@ int main() {
                 // Set the host index in the topology
                 mca_veriflow->topology.hostIndex = HostIndex;
 
-                topology_initialized = true;
+                mca_veriflow->topology_initialized = true;
             }
-        }
-
-        // unlink-controller command
-        else if (args.at(0) == "unlink-controller") {
-            if (!controller_linked) {
-				loggy << "Controller not linked. Try link-controller first.\n" << std::endl;
-			} else if (mca_veriflow->isRunning) {
-                loggy << "Ensure CCPDN Service is stopped first.\n" << std::endl;
-            }
-			else {
-                // This should kill controller thread
-                mca_veriflow->isRunning = false;
-				controller_linked = false;
-                topology_initialized = false;
-			}
         }
 
         // run command
         else if (args.at(0) == "start") {
-            if (!controller_linked || !topology_initialized) {
+            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
                 loggy << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized.\n" << std::endl;
             } else if (args.size() < 3) {
                 loggy << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]\n" << std::endl;
@@ -707,7 +717,7 @@ int main() {
 
         // stop command
         else if (args.at(0) == "stop") {
-            if (!controller_linked || !topology_initialized || mca_veriflow->isRunning) {
+            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || mca_veriflow->controller_running) {
                 loggy << "CCPDN App is not running.\n" << std::endl;
             } else {
                 mca_veriflow->stop();
@@ -719,7 +729,7 @@ int main() {
         else if (args.at(0) == "run-tcp-test") {
             if (args.size() < 3) {
                 loggy << "Usage: run-tcp-test [target-ip] [port]\n";
-            } else if (!controller_linked || !topology_initialized) {
+            } else if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
                 loggy << "Ensure topology is initialized and controller is linked first.\n\n";
             } else {
                 loggy << "Running TCP test...\n" << std::endl;
@@ -751,7 +761,7 @@ int main() {
 
         else if (args.at(0) == "test-method") {
 
-            if (!controller_linked) {
+            if (!mca_veriflow->controller_linked) {
                 loggy << "Link controller first dummy.\n\n";
             }
 
