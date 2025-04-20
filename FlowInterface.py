@@ -11,6 +11,14 @@ class FlowInterface:
         core.openflow.addListeners(self)
         self.start_socket_server()
 
+    def _handle_ConnectionUp(self, event):
+        # This method stores the DPID and IP address of each switch for mappings w/ CCPDN
+        connection = event.connection
+        dpid = connection.dpid
+        switch_ip, switch_port = connection._sock.getpeername()
+        log.info("Switch %s connected from %s:%s", dpid, switch_ip, switch_port)
+        self.switches[dpid] = connection
+
     def start_socket_server(self):
         """Start a socket server to handle external commands."""
         def socket_thread():
@@ -69,7 +77,7 @@ class FlowInterface:
             log.error("Error parsing rule prefix: %s", e)
             return None
         
-        
+        # Get 
 
         # Returns a dictionary with {command, {flow_data}}
 
