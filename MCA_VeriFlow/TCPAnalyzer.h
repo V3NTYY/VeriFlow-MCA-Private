@@ -1,6 +1,8 @@
 #ifndef TCPANALYZER_H
 #define TCPANALYZER_H
 
+#include "Log.h"
+
 #include <string>
 #include <fstream>
 #include <iostream>
