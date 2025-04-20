@@ -175,7 +175,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, std::string dstIP) {
 }
 
 std::string exec(const std::string& command, std::string match) {
-    std::vector<char> buffer;
+    std::vector<char> buffer(128);
     std::string result;
 
     #ifdef __unix__
