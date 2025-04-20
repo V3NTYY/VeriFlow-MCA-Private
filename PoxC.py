@@ -4,14 +4,9 @@ import pox.openflow.libopenflow_01 as of
 log = core.getLogger()
 
 class CCPDNHandler:
-    def __init__(self):
-        core.openflow.addListeners(self)
-
     def _handle_ConnectionUp(self, event):
         log.info("Switch %s has connected", event.connection.dpid)
-        # Add listeners for our custom events to the connection
-        event.connection.addListener(of.ofp_stats_request, self._handle_ofp_stats_request)
-        event.connection.addListener(of.ofp_packet_in, self._handle_ofp_packet_in)
+        event.connection.addListeners(self)
 
     def _handle_ConnectionDown(self, event):
         log.info("Switch %s has disconnected", event.connection.dpid)
