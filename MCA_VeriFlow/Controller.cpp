@@ -179,26 +179,26 @@ std::string exec(const std::string& command, std::string match) {
     std::string result;
 
     #ifdef __unix__
-			// Open a pipe to read the output of tcpdump
-			FILE* pipe = popen(command.c_str(), "r");
-			if (!pipe) {
-				throw std::runtime_error("Failed to pipe command: " + std::string(strerror(errno)));
-			}
+		// Open a pipe to read the output of tcpdump
+		FILE* pipe = popen(command.c_str(), "r");
+		if (!pipe) {
+			throw std::runtime_error("Failed to pipe command: " + std::string(strerror(errno)));
+		}
 
-			while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-				// Return the first line that contains the match string, if match is -1 then return first line
-				if (strstr(buffer.data(), match.c_str()) != nullptr) {
-					result = buffer.data();
-					break;
-				}
-				if (match == "-1") {
-					result = buffer.data();
-					break;
-				}
+		while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+			// Return the first line that contains the match string, if match is -1 then return first line
+			if (strstr(buffer.data(), match.c_str()) != nullptr) {
+				result = buffer.data();
+				break;
 			}
+			if (match == "-1") {
+				result = buffer.data();
+				break;
+			}
+		}
 
-			// Close the pipe
-			pclose(pipe);
+		// Close the pipe
+		pclose(pipe);
 	#endif
 
     return result;
