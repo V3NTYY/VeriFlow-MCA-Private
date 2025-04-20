@@ -153,6 +153,8 @@ struct ofp_action_header { // Unused but required field
 };
 OFP_ASSERT(sizeof(struct ofp_action_header) == 8);
 
+// ADD OFP_ACTION_OUTPUT struct
+
 // 40 bytes -- // MATCH STRUCT -- REQUIRED FOR FLOWS
 struct ofp_match { // Struct used for matching SRC IP, next hop & rule prefix
 	uint32_t wildcards; /* Wildcard fields. */

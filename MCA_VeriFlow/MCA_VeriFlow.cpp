@@ -93,6 +93,7 @@ void MCA_VeriFlow::stop() {
     controller_running = false;
 	controller_linked = false;
     topology_initialized = false;
+    flowhandler_linked = false;
 }
 
 bool MCA_VeriFlow::registerTopologyFile(std::string file) {

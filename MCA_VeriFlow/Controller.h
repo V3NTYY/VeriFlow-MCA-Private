@@ -57,6 +57,7 @@ class Controller {
 		// Send msg functions (for controller)
 		bool sendOpenFlowMessage(std::vector<unsigned char> data);
 		bool sendVeriFlowMessage(std::string message);
+		bool sendFlowHandlerMessage(std::string message);
 
 		// Update functions
 		bool synchTopology(Digest d);

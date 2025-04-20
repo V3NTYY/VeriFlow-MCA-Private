@@ -424,14 +424,9 @@ bool Controller::freeLink()
 }
 
 bool Controller::addFlowToTable(Flow f)
-{
-	// Craft an OpenFlow message with our given flow rule, ask to add and send
-	uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));
-    
+{    
     // Send the OpenFlow message to the controller
-	sendOpenFlowMessage(OpenFlowMessage::createFlowAdd(f, xid));
-
-	return false;
+	return sendFlowHandlerMessage("addflow-" + f.flowToStr()); // true for add action
 }
 
 bool Controller::removeFlowFromTable(Flow f)
@@ -447,10 +442,7 @@ bool Controller::removeFlowFromTable(Flow f)
             existingFlow.getNextHopIP() == f.getNextHopIP()) {
             
 			// Send the removal message to the controller
-            uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));
-			sendOpenFlowMessage(OpenFlowMessage::createFlowRemove(f, xid)); // false for delete action
-            
-            return true;
+			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr()); // false for delete action
         }
     }
     
@@ -476,7 +468,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		}
 		if (!sent) {
 			// Send this request to controller
-			if (!sendOpenFlowMessage(OpenFlowMessage::createFlowRequest())) {
+			if (sendFlowHandlerMessage("listflows-" + IP)) {
 				std::cout << "[CCPDN-ERROR]: Failed to send flow list request to controller" << std::endl;
 				pause_rst = false;
 				return flows;
@@ -619,6 +611,22 @@ bool Controller::sendVeriFlowMessage(std::string message)
 	}
 	loggyMsg("\n\n");
 	return false;
+}
+
+bool Controller::sendFlowHandlerMessage(std::string message)
+{
+	// Convert message to sendable format
+	std::vector<char> Msg(message.begin(), message.end());
+
+#ifdef __unix__
+	// Recast message as char array and send it
+	ssize_t bytes_sent = send(sockfh, Msg.data(), Msg.size(), 0);
+#endif
+
+	// Print send message
+	loggyMsg("[CCPDN]: Sent FlowHandler Request.\n");
+
+    return true;
 }
 
 bool Controller::synchTopology(Digest d)
@@ -847,7 +855,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 		return;
 	}
 
-	// Flow processing
+	// Flow processing -- ADJUST PROCESSING TO GET SRC/DST IP
 	uint32_t srcIP = ntohl(mod->match.nw_src);
 	uint32_t dstIP = ntohl(mod->match.nw_dst);
 	uint32_t wildcards = ntohl(mod->match.wildcards);
@@ -885,7 +893,7 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 		return;
 	}
 
-	// Flow processing
+	// Flow processing -- ADJUST HOW WE GET IP FOR SRC/DST
 	uint32_t srcIP = ntohl(removed->match.nw_src);
 	uint32_t dstIP = ntohl(removed->match.nw_dst);
 	uint32_t wildcards = ntohl(removed->match.wildcards);
