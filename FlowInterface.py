@@ -15,7 +15,7 @@ class FlowInterface:
         # This method stores the DPID and IP address of each switch for mappings w/ CCPDN
         connection = event.connection
         dpid = connection.dpid
-        switch_ip, switch_port = connection._sock.getpeername()
+        switch_ip, switch_port = connection.sock.getpeername()
         log.info("Switch %s connected from %s:%s", dpid, switch_ip, switch_port)
         self.switches[dpid] = connection
 
