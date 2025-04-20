@@ -189,6 +189,20 @@ std::vector<unsigned char> OpenFlowMessage::createBarrierReply(uint32_t XID)
 	return buffer;
 }
 
+std::vector<unsigned char> OpenFlowMessage::createFlowAdd(Flow f, uint32_t XID)
+{
+	// Initialize the flow_mod struct
+	ofp_flow_mod flow_mod;
+	std::memset(&flow_mod, 0, sizeof(flow_mod));
+
+	return std::vector<unsigned char>();
+}
+
+std::vector<unsigned char> OpenFlowMessage::createFlowRemove(Flow f, uint32_t XID)
+{
+    return std::vector<unsigned char>();
+}
+
 std::string OpenFlowMessage::ipToString(uint32_t ip)
 {
 	// Output string. This method expects host-endian order

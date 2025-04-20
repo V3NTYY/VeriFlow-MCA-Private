@@ -364,9 +364,9 @@ bool Controller::addFlowToTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask to add and send
 	uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));
-    // Craft flow mod message
     
     // Send the OpenFlow message to the controller
+	sendOpenFlowMessage(OpenFlowMessage::createFlowAdd(f, xid));
 
 	return false;
 }
@@ -383,10 +383,9 @@ bool Controller::removeFlowFromTable(Flow f)
             existingFlow.getRulePrefix() == f.getRulePrefix() &&
             existingFlow.getNextHopIP() == f.getNextHopIP()) {
             
-            uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));            
-            // Craft flow removal message
-            
-            // Send the removal message to the controller
+			// Send the removal message to the controller
+            uint32_t xid = static_cast<uint32_t>(100 + (std::rand() % 4095 - 99));
+			sendOpenFlowMessage(OpenFlowMessage::createFlowRemove(f, xid)); // false for delete action
             
             return true;
         }

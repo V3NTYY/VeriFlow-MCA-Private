@@ -323,6 +323,8 @@ class OpenFlowMessage {
 		static std::vector<unsigned char> createDescStatsReply(uint32_t XID);
 		static std::vector<unsigned char> createFlowStatsReply(uint32_t XID);
 		static std::vector<unsigned char> createBarrierReply(uint32_t XID);
+		static std::vector<unsigned char> createFlowAdd(Flow f, uint32_t XID);
+		static std::vector<unsigned char> createFlowRemove(Flow f, uint32_t XID);
 
 		// Helper methods
 		static std::string ipToString(uint32_t ip);

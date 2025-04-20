@@ -512,7 +512,7 @@ int main() {
         }
 
         else if (args.at(0) == "list-flows") {
-            if (!mca_veriflow->controller_running) {
+            if (!mca_veriflow->runTCPDump) {
                 loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
             }
             else if (args.size() < 2) {
@@ -541,7 +541,7 @@ int main() {
         }
 
         else if (args.at(0) == "add-flow") {
-			if (!mca_veriflow->controller_running) {
+			if (!mca_veriflow->runTCPDump) {
 				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
 			}
 			else if (args.size() < 4) {
@@ -563,7 +563,7 @@ int main() {
 		}
 
 		else if (args.at(0) == "del-flow") {
-			if (mca_veriflow->controller_running) {
+			if (mca_veriflow->runTCPDump) {
 				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
 			}
             else if (args.size() < 4) {
@@ -769,7 +769,7 @@ int main() {
 
         else if (args.at(0) == "test-method") {
 
-            if (!mca_veriflow->controller_linked) {
+            if (!mca_veriflow->runTCPDump) {
                 loggy << "Link controller first dummy.\n\n";
             }
 
