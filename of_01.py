@@ -161,7 +161,7 @@ class OpenFlowHandlers (object):
         continue
       from_switch = getattr(of._message_type_to_class.get(of_type),
                             '_from_switch', False)
-      assert from_switch, "%s is not switch-to-controller message" % (name,)
+      assert from_switch, "%s is not switch-to-controller message" % (fname,)
       self.add_handler(of_type, h)
 
 
