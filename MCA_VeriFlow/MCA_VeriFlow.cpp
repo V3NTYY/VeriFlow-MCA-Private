@@ -77,8 +77,9 @@ void MCA_VeriFlow::run()
 	}
 
     // Start TCPDump thread
+    TCPAnalyzer tcp;
     runTCPDump = true;
-    std::thread tcpDumpThread(&TCPAnalyzer::thread, this, &runTCPDump);
+    std::thread tcpDumpThread(&TCPAnalyzer::thread, &tcp, &runTCPDump);
     tcpDumpThread.detach();
 }
 
