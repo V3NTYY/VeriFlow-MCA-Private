@@ -1,6 +1,14 @@
 #include "Controller.h"
 #include <thread>
 
+/// Temporary solution for getting flows and finding flow mods
+
+/// Run a separate thread for the command sudo tcpdump -i lo tcp port 6653
+/// Parse every individual packet received by tcpdump
+/// OpenFlow packets from the controller (srcPort 6653) will be analyzed and used as "interception"
+/// Format these packets, and run them through parsePacket()
+/// Problem solved -- stupid problem too. I love losing probably near triple digit hours to this!
+
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
 {
