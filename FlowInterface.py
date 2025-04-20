@@ -9,7 +9,7 @@ log = core.getLogger()
 class FlowInterface:
     def __init__(self):
         core.openflow.addListeners(self)
-        self.switches = {}  # Store switch connections
+        self.switches = {}
         self.start_socket_server()
 
     def _handle_ConnectionUp(self, event):
@@ -18,10 +18,10 @@ class FlowInterface:
         dpid = connection.dpid
         switch_ip, switch_port = connection.sock.getpeername()
         log.info("Switch %s connected from %s:%s", dpid, switch_ip, switch_port)
-        self.switches[dpid] = switch_ip
+        self.switches[dpid] = connection
 
     def start_socket_server(self):
-        """Start a socket server to handle external commands."""
+        # Start socket server to listen for ccpdn
         def socket_thread():
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.bind(("0.0.0.0", 6667))  # Listen on port 6667
@@ -41,15 +41,35 @@ class FlowInterface:
             data = client_socket.recv(1024).decode("utf-8")
             log.info("Received command: %s", data)
 
-            # Parse the command, returns a dictionary with {command, {flow_data}}
+            # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             result = self.parse_data(data)
 
-            if action == "add_flow":
-                self.add_flow(dpid, match, actions)
-            elif action == "remove_flow":
-                self.remove_flow(dpid, match)
-            elif action == "list_flows":
-                self.list_flows(dpid)
+            if (result == None):
+                log.error("Error parsing data: %s", data)
+                return
+
+            # Create match object from our nw_src, Wildcards and dstDPID
+            match = of.ofp_match()
+            match.nw_src = result[3]
+            match.wildcards = result[4]
+            match.dl_type = 0x0800  # IPv4
+
+            srcDPID = int(result[1])
+            dstDPID = int(result[2])
+
+            # Create action object based on srcDPID and dstDPID
+            output_port = self.get_output_port(srcDPID, dstDPID)
+            if (output_port == None):
+                log.error("No output port found for %s to %s", srcDPID, dstDPID)
+            action = of.ofp_action_output(port=output_port)
+
+            # Apply commands via controller
+            if result[0] == "add_flow":
+                self.add_flow(srcDPID, match, action)
+            elif result[0] == "remove_flow":
+                self.remove_flow(srcDPID, match, action)
+            elif result[0] == "list_flows":
+                self.list_flows(srcDPID)
         except Exception as e:
             log.error("Error handling client: %s", e)
         finally:
@@ -58,14 +78,14 @@ class FlowInterface:
     def parse_data(self, data):
 
         #    ---Format of received data---
-        # command-A#switchIP-rulePrefix-nextHopIP
+        # command-A#switchDPID-rulePrefix-nextHopDPID
         # Commands: addflow, removeflow, listflows
 
         # Parse each individual arg using "-" as a delimiter
-        args = set(data.split("-"))
+        args = data.split("-")
 
         # Remove A# or R# from the second arg
-        if (args[1][0].contains("A#") or args[1][0].contains("R#")):
+        if (args[1][0].startswith("A#") or args[1][0].startswith("R#")):
             args[1] = args[1][2:]
 
         # Parse rule prefix into nw_src and wildcard
@@ -77,30 +97,26 @@ class FlowInterface:
         except Exception as e:
             log.error("Error parsing rule prefix: %s", e)
             return None
-        
-        # Get 
 
-        # Returns a dictionary with {command, {flow_data}}
+        # Returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
+        return { args[0], args[1], args[3], Nw_src, Wildcards }
 
-
-    def add_flow(self, dpid, match, actions):
+    def add_flow(self, dpid, match, action):
 
         # Send a Flow Mod command to the switch
         fm = of.ofp_flow_mod()
-        for field, value in match.items():
-            setattr(fm.match, field, value)
-        for action in actions:
-            fm.actions.append(of.ofp_action_output(port=action["port"]))
+        fm.match = match
+        fm.actions.append(action)
 
         self.switches[dpid].send(fm)
         log.info("Flow added to switch %s", dpid)
 
-    def remove_flow(self, dpid, match):
+    def remove_flow(self, dpid, match, action):
 
         # Send a Flow Remove command to the switch
         fm = of.ofp_flow_mod(command=of.OFPFC_DELETE)
-        for field, value in match.items():
-            setattr(fm.match, field, value)
+        fm.match = match
+        fm.actions.append(action)
 
         self.switches[dpid].send(fm)
         log.info("Flow removed from switch %s", dpid)

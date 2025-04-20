@@ -1,10 +1,12 @@
 #include "Flow.h"
 
-std::string Flow::flowToStr()
+std::string Flow::flowToStr(bool printDPID)
 {
 	// #switchIP-rulePrefix-nextHopIP
 	std::string output;
 	std::string actionStr = action ? "A" : "R";
+	std::string outputSrcIP = printDPID ? switchDPID : switchIP;
+	std::string outputHopIP = printDPID ? nextHopDPID : nextHopIP;
 	output = actionStr + "#" + switchIP + "-" + rulePrefix + "-" + nextHopIP;
 	return output;
 }
@@ -55,6 +57,8 @@ Flow::Flow(std::string SwitchIP, std::string RulePrefix, std::string NextHopIP, 
 	rulePrefix = RulePrefix;
 	nextHopIP = NextHopIP;
 	action = Action;
+	switchDPID = "";
+	nextHopDPID = "";
 }
 
 Flow::Flow()
@@ -62,6 +66,8 @@ Flow::Flow()
 	switchIP = "";
 	rulePrefix = "";
 	nextHopIP = "";
+	switchDPID = "";
+	nextHopDPID = "";
 	action = false;
 }
 

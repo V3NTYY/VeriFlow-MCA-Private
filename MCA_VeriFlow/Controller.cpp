@@ -226,7 +226,7 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 {
 	// Craft the packet
 	std::string packet = "[CCPDN] FLOW ";
-	packet += f.flowToStr();
+	packet += f.flowToStr(false);
 
 	// Send the packet, wait for response
 	sendVeriFlowMessage(packet);
@@ -455,8 +455,8 @@ bool Controller::freeLink()
 
 bool Controller::addFlowToTable(Flow f)
 {    
-    // Send the OpenFlow message to the controller
-	return sendFlowHandlerMessage("addflow-" + f.flowToStr()); // true for add action
+    // Send the OpenFlow message to the controller, flow already should have DPIDs
+	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true)); // true for add action
 }
 
 bool Controller::removeFlowFromTable(Flow f)
@@ -470,14 +470,19 @@ bool Controller::removeFlowFromTable(Flow f)
         if (existingFlow.getSwitchIP() == f.getSwitchIP() &&
             existingFlow.getRulePrefix() == f.getRulePrefix() &&
             existingFlow.getNextHopIP() == f.getNextHopIP()) {
+
+			// Set our DPIDs for reference
+			std::string switchDP = std::to_string(getDPID(existingFlow.getSwitchIP()));
+        	std::string hopDP = std::to_string(getDPID(existingFlow.getNextHopIP()));
+			existingFlow.setDPID(switchDP, hopDP);
             
 			// Send the removal message to the controller
-			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr()); // false for delete action
+			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true)); // false for delete action
         }
     }
     
     // No matching flow found
-    std::cout << "[CCPDN-ERROR]: No matching flow found to remove" << std::endl;
+    loggyErr("[CCPDN-ERROR]: No matching flow found to remove\n");
     return false;
 }
 
@@ -492,14 +497,15 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	while (!ofFlag) {
 		// Timeout
 		if (localCount > 10) {
-			std::cout << "[CCPDN-ERROR]: Timeout waiting for flow list from controller" << std::endl;
+			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
 			return flows;
 		}
 		if (!sent) {
 			// Send this request to controller
-			if (sendFlowHandlerMessage("listflows-" + IP)) {
-				std::cout << "[CCPDN-ERROR]: Failed to send flow list request to controller" << std::endl;
+			std::string dpid = std::to_string(getDPID(IP));
+			if (sendFlowHandlerMessage("listflows-" + dpid)) {
+				loggyErr("[CCPDN-ERROR]: Failed to send flow list request to controller\n");
 				pause_rst = false;
 				return flows;
 			}

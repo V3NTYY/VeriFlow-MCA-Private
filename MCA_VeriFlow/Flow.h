@@ -14,7 +14,7 @@ class Flow {
 		~Flow();
 
 		// Marshalling methods
-		std::string flowToStr();
+		std::string flowToStr(bool printDPID);
 		static Flow* strToFlow(std::string payload);
 
 		// Misc methods
@@ -26,7 +26,12 @@ class Flow {
 		std::string getNextHopIP();
 		bool actionType();
 
+		void setDPID(std::string switchDP, std::string hopDP) { switchDPID = switchDP; nextHopDPID = hopDP; }
+
 	private:
+		std::string switchDPID;
+		std::string nextHopDPID;
+
 		std::string switchIP;
 		std::string rulePrefix;
 		std::string nextHopIP;
