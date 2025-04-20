@@ -173,13 +173,6 @@ class DefaultOpenFlowHandlers (OpenFlowHandlers):
   Connections.
   """
   @staticmethod
-  def handle_STATS_REQUEST (con, msg):
-    log.debug("Got stats request: %s", msg)
-    e = con.ofnexus.raiseEventNoErrors(StatsRequest, con, msg)
-    if e is None or e.halt != True:
-      con.raiseEventNoErrors(StatsRequest, con, msg)
-
-  @staticmethod
   def handle_STATS_REPLY (con, msg):
     e = con.ofnexus.raiseEventNoErrors(RawStatsReply, con, msg)
     if e is None or e.halt != True:
