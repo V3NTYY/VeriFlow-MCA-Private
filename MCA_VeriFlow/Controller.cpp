@@ -764,13 +764,13 @@ int Controller::getDPID(std::string IP)
 	// Output format "interface ip-address"
 
 	// Match the interface name to the given parameter IP, use the interface name to get the DPID
-	std::string sysCommand = command1 + " > /dev/null 2>&1";
+	std::string sysCommand = command1;
     std::string output = exec(sysCommand.c_str(), IP);
 	// Use ' ' as delimiter, only take everything before the delimiter
 	std::string interface = output.substr(0, output.find(' '));
 	
 	// Run sudo ovs-ofctl and parse output for dpid
-	sysCommand = "sudo ovs-ofctl show " + interface + " | sed -n 's/.*dpid:\\([0-9a-fA-F]*\\).*/\\1/p'" + " > /dev/null 2>&1";
+	sysCommand = "sudo ovs-ofctl show " + interface + " | sed -n 's/.*dpid:\\([0-9a-fA-F]*\\).*/\\1/p'";
 	// Output format is just "dpid"
 	std::string dpid = exec(sysCommand.c_str(), "-1");
 
