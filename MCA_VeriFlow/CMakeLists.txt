@@ -19,7 +19,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(MCA_VeriFlow PRIVATE Threads::Threads)
 
 # Find libpcap library
-find_package(PCAP_LIBRARY pcap REQUIRED)
+find_library(PCAP_LIBRARY pcap REQUIRED)
 find_path(PCAP_INCLUDE_DIRS pcap.h REQUIRED)
 
 # Include and link libpcap library
