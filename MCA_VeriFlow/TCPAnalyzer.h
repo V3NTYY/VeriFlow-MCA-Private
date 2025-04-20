@@ -32,7 +32,7 @@ class TCPAnalyzer {
 			// Open a pipe to read the output of tcpdump
 			FILE* pipe = popen(sysCommand.c_str(), "r");
 			if (!pipe) {
-				logErr("[CCPDN-ERROR]: Failed to open pipe for tcpdump.\n");
+				loggyErr("[CCPDN-ERROR]: Failed to open pipe for tcpdump.\n");
 				throw std::runtime_error("Failed to run tcpdump: " + std::string(strerror(errno)));
 			}
 
