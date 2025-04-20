@@ -480,6 +480,7 @@ int main() {
 
         std::string input;
         loggyMsg(">>> ");
+        std::cin.clear();
         std::getline(std::cin, input);
         loggyMsg("\n");
         if (input == "exit") {
