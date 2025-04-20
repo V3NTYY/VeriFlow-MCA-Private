@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <vector>
 #include "Log.h"
+#include "OpenFlowMessage.h"
+#include "Controller.h"
 
 #ifdef __unix__
 #include <pcap.h>
@@ -19,9 +21,15 @@ typedef std::vector<uint8_t> packet;
 class TCPAnalyzer {
 	public:
 		// Thread method
-		void thread(bool *run, std::string controllerPort) {
+		void thread(bool *run, Controller *controller) {
 			loggy << "\n\n[CCPDN]: Starting TCPDump thread...\n";
-			startPacketCapture("lo", "tcp port " + controllerPort, run);
+
+			con = controller;
+			if (con == nullptr) {
+				return;
+			}
+
+			startPacketCapture("lo", "tcp port " + controller->controllerPort, run);
 		}
 
 #ifdef __unix__
@@ -33,12 +41,35 @@ class TCPAnalyzer {
 		loggy << "Captured a packet with length: " << pkthdr->len << " bytes" << std::endl;
 
 		// Example: Print the first 16 bytes of the packet
-		for (int i = 0; i < 16 && i < pkthdr->len; i++) {
+		for (int i = 0; i < pkthdr->len; i++) {
 			loggy << std::hex << (int)packet[i] << " ";
 		}
 		loggy << std::endl;
 
-		// TODO: Add logic to parse OpenFlow messages (e.g., FlowMod, FlowRemoved)
+		// Extract lengths of each header (ethernet, IP, TCP, etc.)
+		int ETHERNET_HEADER_SIZE = 14;
+		int IP_HEADER_SIZE = (packet[ETHERNET_HEADER_SIZE] & 0x0F) * 4;
+		int TCP_HEADER_SIZE = ((packet[ETHERNET_HEADER_SIZE + IP_HEADER_SIZE] & 0xF0) >> 4) * 4;
+		int TOTAL_HEADER_SIZE = ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + TCP_HEADER_SIZE;
+		int payload_size = pkthdr->len - TOTAL_HEADER_SIZE;
+
+		// Extract payload data
+		std::vector<uint8_t> payload(packet + TOTAL_HEADER_SIZE, packet + pkthdr->len);
+		loggy << "Payload size: " << payload_size << " bytes" << std::endl;
+		loggy << "Payload data: ";
+		for (int i = 0; i < payload_size; i++) {
+			loggy << std::hex << (int)payload[i] << " ";
+		}
+		loggy << std::endl;
+
+		// Utilize parsing methods from controller, and update controller remotely
+		con->parsePacket(payload);
+
+		// For now, print any flows received
+		for (Flow f : con->sharedFlows) {
+			f.print();
+			con->parseFlow(f);
+		}
 	}
 #endif
 
@@ -85,6 +116,8 @@ class TCPAnalyzer {
 		loggy << "[CCPDN]: Packet capture complete.\n";
 #endif
 	}
+
+	Controller* con;
 		
 	private:
 };
