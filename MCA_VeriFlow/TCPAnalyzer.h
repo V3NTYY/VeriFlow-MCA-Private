@@ -26,7 +26,7 @@ class TCPAnalyzer {
 
 		void runTCPDump(int port) {
 			// Construct the tcpdump command
-			std::string sysCommand = "sudo tcpdump -i lo tcp port " + std::to_string(port) + " -l -n";
+			std::string sysCommand = "sudo tcpdump -i lo tcp port " + std::to_string(port) + " -n 2>/dev/null";
 
 			#ifdef __unix__
 			// Open a pipe to read the output of tcpdump
