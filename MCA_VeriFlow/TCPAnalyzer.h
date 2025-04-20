@@ -50,12 +50,14 @@ class TCPAnalyzer {
 
 		// Extract lengths of each header (ethernet, IP, TCP, etc.)
 		int ETHERNET_HEADER_SIZE = 14;
-		int IP_HEADER_SIZE = 20; // Not always, but most of the time
-		int TCP_HEADER_SIZE = packet[ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + 13] / 4; // value of 13th byte of tcp frame divided by 4
+		int IP_HEADER_SIZE = (packet[ETHERNET_HEADER_SIZE] & 0x0F) * 4;
+		int TCP_HEADER_SIZE = ((packet[ETHERNET_HEADER_SIZE + IP_HEADER_SIZE] & 0xF0) >> 4) * 4;
 		int TOTAL_HEADER_SIZE = ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + TCP_HEADER_SIZE;
 
 		// Extract payload data
 		std::vector<byte> payload(packet + TOTAL_HEADER_SIZE, packet + pkthdr->len);
+		// Print timestamp
+		loggy << "Timestamp: " << pkthdr->ts.tv_sec << "." << pkthdr->ts.tv_usec << std::endl;
 		loggy << "Payload size: " << payload.size() << std::endl;
 		loggy << "Payload data: ";
 		for (int i = 0; i < payload.size(); i++) {
