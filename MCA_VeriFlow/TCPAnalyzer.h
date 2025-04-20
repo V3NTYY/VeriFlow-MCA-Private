@@ -16,6 +16,7 @@ class TCPAnalyzer {
 	public:
 		// Thread method
 		void thread(bool *run) {
+			loggy << "[CCPDN]: Starting TCPDump thread...\n";
 			while (*run) {
 				runTCPDump(6653);
 			}
@@ -29,6 +30,7 @@ class TCPAnalyzer {
 			// Open a pipe to read the output of tcpdump
 			FILE* pipe = popen(sysCommand.c_str(), "r");
 			if (!pipe) {
+				logErr("[CCPDN-ERROR]: Failed to open pipe for tcpdump.\n");
 				throw std::runtime_error("Failed to run tcpdump: " + std::string(strerror(errno)));
 			}
 
