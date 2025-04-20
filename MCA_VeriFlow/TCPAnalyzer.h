@@ -56,7 +56,6 @@ class TCPAnalyzer {
 
 		// Extract payload data
 		std::vector<byte> payload(packet + TOTAL_HEADER_SIZE, packet + pkthdr->len);
-		loggy << "Payload size: " << payload_size << " bytes" << std::endl;
 		loggy << "Payload data: ";
 		for (int i = 0; i < payload_size; i++) {
 			loggy << std::hex << (int)payload[i] << " ";
