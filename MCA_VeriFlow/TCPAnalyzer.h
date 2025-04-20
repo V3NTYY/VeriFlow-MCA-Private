@@ -13,7 +13,7 @@
 typedef std::vector<uint8_t> packet;
 
 // Function to split a string into a vector of words based on delimiters
-std::vector<std::string> splitInput(std::string input, std::vector<std::string> delimiters) {
+std::vector<std::string> splitInputTCP(std::string input, std::vector<std::string> delimiters) {
     std::vector<std::string> words;
     std::string word;
 
@@ -149,7 +149,7 @@ class TCPAnalyzer {
 			splicedData.erase(std::remove(splicedData.begin(), splicedData.end(), '\r'), splicedData.end());
 
 			// Split the spliced data into words by using a comma as a delimiter
-			std::vector<std::string> words = splitInput(splicedData, { "," });
+			std::vector<std::string> words = splitInputTCP(splicedData, { "," });
 
 			// For now, print this data to log for debugging
 			loggy << "Spliced Data: " << splicedData << std::endl;
