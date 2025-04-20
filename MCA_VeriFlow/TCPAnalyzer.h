@@ -17,16 +17,16 @@ typedef std::vector<uint8_t> packet;
 class TCPAnalyzer {
 	public:
 		// Thread method
-		void thread(bool *run, int controllerPort) {
+		void thread(bool *run, std::string controllerPort) {
 			loggy << "[CCPDN]: Starting TCPDump thread...\n";
 			while (*run) {
 				runTCPDump(controllerPort, run);
 			}
 		}
 
-		void runTCPDump(int port, bool *run) {
+		void runTCPDump(std::string port, bool *run) {
 			// Construct the tcpdump command
-			std::string sysCommand = "xterm -e sudo tcpdump -i lo tcp port " + std::to_string(port) + " -n > /dev/null 2>&1";
+			std::string sysCommand = "xterm -hold -e \"sudo tcpdump -i lo tcp port " + port + " -l -n\" &";
 
 			#ifdef __unix__
 			// Open a pipe to read the output of tcpdump
