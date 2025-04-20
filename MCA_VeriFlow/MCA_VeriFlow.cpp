@@ -500,7 +500,7 @@ int main() {
                 " - reset-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
                 " - link-flowhandler [ip-address] [port]:" << std::endl <<
-                "   Link this app to the flow handler, allowing for dynamic flow access (list-flows, add-flow, remove-flow).\n" << std::endl <<
+                "   Link this app to the flow handler, allowing for dynamic flow access (list-flows, add-flow, remove-flow). Typical port = 6657.\n" << std::endl <<
                 " - reset-fh" << std::endl <<
                 "   Free the flowhandler connection from this app.\n" << std::endl <<
                 " * list-flows [switch-ip-address]:" << std::endl <<

@@ -24,9 +24,9 @@ class FlowInterface:
         # Start socket server to listen for ccpdn
         def socket_thread():
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.bind(("0.0.0.0", 6667))  # Listen on port 6667
+            server_socket.bind(("0.0.0.0", 6657))  # Listen on port 6657
             server_socket.listen(5)
-            log.info("FlowHandler server started on port 6667")
+            log.info("FlowHandler server started on port 6657")
 
             while True:
                 client_socket, addr = server_socket.accept()

@@ -21,7 +21,7 @@ std::string Digest::toJson() {
     j["destinationIndex"] = destinationIndex;
     j["payload"] = payload;
     j["destination_ip"] = destination_ip;
-    j["flow_data"] = appendedFlow.flowToStr();
+    j["flow_data"] = appendedFlow.flowToStr(false);
     return j.dump();
 }
 
