@@ -30,13 +30,13 @@ class TCPAnalyzer {
 		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
 
 		// Log packet details
-		analyzer->loggy << "Captured a packet with length: " << pkthdr->len << " bytes" << std::endl;
+		loggy << "Captured a packet with length: " << pkthdr->len << " bytes" << std::endl;
 
 		// Example: Print the first 16 bytes of the packet
 		for (int i = 0; i < 16 && i < pkthdr->len; i++) {
-			analyzer->loggy << std::hex << (int)packet[i] << " ";
+			loggy << std::hex << (int)packet[i] << " ";
 		}
-		analyzer->loggy << std::endl;
+		loggy << std::endl;
 
 		// TODO: Add logic to parse OpenFlow messages (e.g., FlowMod, FlowRemoved)
 	}
