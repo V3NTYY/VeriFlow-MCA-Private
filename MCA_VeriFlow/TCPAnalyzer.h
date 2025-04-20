@@ -96,15 +96,19 @@ class TCPAnalyzer {
 		// Start capturing packets
 		loggy << "[CCPDN]: Starting packet capture...\n";
 
-		// Create thread to monitor kill signal for loop
-		std::thread killThread([handle, run]() {
-			while (*run) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		// Create thread loop
+		while (*run) {
+			// Capture packets
+			int result == pcap_dispatch(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
+			if (result == -1) {
+				loggyErr("[CCPDN-ERROR]: Error capturing packets: ");
+				loggyErr(pcap_geterr(handle));
+				loggyErr("\n");
+				break;
 			}
-			pcap_breakloop(handle);
-		});
-
-		pcap_loop(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
+			// Sleep to prevent wasted resources
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		}
 
 		// Close the handle
 		pcap_close(handle);
