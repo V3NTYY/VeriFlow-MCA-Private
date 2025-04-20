@@ -21,16 +21,6 @@ class TCPAnalyzer {
 			}
 		}
 
-		bool isOpenFlow(std::vector<uint8_t> packet) {
-			return false;
-		}
-
-		void runTCPDump(int port) {
-			// Run tcpdump and output to our byte buffer. Use /dev/null 2>&1 to hide output
-			std::string sysCommand = "sudo tcpdump -i lo tcp port " + std::to_string(port) + " > /dev/null 2>&1";
-			int result = system(sysCommand.c_str());
-		}
-
 		void runTCPDump(int port) {
 			// Construct the tcpdump command
 			std::string sysCommand = "sudo tcpdump -i lo tcp port " + std::to_string(port) + " -l -n";
