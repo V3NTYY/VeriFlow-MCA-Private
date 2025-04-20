@@ -11,6 +11,7 @@
 #include "Log.h"
 #include "OpenFlowMessage.h"
 #include "Controller.h"
+#include "Flow.h"
 
 #ifdef __unix__
 #include <pcap.h>
@@ -63,12 +64,12 @@ class TCPAnalyzer {
 		loggy << std::endl;
 
 		// Utilize parsing methods from controller, and update controller remotely
-		con->parsePacket(payload);
+		analyzer->con->parsePacket(payload);
 
 		// For now, print any flows received
-		for (Flow f : con->sharedFlows) {
+		for (Flow f : analyzer->con->sharedFlows) {
 			f.print();
-			con->parseFlow(f);
+			analyzer->con->parseFlow(f);
 		}
 	}
 #endif
