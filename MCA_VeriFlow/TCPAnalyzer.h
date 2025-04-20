@@ -18,7 +18,7 @@ class TCPAnalyzer {
 	public:
 		// Thread method
 		void thread(bool *run, std::string controllerPort) {
-			loggy << "[CCPDN]: Starting TCPDump thread...\n";
+			loggy << "[CCPDN]: Starting TCPDump thread, an xterm window will open...\n";
 			while (*run) {
 				runTCPDump(controllerPort, run);
 			}
@@ -26,8 +26,7 @@ class TCPAnalyzer {
 
 		void runTCPDump(std::string port, bool *run) {
 			// Construct the tcpdump command
-			std::string pidCommand = "echo $! > /tmp/ccpdn_xterm_pid";
-			std::string sysCommand = "xterm -hold -e \"sudo tcpdump -v -i lo tcp port " + port + " -l -n\" & " + pidCommand;
+			std::string sysCommand = "xterm -hold -e \"sudo tcpdump -v -i lo tcp port " + port + " -l -n\" & ";
 
 			#ifdef __unix__
 			// Open a pipe to read the output of tcpdump
