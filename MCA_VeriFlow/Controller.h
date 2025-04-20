@@ -72,14 +72,14 @@ class Controller {
 		Flow adjustCrossTopFlow(Flow f);
 
 		bool					  linking;
+		std::string				  controllerPort;
+		std::string				  veriflowPort;
 
 	private:
 		int						  sockfd;
 		int						  sockvf;
 		std::string				  controllerIP;
-		std::string				  controllerPort;
 		std::string				  veriflowIP;
-		std::string				  veriflowPort;
 		std::vector<Node*>		  domainNodes;
 		std::vector<Flow>		  sharedFlows;
 		Topology*				  referenceTopology;
