@@ -1,3 +1,6 @@
+#ifndef OPENFLOWMESSAGE_H
+#define OPENFLOWMESSAGE_H
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -327,3 +330,5 @@ class OpenFlowMessage {
 		
 	private:
 };
+
+#endif

@@ -74,6 +74,7 @@ class Controller {
 		bool					  linking;
 		std::string				  controllerPort;
 		std::string				  veriflowPort;
+		std::vector<Flow>		  sharedFlows;
 
 	private:
 		int						  sockfd;
@@ -81,7 +82,6 @@ class Controller {
 		std::string				  controllerIP;
 		std::string				  veriflowIP;
 		std::vector<Node*>		  domainNodes;
-		std::vector<Flow>		  sharedFlows;
 		Topology*				  referenceTopology;
 		char					  vfBuffer[1024];
 		bool					  vfFlag;
