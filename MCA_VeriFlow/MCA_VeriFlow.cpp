@@ -737,8 +737,8 @@ int main() {
 
         // run command
         else if (args.at(0) == "start") {
-            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
-                loggy << "Cannot start CCPDN App. Ensure the controller is linked and topology is initialized.\n" << std::endl;
+            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->flowhandler_linked) {
+                loggy << "Cannot start CCPDN App. Ensure the controller is linked, Flow Handler is linked and topology is initialized.\n" << std::endl;
             } else if (args.size() < 3) {
                 loggy << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]\n" << std::endl;
             } else {
