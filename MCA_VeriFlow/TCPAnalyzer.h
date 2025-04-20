@@ -60,7 +60,7 @@ class TCPAnalyzer {
 		void runTCPDump(std::string port, bool *run) {
 			// Construct the tcpdump command
 			std::string pidCommand = "echo $! > /tmp/ccpdn_xterm_pid";
-			std::string sysCommand = "xterm -hold -e \"sudo tcpdump -v -i lo tcp port " + port + " -l -n  > /dev/null 2>&1\" & " + pidCommand;
+			std::string sysCommand = "xterm -hold -e \"sudo tcpdump -v -i lo tcp port " + port + " -l -n\" & " + pidCommand;
 
 			#ifdef __unix__
 			// Open a pipe to read the output of tcpdump
