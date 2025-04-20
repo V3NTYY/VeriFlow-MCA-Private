@@ -64,7 +64,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 
 	// Ensure we have a valid packet
 	if (packet.empty()) {
-		loggyErr("[CCPDN-ERROR]: Empty packet, cancelling read.\n");
 		return false;
 	}
 

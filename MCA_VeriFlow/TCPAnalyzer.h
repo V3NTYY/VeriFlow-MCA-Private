@@ -39,38 +39,18 @@ class TCPAnalyzer {
 		// Cast userData back to TCPAnalyzer instance
 		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
 
-		// Log packet details
-		loggy << "Captured a packet with length: " << pkthdr->len << " bytes" << std::endl;
-
-		// Example: Print the first 16 bytes of the packet
-		for (int i = 0; i < pkthdr->len; i++) {
-			loggy << std::hex << (int)packet[i] << " ";
-		}
-		loggy << std::endl;
-
 		int ETHERNET_HEADER_SIZE = 14;
 		// Extract IP Frame
 		const u_char* ipHeader = packet + ETHERNET_HEADER_SIZE;
 		int IP_HEADER_SIZE = ((ipHeader[0] & 0x0F) * 4);
-		loggy << "IP Header Size: " << IP_HEADER_SIZE << std::endl;
 
 		// Extract TCP Frame
 		const u_char* tcpHeader = ipHeader + (IP_HEADER_SIZE);
 		int TCP_HEADER_SIZE = ((tcpHeader[12] & 0xF0) >> 4) * 4;
-		loggy << "TCP Header Size: " << TCP_HEADER_SIZE << std::endl;
 		int TOTAL_PAYLOAD_SIZE = pkthdr->len - (ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + TCP_HEADER_SIZE);
 
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
-
-		// Print timestamp
-		loggy << "Timestamp: " << pkthdr->ts.tv_sec << "." << pkthdr->ts.tv_usec << std::endl;
-		loggy << "Payload size: " << payload.size() << std::endl;
-		loggy << "Payload data: ";
-		for (int i = 0; i < payload.size(); i++) {
-			loggy << std::hex << (int)payload[i] << " ";
-		}
-		loggy << std::endl;
 
 		// Utilize parsing methods from controller, and update controller remotely
 		analyzer->con->parsePacket(payload);
