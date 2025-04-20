@@ -68,6 +68,11 @@ MCA_VeriFlow::MCA_VeriFlow()
     runTCPDump = false;
 }
 
+MCA_VeriFlow::~MCA_VeriFlow()
+{
+    MCA_VeriFlow::stop();
+}
+
 void MCA_VeriFlow::run() 
 {
     // Link the CCPDN to the veriflow server
@@ -88,6 +93,24 @@ void MCA_VeriFlow::stop() {
     controller_running = false;
 	controller_linked = false;
     topology_initialized = false;
+
+    // Kill any rogue xterm processes from the CCPDN
+    std::ifstream pidFile("/tmp/ccpdn_xterm_pid");
+    if (pidFile.is_open()) {
+        std::string pid;
+        std::getline(pidFile, pid);
+        pidFile.close();
+        if (!pid.empty()) {
+            std::string killPID = "kill -9 " + pid;
+            system(killPID.c_str());
+        }
+
+        // Remove the PID file
+        std::string removePIDFile = "rm -f /tmp/ccpdn_xterm_pid";
+        system(removePIDFile.c_str());
+    } else {
+        loggy << "[CCPDN-ERROR]: Could not kill xterm window!" << std::endl;
+    }
 }
 
 bool MCA_VeriFlow::registerTopologyFile(std::string file) {
@@ -467,7 +490,8 @@ int main() {
         std::vector<std::string> delimiters = { " " };
         std::vector<std::string> args = splitInput(input, delimiters);
         if (args.size() == 0) {
-			loggyMsg("Invalid command\n");
+            // Print nothing if no args are given
+            continue;
 		}
 
         // Help command, * means implemented, - means work in progress, x means nothing started on it yet
@@ -718,7 +742,7 @@ int main() {
 
         // stop command
         else if (args.at(0) == "stop") {
-            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || mca_veriflow->controller_running) {
+            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->controller_running) {
                 loggy << "CCPDN App is not running.\n" << std::endl;
             } else {
                 mca_veriflow->stop();

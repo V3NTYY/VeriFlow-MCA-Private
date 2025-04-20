@@ -24,6 +24,7 @@
 class MCA_VeriFlow {
 	public:
 		MCA_VeriFlow();
+		~MCA_VeriFlow();
 
 		void run();
 		void stop();
