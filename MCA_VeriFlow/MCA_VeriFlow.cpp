@@ -93,6 +93,24 @@ void MCA_VeriFlow::stop() {
     controller_running = false;
 	controller_linked = false;
     topology_initialized = false;
+
+    // Kill any rogue xterm processes from the CCPDN
+    std::ifstream pidFile("/tmp/ccpdn_xterm_pid");
+    if (pidFile.is_open()) {
+        std::string pid;
+        std::getline(pidFile, pid);
+        pidFile.close();
+        if (!pid.empty()) {
+            std::string killPID = "kill -9 " + pid;
+            system(killPID.c_str());
+        }
+
+        // Remove the PID file
+        std::string removePIDFile = "rm -f /tmp/ccpdn_xterm_pid";
+        system(removePIDFile.c_str());
+    } else {
+        loggy << "[CCPDN-ERROR]: Could not kill xterm window!" << std::endl;
+    }
 }
 
 bool MCA_VeriFlow::registerTopologyFile(std::string file) {
