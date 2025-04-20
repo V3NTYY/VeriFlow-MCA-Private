@@ -185,7 +185,7 @@ std::string exec(const std::string& command, std::string match) {
 				throw std::runtime_error("Failed to pipe command: " + std::string(strerror(errno)));
 			}
 
-			while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+			while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
 				// Return the first line that contains the match string, if match is -1 then return first line
 				if (strstr(buffer.data(), match.c_str()) != nullptr) {
 					result = buffer.data();
