@@ -456,7 +456,7 @@ bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 		loggyErr("[CCPDN-ERROR]: Failed to send OpenFlow Header\n");
 		return false;
 	} else if (bytes_sent != data.size()) {
-		warningString = std::to_string(bytes_sent) + " bytes transmitted but expected " << std::to_string(data.size()) + " bytes.";
+		warningString = std::to_string(bytes_sent) + " bytes transmitted but expected " + std::to_string(data.size()) + " bytes.";
 	}
 #endif
 
