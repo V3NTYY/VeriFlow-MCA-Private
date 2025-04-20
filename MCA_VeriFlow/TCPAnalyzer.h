@@ -99,7 +99,7 @@ class TCPAnalyzer {
 		// Create thread loop
 		while (*run) {
 			// Capture packets
-			int result == pcap_dispatch(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
+			int result = pcap_dispatch(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
 			if (result == -1) {
 				loggyErr("[CCPDN-ERROR]: Error capturing packets: ");
 				loggyErr(pcap_geterr(handle));
