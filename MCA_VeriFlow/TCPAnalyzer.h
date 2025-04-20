@@ -17,13 +17,14 @@
 #include <pcap.h>
 #endif
 
-typedef std::vector<uint8_t> packet;
+typedef uint8_t byte;
+typedef std::vector<byte> packet;
 
 class TCPAnalyzer {
 	public:
 		// Thread method
 		void thread(bool *run, Controller *controller) {
-			loggy << "\n\n[CCPDN]: Starting TCPDump thread...\n";
+			loggy << "\n\n[CCPDN]: Starting LibPCap thread...\n";
 
 			con = controller;
 			if (con == nullptr) {
@@ -49,13 +50,12 @@ class TCPAnalyzer {
 
 		// Extract lengths of each header (ethernet, IP, TCP, etc.)
 		int ETHERNET_HEADER_SIZE = 14;
-		int IP_HEADER_SIZE = (packet[ETHERNET_HEADER_SIZE] & 0x0F) * 4;
-		int TCP_HEADER_SIZE = ((packet[ETHERNET_HEADER_SIZE + IP_HEADER_SIZE] & 0xF0) >> 4) * 4;
+		int IP_HEADER_SIZE = 20; // Not always, but most of the time
+		int TCP_HEADER_SIZE = packet[ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + 13] / 4; // value of 13th byte of tcp frame divided by 4
 		int TOTAL_HEADER_SIZE = ETHERNET_HEADER_SIZE + IP_HEADER_SIZE + TCP_HEADER_SIZE;
-		int payload_size = pkthdr->len - TOTAL_HEADER_SIZE;
 
 		// Extract payload data
-		std::vector<uint8_t> payload(packet + TOTAL_HEADER_SIZE, packet + pkthdr->len);
+		std::vector<byte> payload(packet + TOTAL_HEADER_SIZE, packet + pkthdr->len);
 		loggy << "Payload size: " << payload_size << " bytes" << std::endl;
 		loggy << "Payload data: ";
 		for (int i = 0; i < payload_size; i++) {
