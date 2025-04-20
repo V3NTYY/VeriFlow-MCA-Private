@@ -12,6 +12,9 @@
 #include <string>
 #include <cstring>
 #include <cstddef>
+#include <stdexcept>
+#include <memory>
+#include <cstdio>
 #include <chrono>
 #include <thread>
 
@@ -78,6 +81,7 @@ class Controller {
 		std::vector<Node*> getDomainNodes();
 		void rstControllerFlag();
 		void rstVeriFlowFlag();
+		int	 getDPID(std::string IP);
 
 		bool					  linking;
 		std::string				  controllerPort;

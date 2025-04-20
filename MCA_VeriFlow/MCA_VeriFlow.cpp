@@ -794,24 +794,8 @@ int main() {
         }
 
         else if (args.at(0) == "test-method") {
-
-            if (!mca_veriflow->runTCPDump) {
-                loggy << "Link controller first dummy.\n\n";
-            }
-
-            // Request flows from controller
-            std::vector<Flow> flows = mca_veriflow->controller.retrieveFlows("127.0.0.1");
-
-            // Print all flows
-            loggy << "--- FLOWS ---" << std::endl;
-            for (Flow f : flows) {
-                loggy << "Switch IP: " << f.getSwitchIP() << std::endl;
-                loggy << "Rule Prefix: " << f.getRulePrefix() << std::endl;
-                loggy << "Next Hop IP: " << f.getNextHopIP() << std::endl;
-                loggy << "Action: " << (f.actionType() ? "Forward" : "Drop") << std::endl;
-                loggy << std::endl;
-            }
-            loggy << std::endl;
+            int dpid = mca_veriflow->controller.getDPID(args.at(1));
+            loggy << "DPID of " << args.at(1) << " is: " << dpid << std::endl;
         }
 
         // Invalid response

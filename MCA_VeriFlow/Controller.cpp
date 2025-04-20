@@ -174,6 +174,36 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, std::string dstIP) {
 	return true;
 }
 
+std::string exec(const std::string& command, std::string match) {
+    std::vector<char> buffer;
+    std::string result;
+
+    #ifdef __unix__
+			// Open a pipe to read the output of tcpdump
+			FILE* pipe = popen(command.c_str(), "r");
+			if (!pipe) {
+				throw std::runtime_error("Failed to pipe command: " + std::string(strerror(errno)));
+			}
+
+			while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+				// Return the first line that contains the match string, if match is -1 then return first line
+				if (strstr(buffer.data(), match.c_str()) != nullptr) {
+					result = buffer.data();
+					break;
+				}
+				if (match == "-1") {
+					result = buffer.data();
+					break;
+				}
+			}
+
+			// Close the pipe
+			pclose(pipe);
+	#endif
+
+    return result;
+}
+
 bool Controller::requestVerification(int destinationIndex, Flow f)
 {
 	/// WARNING: Only call this function for cross-domain verification
@@ -707,6 +737,44 @@ void Controller::rstControllerFlag()
 void Controller::rstVeriFlowFlag()
 {
 	vfFlag = false;
+}
+
+int Controller::getDPID(std::string IP)
+{
+    // Ensure IP exists within current topology
+	int hostIndex = referenceTopology->hostIndex;
+	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
+		return -1;
+	}
+	bool IPExists = false;
+	for (Node n : referenceTopology->topologyList[hostIndex]) {
+		if (n.getIP() == IP) {
+			IPExists = true;
+			break;
+		}
+	}
+
+	// If IP doesn't exist, return a fail
+	if (!IPExists) {
+		return -1;
+	}
+
+	// Run ifconfig to display interface and inet address, filter everything else out
+	std::string command1 = "ifconfig | grep -E '^[a-zA-Z0-9]|inet ' | awk '/^[a-zA-Z0-9]/ {iface=$1} /inet / {print iface, $2}' | sed 's/addr://'";
+	// Output format "interface ip-address"
+
+	// Match the interface name to the given parameter IP, use the interface name to get the DPID
+	std::string sysCommand = command1 + " > /dev/null 2>&1";
+    std::string output = exec(sysCommand.c_str(), IP);
+	// Use ' ' as delimiter, only take everything before the delimiter
+	std::string interface = output.substr(0, output.find(' '));
+	
+	// Run sudo ovs-ofctl and parse output for dpid
+	sysCommand = "sudo ovs-ofctl show " + interface + " | sed -n 's/.*dpid:\\([0-9a-fA-F]*\\).*/\\1/p'" + " > /dev/null 2>&1";
+	// Output format is just "dpid"
+	std::string dpid = exec(sysCommand.c_str(), "-1");
+
+	return std::stoi(dpid);
 }
 
 Flow Controller::adjustCrossTopFlow(Flow f)
