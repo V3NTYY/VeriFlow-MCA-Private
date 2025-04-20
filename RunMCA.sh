@@ -2,4 +2,4 @@
 cd MCA_VeriFlow
 cmake build .
 make
-./MCA_VeriFlow
+sudo ./MCA_VeriFlow
