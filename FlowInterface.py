@@ -9,6 +9,7 @@ log = core.getLogger()
 class FlowInterface:
     def __init__(self):
         core.openflow.addListeners(self)
+        self.switches = {}  # Store switch connections
         self.start_socket_server()
 
     def _handle_ConnectionUp(self, event):
@@ -17,7 +18,7 @@ class FlowInterface:
         dpid = connection.dpid
         switch_ip, switch_port = connection.sock.getpeername()
         log.info("Switch %s connected from %s:%s", dpid, switch_ip, switch_port)
-        self.switches[dpid] = connection
+        self.switches[dpid] = switch_ip
 
     def start_socket_server(self):
         """Start a socket server to handle external commands."""
