@@ -520,7 +520,6 @@ bool Controller::removeFlowFromTable(Flow f)
 
 			// Update XID mapping, use to track the return flow
 			int genXID = generateXID(referenceTopology->hostIndex);
-			fhXID = genXID;
 			updateXIDMapping(genXID, existingFlow.getSwitchIP(), existingFlow.getNextHopIP());
             
 			// Send the removal message to the controller
@@ -554,6 +553,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 
 			// Update XID mapping, use to track the return flow
 			int genXID = generateXID(referenceTopology->hostIndex);
+			fhXID = genXID;
 			updateXIDMapping(genXID, IP, "");
 
 			// Send the FlowHandler message and wait for response
