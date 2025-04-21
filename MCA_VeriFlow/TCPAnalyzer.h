@@ -10,7 +10,6 @@
 #include <vector>
 #include "Log.h"
 #include "OpenFlowMessage.h"
-#include "Controller.h"
 #include "Flow.h"
 
 #ifdef __unix__
@@ -28,13 +27,13 @@ class TCPAnalyzer {
 		static std::vector<std::vector<byte>> currentPackets;
 
 		// Thread method
-		void thread(bool *run, Controller *controller) {
+		void thread(bool *run, std::string controllerPort) {
 			while (*run) {
 				pingFlag = false;
 				currentPackets.clear();
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				loggy << "\n\n[CCPDN]: Starting LibPCap thread...\n";
-				startPacketCapture("lo", "tcp port " + controller->controllerPort, run);
+				startPacketCapture("lo", "tcp port " + controllerPort, run);
 			}
 		}
 
