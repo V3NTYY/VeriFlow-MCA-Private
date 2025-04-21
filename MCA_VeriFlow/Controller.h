@@ -118,6 +118,7 @@ class Controller {
 		bool					  vfFlag;
 		bool					  ofFlag;
 		bool					  pause_rst;
+		bool					  noRst;
 
 		// Private Functions
 		bool linkVeriFlow();

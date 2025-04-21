@@ -27,11 +27,10 @@ void Controller::controllerThread(bool* run)
 		// Parse the packet with no scrutiny to XID
 		parsePacket(packet, false);
 
-		// For now, print any flows received
-		for (Flow f : sharedFlows) {
-			f.print();
-			parseFlow(f);
-		}
+		// // Parse all received flows -- not needed for this thread, handled in flowHandler
+		// for (Flow f : sharedFlows) {
+		// 	parseFlow(f);
+		// }
 
 		// Use pause flag to hold off on using rstControllerFlag until command says its ok
 		// Only command that does this is "retrieveFlows"
@@ -40,7 +39,9 @@ void Controller::controllerThread(bool* run)
 		}
 
 		// Reset the flag once we are finished parsing everything
-		rstControllerFlag();
+		if (!noRst) {
+			rstControllerFlag();
+		}
 	}
 }
 
@@ -61,9 +62,8 @@ void Controller::flowHandlerThread(bool *run)
 			// Parse packet with scrutiny to XID
 			parsePacket(currPacket, true);
 
-			// For now, print any flows received
+			// Handle all received flows
 			for (Flow f : sharedFlows) {
-				f.print();
 				parseFlow(f);
 			}
 		}
@@ -280,6 +280,7 @@ Controller::Controller()
 	fhFlag = false;
 	linking = false;
 	pause_rst = false;
+	noRst = false;
 
 	sharedFlows.clear();
 	sharedPacket.clear();
@@ -301,6 +302,7 @@ Controller::Controller(Topology* t) {
 	fhFlag = false;
 	linking = false;
 	pause_rst = false;
+	noRst = false;
 
 	sharedPacket.clear();
 	sharedFlows.clear();
@@ -539,7 +541,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	pause_rst = true;
 	while (!fhFlag) {
 		// Timeout
-		if (localCount > 10) {
+		if (localCount > 15) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
 			return flows;
@@ -982,10 +984,12 @@ std::vector<uint8_t> Controller::recvControllerMessages()
 		if (bytes_received < 0) {
 			loggyErr("[CCPDN-ERROR]: Failed to receive message from controller\n");
 			ofFlag = true;
+			noRst = true;
 			return {};
 		} else if (bytes_received == 0) {
 			loggyErr("[CCPDN-ERROR]: Connection closed by controller\n");
 			ofFlag = true;
+			noRst = true;
 			return {};
 		}
 
@@ -1051,10 +1055,6 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		// Flow processing
 		uint32_t rulePrefixIP = ntohl(flow_stats->match.nw_src);
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
-
-		loggy << "Rule Prefix IP: " << rulePrefixIP << std::endl;
-		loggy << "Wildcards: " << wildcards << std::endl;
-		loggy << "Flow Length: " << flow_length << std::endl;
 
 		// Create string formats
 		std::string targetSwitch = getSrcFromXID(reply->header.xid);
