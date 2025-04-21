@@ -895,6 +895,50 @@ Flow Controller::adjustCrossTopFlow(Flow f)
 	return Flow();
 }
 
+bool Controller::updateXIDMapping(uint32_t xid, std::string srcIP, std::string dstIP)
+{
+	// Return true if mapping was added successfully
+	// Return false if mapping already exists, and had to be overwritten
+
+	bool returnVal = true;
+	if (xidFlowMap.find(xid) != xidFlowMap.end()) {
+		returnVal = false;
+	}
+
+	xidFlowMap[xid] = std::make_pair(srcIP, dstIP);
+
+	return returnVal;
+}
+
+std::string Controller::getSrcFromXID(uint32_t xid)
+{
+	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
+	if (IPs.first.empty()) {
+		return "";
+	}
+
+	return IPs.first;
+}
+
+std::string Controller::getDstFromXID(uint32_t xid)
+{
+    std::pair<std::string, std::string> IPs = xidFlowMap[xid];
+	if (IPs.second.empty()) {
+		return "";
+	}
+
+	return IPs.second;
+}
+
+int Controller::generateXID(int topologyIndex)
+{
+	// Each topology will have a range of 1000 values, so topology 0 has 0-999, topology 1 has 1000-1999, etc.
+	int baseXID = topologyIndex * 1000;
+	int randomXID = rand() % 1000; // Random number between 0 and 999
+	
+    return baseXID + randomXID;
+}
+
 void Controller::veriFlowHandshake()
 {
 	sendVeriFlowMessage("[CCPDN] Hello");

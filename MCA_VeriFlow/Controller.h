@@ -18,6 +18,8 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
+#include <utility>
+#include <unordered_map>
 
 #ifdef __unix__
 	#include <sys/socket.h>
@@ -73,6 +75,12 @@ class Controller {
 		std::vector<Flow> retrieveFlows(std::string IP);
 		Flow adjustCrossTopFlow(Flow f);
 
+		// XID Mapping functions
+		bool updateXIDMapping(uint32_t xid, std::string srcIP, std::string dstIP);
+		std::string getSrcFromXID(uint32_t xid);
+		std::string getDstFromXID(uint32_t xid);
+		int generateXID(int topologyIndex);
+
 		// Verification functions
 		bool requestVerification(int destinationIndex, Flow f);
 		bool performVerification(bool externalRequest, Flow f);
@@ -85,6 +93,9 @@ class Controller {
 		int	 			   getDPID(std::string IP);
 		int  			   getOutputPort(std::string srcIP, std::string dstIP);
 		std::string 	   getIPFromStats(int port);
+
+		// Map every XID to a flow, specifically the source and destination IPs
+		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 
 
 		bool					  linking;
 		std::string				  controllerPort;
