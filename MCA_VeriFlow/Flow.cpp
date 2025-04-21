@@ -8,7 +8,8 @@ std::string Flow::flowToStr(bool printDPID)
 	std::string actionStr = action ? "A" : "R";
 	std::string outputSrcIP = printDPID ? switchDPID : switchIP;
 	std::string outputHopIP = printDPID ? outPort : nextHopIP;
-	output = actionStr + "#" + outputSrcIP + "-" + rulePrefix + "-" + outputHopIP;
+	std::string actionPrefix = printDPID ? "" : (actionStr + "#");
+	output = actionPrefix + outputSrcIP + "-" + rulePrefix + "-" + outputHopIP;
 	return output;
 }
 
