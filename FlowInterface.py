@@ -44,15 +44,16 @@ class FlowInterface:
             if (data == None):
                 log.error("Received malformed/empty data.")
                 return
-
-            # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
-            result = self.parse_data(data)
-
+            
             # Parse listflows version of the command
             if (data.startswith("listflows")):
                 result = data.split("-")
                 result[0] = "list_flows"
                 result[1] = result[1][2:]
+
+            # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
+            if (result == None):
+                result = self.parse_data(data)
 
             if (result == None):
                 log.error("Error parsing data: %s", data)
