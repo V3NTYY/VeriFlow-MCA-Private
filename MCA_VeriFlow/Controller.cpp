@@ -1,6 +1,9 @@
 #include "Controller.h"
 #include <thread>
 
+bool TCPAnalyzer::pingFlag = false;
+std::vector<std::vector<byte>> TCPAnalyzer::currentPackets;
+
 /// Temporary solution for getting flows and finding flow mods
 
 /// Run a separate thread for the command sudo tcpdump -i lo tcp port 6653
