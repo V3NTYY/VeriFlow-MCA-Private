@@ -102,6 +102,10 @@ class TCPAnalyzer {
 		// Create thread loop
 		while (*run) {
 
+			if (con == nullptr) {
+				break;
+			}
+
 			// Prevent packet capture while we are parsing packets
 			if (con->fhFlag) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(50));
