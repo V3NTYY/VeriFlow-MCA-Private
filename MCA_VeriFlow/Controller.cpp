@@ -19,9 +19,6 @@ void Controller::controllerThread(bool* run)
 	loggy << "[CCPDN]: Starting controller thread...\n";
 	while (*run) {
 
-		// Clear our current flow list
-		tryClearSharedFlows();
-
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
 
@@ -298,7 +295,7 @@ Controller::Controller()
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
-	recvSharedFlag = false;
+	recvSharedFlag = true;
 
 	sharedFlows.clear();
 	sharedPacket.clear();
@@ -322,7 +319,7 @@ Controller::Controller(Topology* t) {
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
-	recvSharedFlag = false;
+	recvSharedFlag = true;
 
 	sharedPacket.clear();
 	sharedFlows.clear();
@@ -600,7 +597,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	}
 
 	pause_rst = false;
-	recvSharedFlag = false;
+	recvSharedFlag = true;
 	return flows;
 }
 
@@ -956,7 +953,7 @@ std::string Controller::getIPFromOutputPort(std::string srcIP, int outputPort)
 
 void Controller::tryClearSharedFlows()
 {
-	if (recvSharedFlag) {
+	if (!recvSharedFlag) {
 		return;
 	}
 
@@ -1133,7 +1130,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 		// Add flow to shared flows
-		recvSharedFlag = true;
+		recvSharedFlag = false;
 		Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
 		f.setMod(false);
 		sharedFlows.push_back(f);
@@ -1184,7 +1181,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	}
 	
 	// Add flow to shared flows -- since it is added, do true
-	recvSharedFlag = true;
+	recvSharedFlag = false;
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
 	f.setMod(true);
 	sharedFlows.push_back(f);
@@ -1224,7 +1221,7 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	}
 
 	// Add flow to shared flows -- since it is added, do true
-	// recvSharedFlag = true;
+	// recvSharedFlag = false;
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, false);
 	f.setMod(true);
 	sharedFlows.push_back(f);
