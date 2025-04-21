@@ -30,7 +30,6 @@ class Controller {
 		Controller();
 		Controller(Topology* t);
 		~Controller();
-		Controller& operator=(const Controller&) = delete; // Disable assignment operator
 
 		// Setters
 		void setControllerIP(std::string Controller_IP, std::string Controller_Port);
