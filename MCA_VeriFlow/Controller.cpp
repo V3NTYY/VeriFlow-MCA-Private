@@ -119,11 +119,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
 			return false;
 		}
 
-		// dbg statement
-		if (xidCheck) {
-			loggy << "XID Check success!\n";
-		}
-
 		// Based on header type, process our packet
 		switch (header_type) {
 			case OFPT_HELLO: {
@@ -932,6 +927,8 @@ bool Controller::updateXIDMapping(uint32_t xid, std::string srcIP, std::string d
 
 	xidFlowMap[xid] = std::make_pair(srcIP, dstIP);
 
+	loggyMsg("[CCPDN]: Added XID mapping: " + std::to_string(xid) + " -> " + srcIP + " -> " + dstIP + "\n");
+
 	return returnVal;
 }
 
@@ -1092,6 +1089,8 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	// Flow processing -- HANDLE GETTING DST IP FROM ACTION
 	uint32_t rulePrefixIP = ntohl(mod->match.nw_src);
 	uint32_t wildcards = ntohl(mod->match.wildcards);
+
+	loggy << "XID: " << mod->header.xid << std::endl;
 
 	// Create string formats
 	std::string targetSwitch = getSrcFromXID(mod->header.xid);
