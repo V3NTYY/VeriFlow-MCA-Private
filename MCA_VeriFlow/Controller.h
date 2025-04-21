@@ -17,8 +17,6 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 
 #ifdef __unix__
 	#include <sys/socket.h>
