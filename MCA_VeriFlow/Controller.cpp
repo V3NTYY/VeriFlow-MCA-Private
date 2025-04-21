@@ -158,7 +158,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
 			}
 			case OFPT_STATS_REPLY: {
 				// Handle stats reply -- used for listing flows. Set fHFlag to true for list-flows
-				fhFlag = true;
 				loggy << "[CCPDN]: Received Stats_Reply." << std::endl;
 				ofp_stats_reply* reply = reinterpret_cast<ofp_stats_reply*>(packet.data() + offset);
 				handleStatsReply(reply);
@@ -281,6 +280,7 @@ Controller::Controller()
 	linking = false;
 	pause_rst = false;
 	noRst = false;
+	fhXID = -1;
 
 	sharedFlows.clear();
 	sharedPacket.clear();
@@ -303,6 +303,7 @@ Controller::Controller(Topology* t) {
 	linking = false;
 	pause_rst = false;
 	noRst = false;
+	fhXID = -1;
 
 	sharedPacket.clear();
 	sharedFlows.clear();
@@ -519,6 +520,7 @@ bool Controller::removeFlowFromTable(Flow f)
 
 			// Update XID mapping, use to track the return flow
 			int genXID = generateXID(referenceTopology->hostIndex);
+			fhXID = genXID;
 			updateXIDMapping(genXID, existingFlow.getSwitchIP(), existingFlow.getNextHopIP());
             
 			// Send the removal message to the controller
@@ -578,11 +580,6 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		if (f.getSwitchIP() == IP) {
 			flows.push_back(f);
 		}
-	}
-
-	// Recursively call this function if we picked the wrong stats_reply
-	if (sharedFlows.empty()) {
-		return retrieveFlows(IP);
 	}
 
 	pause_rst = false;
@@ -1072,6 +1069,12 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 	reply->header.length = ntohs(reply->header.length);
 	reply->header.xid = ntohl(reply->header.xid);
 	reply->type = ntohs(reply->type);
+
+	// Set fhFlag if we are expecting this as a list-flows return
+	if (reply->header.xid == fhXID) {
+		fhXID = -1;
+		fhFlag = true;
+	}
 
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {

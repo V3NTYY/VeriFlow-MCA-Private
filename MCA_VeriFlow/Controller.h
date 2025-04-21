@@ -104,6 +104,7 @@ class Controller {
 		std::vector<Flow>		  sharedFlows;
 		std::vector<uint8_t>	  sharedPacket;
 		bool					  fhFlag;
+		int						  fhXID;
 
 	private:
 		int						  sockfd;
