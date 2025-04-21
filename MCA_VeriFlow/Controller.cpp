@@ -591,7 +591,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	fhFlag = false;
 
 	for (Flow f : sharedFlows) {
-		if (f.getSwitchIP() == IP) {
+		if (f.getSwitchIP() == IP && !f.isMod()) {
 			flows.push_back(f);
 		}
 	}
