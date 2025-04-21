@@ -460,7 +460,8 @@ bool Controller::addFlowToTable(Flow f)
 	std::string switchDP = std::to_string(getDPID(f.getSwitchIP()));
     std::string hopDP = std::to_string(getDPID(f.getNextHopIP()));
     f.setDPID(switchDP, hopDP);
-    // Send the OpenFlow message to the controller, flow already should have DPIDs
+	loggy << "Adding flow " << f.flowToStr(true) << " to table.\n";
+    // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
 	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true)); // true for add action
 }
 
@@ -509,8 +510,8 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		if (!sent) {
 			// Send this request to controller
 			std::string dpid = std::to_string(getDPID(IP));
-			if (sendFlowHandlerMessage("listflows-" + dpid)) {
-				loggyErr("[CCPDN-ERROR]: Failed to send flow list request to controller\n");
+			if (!sendFlowHandlerMessage("listflows-" + dpid)) {
+				loggyErr("[CCPDN-ERROR]: Failed to retrieve flow list\n");
 				pause_rst = false;
 				return flows;
 			}
@@ -521,6 +522,9 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		localCount++;
 	}
+
+	// Wait for 50ms
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
 	for (Flow f : sharedFlows) {
 		if (f.getSwitchIP() == IP) {
