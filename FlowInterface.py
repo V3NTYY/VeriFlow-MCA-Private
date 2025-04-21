@@ -46,12 +46,17 @@ class FlowInterface:
             if (data == None):
                 log.error("Received malformed/empty data.")
                 return
+
+            # Ensure data consistency
+            data = data.strip()
+            data = data.replace(" ", "")  # Remove spaces
+            data = data.replace("\n", "")  # Remove newlines
+            data = data.replace("\r", "")  # Remove carriage returns
+            data = data.replace("\t", "")  # Remove tabs
             
             # Parse listflows version of the command
             if (data.startswith("listflows")):
                 result = data.split("-")
-                result[0] = "list_flows"
-                result[1] = result[1][1:]
 
             # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             if (result == None):
