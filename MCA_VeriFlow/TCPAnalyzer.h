@@ -24,14 +24,17 @@ class TCPAnalyzer {
 	public:
 		// Thread method
 		void thread(bool *run, Controller *controller) {
-			loggy << "\n\n[CCPDN]: Starting LibPCap thread...\n";
+			while (*run) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				loggy << "\n\n[CCPDN]: Starting LibPCap thread...\n";
 
-			con = controller;
-			if (con == nullptr) {
-				return;
+				con = controller;
+				if (con == nullptr) {
+					return;
+				}
+
+				startPacketCapture("lo", "tcp port " + controller->controllerPort, run);
 			}
-
-			startPacketCapture("lo", "tcp port " + controller->controllerPort, run);
 		}
 
 #ifdef __unix__
@@ -61,6 +64,7 @@ class TCPAnalyzer {
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
 
 		// Utilize parsing methods from controller, and update controller remotely
+		loggy << "[CCPDN]: Packet captured.\n";
 		con->sharedPacket = payload;
 		con->fhFlag = true;
 	}

@@ -54,7 +54,9 @@ void Controller::flowHandlerThread(bool *run)
 
 			// Grab copy of last read packet
 			std::vector<uint8_t> currPacket = sharedPacket;
+			// Allow packets to be received again
 			sharedPacket.clear();
+			fhFlag = false;
 
 			// Parse packet
 			parsePacket(currPacket);
@@ -64,9 +66,6 @@ void Controller::flowHandlerThread(bool *run)
 				f.print();
 				parseFlow(f);
 			}
-
-			// Allow packets to be received again
-			fhFlag = false;
 		}
 	}
 }
