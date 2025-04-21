@@ -21,18 +21,19 @@ typedef uint8_t byte;
 typedef std::vector<byte> packet;
 
 class TCPAnalyzer {
+
 	public:
+
+		static bool pingFlag;
+		static std::vector<std::vector<byte>> currentPackets;
+
 		// Thread method
 		void thread(bool *run, Controller *controller) {
 			while (*run) {
+				pingFlag = false;
+				currentPackets.clear();
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				loggy << "\n\n[CCPDN]: Starting LibPCap thread...\n";
-
-				con = controller;
-				if (con == nullptr) {
-					return;
-				}
-
 				startPacketCapture("lo", "tcp port " + controller->controllerPort, run);
 			}
 		}
@@ -44,9 +45,6 @@ class TCPAnalyzer {
 			return;
 		}
 		if (pkthdr->len <= 0) {
-			return;
-		}
-		if (con == nullptr) {
 			return;
 		}
 
@@ -64,9 +62,8 @@ class TCPAnalyzer {
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
 
 		// Utilize parsing methods from controller, and update controller remotely
-		loggy << "[CCPDN]: Packet captured.\n";
-		con->sharedPacket = payload;
-		con->fhFlag = true;
+		currentPackets.push_back(payload);
+		pingFlag = true;
 	}
 #endif
 
@@ -103,14 +100,10 @@ class TCPAnalyzer {
 
 		// Create thread loop
 		while (*run) {
-			if (con == nullptr) {
-				break;
-			}
 
-			// Prevent packet capture while we are parsing packets
-			if (con->fhFlag) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				continue;
+			// Give our other threads a notifier if they have packets to work on!
+			if (currentPackets.size() > 0) {
+				pingFlag = true;
 			}
 
 			// Capture packets and process them
@@ -129,8 +122,6 @@ class TCPAnalyzer {
 		loggy << "[CCPDN]: Packet capture complete.\n";
 #endif
 	}
-
-	Controller* con;
 		
 	private:
 };

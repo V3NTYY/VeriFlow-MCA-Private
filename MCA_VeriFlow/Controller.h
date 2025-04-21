@@ -7,6 +7,7 @@
 #include "Digest.h"
 #include "Log.h"
 #include "Topology.h"
+#include "TCPAnalyzer.h"
 #include <iostream>
 #include <vector>
 #include <string>
