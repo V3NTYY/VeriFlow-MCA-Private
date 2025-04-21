@@ -40,10 +40,10 @@ class TCPAnalyzer {
 		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
 
 		// Ensure valid ptrs
-		if (!analyzer == nullptr) {
+		if (!analyzer) {
 			return;
 		}
-		if (!analyzer->con == nullptr) {
+		if (!analyzer->con) {
 			return;
 		}
 
