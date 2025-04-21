@@ -57,8 +57,9 @@ class TCPAnalyzer {
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
 
-		// Queue the packet to be parsed
-		analyzer->con->enqueuePacket(payload);
+		// Utilize parsing methods from controller, and update controller remotely
+		analyzer->con->sharedPacket = payload;
+		analyzer->con->fhFlag = true;
 	}
 #endif
 

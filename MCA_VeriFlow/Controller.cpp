@@ -45,39 +45,28 @@ void Controller::flowHandlerThread(bool *run)
 {
 	loggy << "[CCPDN]: Starting flow handler thread...\n";
 	while (*run) {
-		// Packet to read
-		std::vector<uint8_t> packet;
+		// Wait until our flag is set to positive, then parse the packet
+		if (fhFlag) {
+			// Clear our current flow list
+			sharedFlows.clear();
 
-		{ // Lock our packet mutex
-			std::unique_lock<std::mutex> lock(packetMutex);
+			// Grab copy of last read packet
+			std::vector<uint8_t> currPacket = sharedPacket;
+			sharedPacket.clear();
 
-			// Wait until we've received a packet
-			packetCondition.wait(lock, [this] { return !sharedPackets.empty(); });
+			// Parse packet
+			parsePacket(currPacket);
 
-			// Process all current packets
-			if (!sharedPackets.empty()) {
-				// Pop the first packet in queue out and process it
-				packet = sharedPackets.front();
-				sharedPackets.erase(sharedPackets.begin());
+			// For now, print any flows received
+			for (Flow f : sharedFlows) {
+				f.print();
+				parseFlow(f);
 			}
-		} // Mutex unlocks by exiting scope
 
-		// Parse the packet
-		parsePacket(packet);
-
-		// For now, print any flows received
-		for (Flow f : sharedFlows) {
-			f.print();
-			parseFlow(f);
+			// Allow packets to be received again
+			fhFlag = false;
 		}
 	}
-}
-
-void Controller::enqueuePacket(const std::vector<uint8_t> &packet)
-{
-	std::lock_guard<std::mutex> lock(packetMutex);
-	sharedPackets.push_back(packet);
-	packetCondition.notify_one();
 }
 
 void Controller::parseFlow(Flow f)
@@ -283,7 +272,7 @@ Controller::Controller()
 	pause_rst = false;
 
 	sharedFlows.clear();
-	sharedPackets.clear();
+	sharedPacket.clear();
 	domainNodes.clear();
 }
 
@@ -303,7 +292,7 @@ Controller::Controller(Topology* t) {
 	linking = false;
 	pause_rst = false;
 
-	sharedPackets.clear();
+	sharedPacket.clear();
 	sharedFlows.clear();
 	domainNodes.clear();
 }
