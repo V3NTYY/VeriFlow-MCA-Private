@@ -46,12 +46,15 @@ void Controller::flowHandlerThread(bool *run)
 	while (*run) {
 		// Packet to read
 		std::vector<uint8_t> packet;
+		loggy << "b4 scope\n";
 
 		{ // Lock our packet mutex
 			std::unique_lock<std::mutex> lock(packetMutex);
 
+			loggy << "b4 wait\n";
 			// Wait until we've received a packet
 			packetCondition.wait(lock, [this] { return !sharedPackets.empty(); });
+			loggy << "after wait\n";
 
 			// Process all current packets
 			if (!sharedPackets.empty()) {
@@ -61,9 +64,11 @@ void Controller::flowHandlerThread(bool *run)
 			}
 		} // Mutex unlocks by exiting scope
 
+		loggy << "Parsing packet...\n";
 		// Parse the packet
 		parsePacket(packet);
 
+		loggy << "Printing flows...\n";
 		// For now, print any flows received
 		for (Flow f : sharedFlows) {
 			f.print();
@@ -74,6 +79,7 @@ void Controller::flowHandlerThread(bool *run)
 
 void Controller::enqueuePacket(const std::vector<uint8_t> &packet)
 {
+	loggy << "enqueue packet...\n";
 	std::lock_guard<std::mutex> lock(packetMutex);
 	sharedPackets.push_back(packet);
 	packetCondition.notify_one();
