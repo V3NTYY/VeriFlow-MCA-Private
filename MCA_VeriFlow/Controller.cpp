@@ -24,11 +24,9 @@ void Controller::controllerThread(bool* run)
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
 
-		loggy << "Parsing packet...\n";
-		// Parse the packet
-		parsePacket(packet);
+		// Parse the packet with no scrutiny to XID
+		parsePacket(packet, false);
 
-		loggy << "Printing flows...\n";
 		// For now, print any flows received
 		for (Flow f : sharedFlows) {
 			f.print();
@@ -58,17 +56,16 @@ void Controller::flowHandlerThread(bool *run)
 			// Grab copy of last read packet
 			std::vector<byte> currPacket = TCPAnalyzer::currentPackets.front();
 			TCPAnalyzer::currentPackets.erase(TCPAnalyzer::currentPackets.begin());
+			TCPAnalyzer::pingFlag = false;
 
-			// Parse packet
-			parsePacket(currPacket);
+			// Parse packet with scrutiny to XID
+			parsePacket(currPacket, true);
 
 			// For now, print any flows received
 			for (Flow f : sharedFlows) {
 				f.print();
 				parseFlow(f);
 			}
-
-			TCPAnalyzer::pingFlag = false;
 		}
 	}
 }
@@ -92,7 +89,7 @@ void Controller::parseFlow(Flow f)
 	// Action: Do nothing, another method will be handling this
 }
 
-bool Controller::parsePacket(std::vector<uint8_t>& packet) {
+bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
 
 	// Ensure we have a valid packet
 	if (packet.empty() || packet.size() < 0) {
@@ -113,6 +110,19 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 		uint8_t header_type = header->type;
 		uint16_t msg_length = ntohs(header->length);
 		uint32_t host_endian_XID = ntohl(header->xid);
+
+		// Drop packet if we are not intended to process it based on XID
+		int hostTopologyLower = referenceTopology->hostIndex * 1000;
+		int hostTopologyUpper = hostTopologyLower + 999;
+		if (((static_cast<int>(host_endian_XID) < hostTopologyLower) && xidCheck)
+		|| ((static_cast<int>(host_endian_XID) > hostTopologyUpper) && xidCheck)) {
+			return false;
+		}
+
+		// dbg statement
+		if (xidCheck) {
+			loggy << "XID Check success!\n";
+		}
 
 		// Based on header type, process our packet
 		switch (header_type) {
@@ -480,12 +490,17 @@ bool Controller::freeLink()
 
 bool Controller::addFlowToTable(Flow f)
 {    
+	// Set reference DPIDs
 	std::string switchDP = std::to_string(getDPID(f.getSwitchIP()));
     std::string output = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
 	f.setDPID(switchDP, output);
 
+	// Update XID mapping, use to track the return flow
+	int genXID = generateXID(referenceTopology->hostIndex);
+	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
+
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
-	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true)); // true for add action
+	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID)); // true for add action
 }
 
 bool Controller::removeFlowFromTable(Flow f)
@@ -504,9 +519,13 @@ bool Controller::removeFlowFromTable(Flow f)
 			std::string switchDP = std::to_string(getDPID(existingFlow.getSwitchIP()));
 			std::string output = std::to_string(getOutputPort(existingFlow.getSwitchIP(), existingFlow.getNextHopIP()));
 			existingFlow.setDPID(switchDP, output);
+
+			// Update XID mapping, use to track the return flow
+			int genXID = generateXID(referenceTopology->hostIndex);
+			updateXIDMapping(genXID, existingFlow.getSwitchIP(), existingFlow.getNextHopIP());
             
 			// Send the removal message to the controller
-			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true)); // false for delete action
+			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true) + "-" + std::to_string(genXID)); // false for delete action
         }
     }
     
@@ -531,8 +550,14 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 			return flows;
 		}
 		if (!sent) {
-			// Send this request to controller
+			// Get the DPID associated with the given IP address
 			std::string dpid = std::to_string(getDPID(IP));
+
+			// Update XID mapping, use to track the return flow
+			int genXID = generateXID(referenceTopology->hostIndex);
+			updateXIDMapping(genXID, IP, "");
+
+			// Send the FlowHandler message and wait for response
 			if (!sendFlowHandlerMessage("listflows-" + dpid)) {
 				loggyErr("[CCPDN-ERROR]: Failed to retrieve flow list\n");
 				pause_rst = false;
@@ -1033,8 +1058,8 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
 
 		// Create string formats
-		std::string targetSwitch = "0";
-		std::string nextHop = "0";
+		std::string targetSwitch = getSrcFromXID(header->xid);
+		std::string nextHop = getDstFromXID(header->xid);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 		
 		// Add flow to shared flows
@@ -1069,8 +1094,8 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	uint32_t wildcards = ntohl(mod->match.wildcards);
 
 	// Create string formats
-	std::string targetSwitch = "0";
-	std::string nextHop = "0";
+	std::string targetSwitch = getSrcFromXID(header->xid);
+	std::string nextHop = getDstFromXID(header->xid);
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
@@ -1106,8 +1131,8 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	uint32_t wildcards = ntohl(removed->match.wildcards);
 
 	// Create string formats
-	std::string targetSwitch = "0";
-	std::string nextHop = "0";
+	std::string targetSwitch = getSrcFromXID(header->xid);
+	std::string nextHop = getDstFromXID(header->xid);
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid

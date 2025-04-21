@@ -42,7 +42,7 @@ class FlowInterface:
                 data = client_socket.recv(1024).decode("utf-8")
                 log.info("Received command: %s", data)
 
-                result = [ 0, 0, 0, 0, 0 ]  # Initialize
+                result = [ 0, 0, 0, 0, 0, 0 ]  # Initialize
 
                 if not data:
                     log.info("Client %s:%s disconnected.", client_socket.getpeername()[0], client_socket.getpeername()[1])
@@ -62,10 +62,10 @@ class FlowInterface:
                 # Parse listflows version of the command
                 if (data.startswith("listflows")):
                     result = data.split("-")
-                    result = [ result[0], result[1], 0, 0, 0 ]
+                    result = [ result[0], result[1], 0, 0, 0, 0 ]
 
-                # Parse the command, returns a set with {command, srcDPID, output_port, nw_src, Wildcards}
-                if (result == [0, 0, 0, 0, 0]):
+                # Parse the command, returns a set with {command, srcDPID, output_port, nw_src, Wildcards, XID}
+                if (result == [0, 0, 0, 0, 0, 0]):
                     result = self.parse_data(data)
 
                 if (result == None):
@@ -74,6 +74,7 @@ class FlowInterface:
                 
                 srcDPID = int(result[1])
                 outPort = int(result[2])
+                xid = int(result[5])
 
                 # Create match object from our nw_src, Wildcards and dstDPID
                 match = of.ofp_match()
@@ -85,13 +86,15 @@ class FlowInterface:
                 # Create action object based on srcDPID and dstDPID
                 action = of.ofp_action_output(port=outPort)
 
+                log.info("Parsed command: %s", result)
+
                 # Apply commands via controller
                 if result[0] == "addflow":
-                    self.add_flow(srcDPID, match, action)
+                    self.add_flow(srcDPID, match, action, xid)
                 elif result[0] == "removeflow":
-                    self.remove_flow(srcDPID, match, action)
+                    self.remove_flow(srcDPID, match, action, xid)
                 elif result[0] == "listflows":
-                    self.list_flows(srcDPID)
+                    self.list_flows(srcDPID, xid)
         except Exception as e:
             log.error("Error handling client: %s", e)
         finally:
@@ -100,7 +103,7 @@ class FlowInterface:
     def parse_data(self, data):
 
         #    ---Format of received data---
-        # command-A#switchDPID-rulePrefix-nextHopDPID
+        # command-A#switchDPID-rulePrefix-nextHopDPID-XID
         # Commands: addflow, removeflow, listflows
 
         # Parse each individual arg using "-" as a delimiter
@@ -121,33 +124,38 @@ class FlowInterface:
             return None
 
         # Returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
-        return [ args[0], args[1], args[3], Nw_src, Wildcards ]
+        return [ args[0], args[1], args[3], Nw_src, Wildcards, args[4] ]
 
-    def add_flow(self, dpid, match, action):
+    def add_flow(self, dpid, match, action, XID):
 
         # Send a Flow Mod command to the switch
         fm = of.ofp_flow_mod()
         fm.match = match
         fm.actions.append(action)
+        fm.xid = XID
 
         self.switches[dpid].send(fm)
         log.info("Flow %s (wildcard %s) added to switch %s", fm, fm.match.wildcards, dpid)
 
-    def remove_flow(self, dpid, match, action):
+    def remove_flow(self, dpid, match, action, XID):
 
         # Send a Flow Remove command to the switch
         fm = of.ofp_flow_mod(command=of.OFPFC_DELETE)
         fm.match = match
         fm.actions.append(action)
+        fm.xid = XID
 
         self.switches[dpid].send(fm)
         log.info("Flow %s (wildcard %s) removed from switch %s", fm, fm.match.wildcards, dpid)
 
-    def list_flows(self, dpid):
+    def list_flows(self, dpid, XID):
 
         # Send a stats request to the switch
         connection = self.switches[dpid]
-        connection.send(of.ofp_stats_request(body=of.ofp_flow_stats_request()))
+        req = of.ofp_stats_request(body=of.ofp_flow_stats_request())
+        req.xid = XID
+
+        connection.send(req)
         log.info("Flow stats requested from switch %s", dpid)
 
 def launch():

@@ -50,7 +50,7 @@ class Controller {
 		void flowHandlerThread(bool* run);
 
 		// Reading + Parsing functions
-		bool parsePacket(std::vector<uint8_t>& packet);
+		bool parsePacket(std::vector<uint8_t>& packet, bool xidCheck);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
 		void parseFlow(Flow f);
