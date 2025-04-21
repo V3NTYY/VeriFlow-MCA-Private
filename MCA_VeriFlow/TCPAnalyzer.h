@@ -82,7 +82,7 @@ class TCPAnalyzer {
 		}
 
 		// Create a timestamped packet
-		TimestampedPacket tsPacket = {std::chrono::steady_clock::now(), payload};
+		TimestampPacket tsPacket = {std::chrono::steady_clock::now(), payload};
 
 		// Utilize parsing methods from controller, and update controller remotely
 		{
