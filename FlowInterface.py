@@ -41,6 +41,8 @@ class FlowInterface:
             data = client_socket.recv(1024).decode("utf-8")
             log.info("Received command: %s", data)
 
+            result = { 0, 0, 0, 0, 0 }  # Initialize
+
             if (data == None):
                 log.error("Received malformed/empty data.")
                 return

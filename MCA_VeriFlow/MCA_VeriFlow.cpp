@@ -531,6 +531,8 @@ int main() {
         else if (args.at(0) == "reset-fh") {
             if (!mca_veriflow->flowhandler_linked) {
                 loggy << "FlowHandler not linked. Try link-flowhandler first\n" << std::endl;
+            } else if (mca_veriflow->runTCPDump) {
+                loggy << "All services are running, please use stop first.\n" << std::endl;
             }
             else {
                 // Once this is false, thread will auto-cleanup
@@ -634,6 +636,8 @@ int main() {
         else if (args.at(0) == "reset-controller") {
             if (!mca_veriflow->controller_linked) {
                 loggy << "Controller not linked. Try link-controller first\n" << std::endl;
+            } else if (mca_veriflow->runTCPDump) {
+                loggy << "All services are running, please use stop first.\n" << std::endl;
             }
             else {
                 mca_veriflow->controller.freeLink();
