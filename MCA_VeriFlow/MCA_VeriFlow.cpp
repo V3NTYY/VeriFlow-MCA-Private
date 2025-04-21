@@ -541,8 +541,8 @@ int main() {
         }
 
         else if (args.at(0) == "list-flows") {
-            if (!mca_veriflow->flowhandler_linked) {
-                loggy << "Ensure Flow Handler is started first.\n" << std::endl;
+            if (!mca_veriflow->runTCPDump) {
+                loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
             }
             else if (args.size() < 2) {
                 loggy << "Not enough arguments. Usage: list-flows [switch-ip-address]\n" << std::endl;
@@ -570,8 +570,8 @@ int main() {
         }
 
         else if (args.at(0) == "add-flow") {
-			if (!mca_veriflow->flowhandler_linked) {
-				loggy << "Ensure Flow Handler is started first.\n" << std::endl;
+			if (!mca_veriflow->runTCPDump) {
+				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
 			}
 			else if (args.size() < 4) {
 				loggy << "Not enough arguments. Usage: add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
@@ -592,8 +592,8 @@ int main() {
 		}
 
 		else if (args.at(0) == "del-flow") {
-			if (!mca_veriflow->flowhandler_linked) {
-				loggy << "Ensure Flow Handler started first.\n" << std::endl;
+			if (!mca_veriflow->runTCPDump) {
+				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
 			}
             else if (args.size() < 4) {
 				loggy << "Not enough arguments. Usage: del-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
