@@ -177,13 +177,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
 				loggy << "[CCPDN]: Received Stats_Reply." << std::endl;
 				ofp_stats_reply* reply = reinterpret_cast<ofp_stats_reply*>(packet.data() + offset);
 
-				// debug print out bytes
-				loggy << "[CCPDN]: Stats Reply Bytes: ";
-				for (int i = 0; i < msg_length; i++) {
-					loggy << std::hex << static_cast<int>(packet[i]) << " ";
-				}
-				loggy << std::dec << std::endl;
-
 				handleStatsReply(reply);
 				break;
 			}
