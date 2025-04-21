@@ -45,9 +45,6 @@ class TCPAnalyzer {
 		if (pkthdr == nullptr || packet == nullptr) {
 			return;
 		}
-		if (pkthdr->len <= 0) {
-			return;
-		}
 
 		int ETHERNET_HEADER_SIZE = 14;
 		// Extract IP Frame
@@ -92,6 +89,8 @@ class TCPAnalyzer {
 			loggy << "[CCPDN-ERROR]: Couldn't set pcap filter: " << pcap_geterr(handle) << std::endl;
 			return;
 		}
+
+		pcap_set_immediate_mode(handle, 1);
 
 		// Start capturing packets
 		loggy << "[CCPDN]: Starting packet capture...\n";

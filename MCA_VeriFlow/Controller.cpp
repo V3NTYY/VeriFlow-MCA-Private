@@ -52,6 +52,7 @@ void Controller::flowHandlerThread(bool *run)
 	while (*run) {
 		// Wait until our flag is set to positive, then parse the packet
 		if (TCPAnalyzer::pingFlag) {
+			loggy << "Got a packet! is it good?\n";
 			// Clear our current flow list
 			sharedFlows.clear();
 
