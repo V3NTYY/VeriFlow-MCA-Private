@@ -35,20 +35,15 @@ class TCPAnalyzer {
 		}
 
 #ifdef __unix__
-	static void packetHandler(u_char* userData, const struct pcap_pkthdr* pkthdr, const u_char* packet) {
-		// Cast userData back to TCPAnalyzer instance
-		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
-
-		// Ensure valid ptrs
-		if (!analyzer) {
-			return;
-		}
-		if (!analyzer->con) {
-			return;
-		}
-
+	void packetHandler(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
 		// Ensure valid data
-		if (pkthdr == nullptr || packet == nullptr || pkthdr->len <= 0) {
+		if (pkthdr == nullptr || packet == nullptr) {
+			return;
+		}
+		if (pkthdr->len <= 0) {
+			return;
+		}
+		if (con == nullptr) {
 			return;
 		}
 
@@ -66,8 +61,8 @@ class TCPAnalyzer {
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
 
 		// Utilize parsing methods from controller, and update controller remotely
-		analyzer->con->sharedPacket = payload;
-		analyzer->con->fhFlag = true;
+		con->sharedPacket = payload;
+		con->fhFlag = true;
 	}
 #endif
 
@@ -99,34 +94,34 @@ class TCPAnalyzer {
 		// Start capturing packets
 		loggy << "[CCPDN]: Starting packet capture...\n";
 
+		const u_char* packet;
+		struct pcap_pkthdr header;
+
 		// Create thread loop
 		while (*run) {
-
 			if (con == nullptr) {
 				break;
 			}
 
 			// Prevent packet capture while we are parsing packets
 			if (con->fhFlag) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				continue;
 			}
 
-			// Capture packets
-			int result = pcap_loop(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
-			if (result == -1) {
-				loggyErr("[CCPDN-ERROR]: Error capturing packets: ");
-				loggyErr(pcap_geterr(handle));
-				loggyErr("\n");
-				break;
+			// Capture packets and process them
+			packet = pcap_next(handle, &header);
+			if (packet != nullptr) {
+				packetHandler(&header, packet);
+			} else {
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			}
-
-			// Sleep to prevent wasted resources
-			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 
 		// Close the handle
-		pcap_close(handle);
+		if (handle != nullptr) {
+			pcap_close(handle);
+		}
 		loggy << "[CCPDN]: Packet capture complete.\n";
 #endif
 	}
