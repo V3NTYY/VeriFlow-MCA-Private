@@ -48,6 +48,12 @@ class FlowInterface:
             # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             result = self.parse_data(data)
 
+            # Parse listflows version of the command
+            if (data.startswith("listflows")):
+                result = data.split("-")
+                result[0] = "list_flows"
+                result[1] = result[1][2:]
+
             if (result == None):
                 log.error("Error parsing data: %s", data)
                 return

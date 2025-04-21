@@ -593,7 +593,7 @@ int main() {
 		}
 
 		else if (args.at(0) == "del-flow") {
-			if (mca_veriflow->flowhandler_linked) {
+			if (!mca_veriflow->flowhandler_linked) {
 				loggy << "Ensure Flow Handler started first.\n" << std::endl;
 			}
             else if (args.size() < 4) {
