@@ -89,6 +89,7 @@ class Controller {
 		std::string				  veriflowPort;
 		std::string				  flowPort;
 		std::vector<Flow>		  sharedFlows;
+		std::vector<uint8_t>	  sharedPacket;
 
 	private:
 		int						  sockfd;
@@ -102,6 +103,7 @@ class Controller {
 		char					  vfBuffer[1024];
 		bool					  vfFlag;
 		bool					  ofFlag;
+		bool					  fhFlag;
 		bool					  pause_rst;
 
 		// Private Functions

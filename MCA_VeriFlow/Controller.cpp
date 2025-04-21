@@ -45,7 +45,27 @@ void Controller::flowHandlerThread(bool *run)
 {
 	loggy << "[CCPDN]: Starting flow handler thread...\n";
 	while (*run) {
-		// Recv is not necessary, since we only issue commands from this interface
+		// Wait until our flag is set to positive, then parse the packet
+		if (fhFlag) {
+			// Clear our current flow list
+			sharedFlows.clear();
+
+			// Grab copy of last read packet
+			std::vector<uint8_t> currPacket = sharedPacket;
+			sharedPacket.clear();
+
+			// Parse packet
+			parsePacket(currPacket);
+
+			// For now, print any flows received
+			for (Flow f : sharedFlows) {
+				f.print();
+				parseFlow(f);
+			}
+
+			// Allow packets to be received again
+			fhFlag = false;
+		}
 	}
 }
 
@@ -246,10 +266,13 @@ Controller::Controller()
 	sockfh = -1;
 	referenceTopology = nullptr;
 	ofFlag = false;
+	vfFlag = false;
+	fhFlag = false;
 	linking = false;
 	pause_rst = false;
 
 	sharedFlows.clear();
+	sharedPacket.clear();
 	domainNodes.clear();
 }
 
@@ -264,9 +287,12 @@ Controller::Controller(Topology* t) {
 	sockfh = -1;
 	referenceTopology = t;
 	ofFlag = false;
+	vfFlag = false;
+	fhFlag = false;
 	linking = false;
 	pause_rst = false;
 
+	sharedPacket.clear();
 	sharedFlows.clear();
 	domainNodes.clear();
 }
@@ -992,11 +1018,8 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Create string formats
 	std::string targetSwitch = "0";
-	loggy << "[CCPDN]: Target Switch: " << targetSwitch << std::endl;
 	std::string nextHop = "0";
-	loggy << "[CCPDN]: Next Hop: " << nextHop << std::endl;
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
-	loggy << "[CCPDN]: Rule Prefix: " << rulePrefix << std::endl;
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
