@@ -1076,12 +1076,6 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 	reply->header.xid = ntohl(reply->header.xid);
 	reply->type = ntohs(reply->type);
 
-	// Set fhFlag if we are expecting this as a list-flows return
-	if (reply->header.xid == fhXID) {
-		fhXID = -1;
-		fhFlag = true;
-	}
-
 	// Only stats reply we care about are flows
 	if (reply->type != OFPST_FLOW) {
 		return;
@@ -1121,9 +1115,15 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 		loggy << "[CCPDN]: Flow rule: " << rulePrefix << " on switch: " << targetSwitch << " to next hop: " << nextHop << std::endl;
-		
+
 		// Add flow to shared flows
 		sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
+
+		// Set fhFlag if we are expecting this as a list-flows return
+		if (reply->header.xid == fhXID) {
+			fhXID = -1;
+			fhFlag = true;
+		}
 
 		// Move to next entry
 		offset += flow_length;
