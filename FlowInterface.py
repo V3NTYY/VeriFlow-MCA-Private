@@ -46,7 +46,7 @@ class FlowInterface:
 
                 if (data == None):
                     log.error("Received malformed/empty data.")
-                    return
+                    continue
 
                 # Ensure data consistency
                 data = data.strip()
@@ -66,13 +66,14 @@ class FlowInterface:
 
                 if (result == None):
                     log.error("Error parsing data: %s", data)
-                    return
+                    continue
                 
                 srcDPID = int(result[1])
                 outPort = int(result[2])
 
                 # Create match object from our nw_src, Wildcards and dstDPID
                 match = of.ofp_match()
+                match.nw_proto = 0x06  # TCP
                 match.nw_src = result[3]
                 match.wildcards = result[4]
                 match.dl_type = 0x0800  # IPv4

@@ -12,11 +12,12 @@ public:
         static Log instance;
         return instance;
     }
-    
+
     // Overload the `<<` operator for stream-like logging
     template <typename T>
     Log& operator<<(const T& message) {
         std::lock_guard<std::mutex> lock(logMutex);
+        std::cin.clear();
         std::cout << message;
         return *this;
     }
@@ -24,6 +25,7 @@ public:
     // Overload the `<<` operator for manipulators like std::endl
     Log& operator<<(std::ostream& (*manip)(std::ostream&)) {
         std::lock_guard<std::mutex> lock(logMutex);
+        std::cin.clear();
         std::cout << manip; // Apply the manipulator (e.g., std::endl)
         return *this;
     }
@@ -32,6 +34,7 @@ public:
     template <typename T>
     void logMessage(const T& message) {
         std::lock_guard<std::mutex> lock(logMutex);
+        std::cin.clear();
         std::cout << message;
     }
 
@@ -39,6 +42,7 @@ public:
     template <typename T>
     void logErrorMessage(const T& message) {
         std::lock_guard<std::mutex> lock(logMutex);
+        std::cin.clear();
         std::cerr << message;
     }
 
