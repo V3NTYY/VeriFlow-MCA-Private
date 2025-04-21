@@ -545,6 +545,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	bool sent = false;
 	int localCount = 0;
 	pause_rst = true;
+	fhFlag = false;
 	while (!fhFlag) {
 		// Timeout
 		if (localCount > 15) {

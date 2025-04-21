@@ -553,6 +553,7 @@ int main() {
                 Node n = mca_veriflow->topology.getNodeByIP(targetIP);
                 if (n.isEmptyNode()) {
                     loggy << "No such switch in topology.\n" << std::endl;
+                    continue;
                 }
 
                 // Request flows from controller
@@ -582,6 +583,7 @@ int main() {
 				Node n = mca_veriflow->topology.getNodeByIP(targetIP);
 				if (n.isEmptyNode()) {
 					loggy << "No such switch in topology.\n" << std::endl;
+                    continue;
 				}
 
                 Flow add(args.at(1), args.at(2), args.at(3), true);
@@ -603,6 +605,7 @@ int main() {
                 Node n = mca_veriflow->topology.getNodeByIP(args.at(1));
                 if (n.isEmptyNode()) {
                     loggy << "[CCPDN-ERROR]: No such switch in topology.\n" << std::endl;
+                    continue;
                 }
 
 				Flow remove(args.at(1), args.at(2), args.at(3), false);
