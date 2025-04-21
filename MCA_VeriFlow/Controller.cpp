@@ -49,23 +49,27 @@ void Controller::flowHandlerThread(bool *run)
 {
 	loggy << "[CCPDN]: Starting flow handler thread...\n";
 	while (*run) {
-		// Wait until our flag is set to positive, then parse the packet
-		while (TCPAnalyzer::currentPackets.size() > 0) {
-			// Clear our current flow list
-			sharedFlows.clear();
 
-			// Grab copy of last read packet
-			std::vector<byte> currPacket = TCPAnalyzer::currentPackets.front();
-			TCPAnalyzer::currentPackets.erase(TCPAnalyzer::currentPackets.begin());
-			TCPAnalyzer::pingFlag = false;
+		// Clear our current flow list
+		sharedFlows.clear();
+		std::vector<byte> currPacket;
 
-			// Parse packet with scrutiny to XID
-			parsePacket(currPacket, true);
-
-			// Handle all received flows
-			for (Flow f : sharedFlows) {
-				parseFlow(f);
+		{
+			// Lock mutex to ensure thread safety
+			std::lock_guard<std::mutex> lock(TCPAnalyzer::currentPacketsMutex);
+			if (!TCPAnalyzer::currentPackets.empty()) {
+				currPacket = TCPAnalyzer::currentPackets.front();
+				TCPAnalyzer::currentPackets.erase(TCPAnalyzer::currentPackets.begin());
+				TCPAnalyzer::pingFlag = false;
 			}
+		}
+
+		// Parse packet with scrutiny to XID
+		parsePacket(currPacket, true);
+
+		// Handle all received flows
+		for (Flow f : sharedFlows) {
+			parseFlow(f);
 		}
 	}
 }

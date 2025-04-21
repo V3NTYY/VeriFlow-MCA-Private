@@ -13,6 +13,7 @@
 #include "Flow.h"
 #include <chrono>
 #include <thread>
+#include <mutex>
 
 #ifdef __unix__
 #include <pcap.h>
@@ -27,6 +28,7 @@ class TCPAnalyzer {
 
 		static bool pingFlag;
 		static std::vector<std::vector<byte>> currentPackets;
+		static std::mutex currentPacketsMutex;
 
 		// Thread method
 		void thread(bool *run, std::string controllerPort) {
@@ -70,7 +72,11 @@ class TCPAnalyzer {
 		}
 
 		// Utilize parsing methods from controller, and update controller remotely
-		currentPackets.push_back(payload);
+		{
+			// Lock mutex to ensure thread safety
+			std::lock_guard<std::mutex> lock(currentPacketsMutex);
+			currentPackets.push_back(payload);
+		}
 		pingFlag = true;
 	}
 #endif
