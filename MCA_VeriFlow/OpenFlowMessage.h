@@ -146,12 +146,13 @@ OFP_ASSERT(sizeof(struct ofp_header) == 8);
 struct ofp_action_header { // Unused but required field
 	uint16_t type; /* One of OFPAT_*. */
 	uint16_t len; /* Length of action, including this
-	header. This is the length of action,
-	including any padding to make it
-	64-bit aligned. */
+					header. This is the length of action,
+					including any padding to make it
+					64-bit aligned. */
+	uint16_t port; /* Port number. */
 	uint8_t pad[4];
 };
-OFP_ASSERT(sizeof(struct ofp_action_header) == 8);
+OFP_ASSERT(sizeof(struct ofp_action_header) == 10);
 
 // ADD OFP_ACTION_OUTPUT struct
 

@@ -92,7 +92,7 @@ class Controller {
 		void 			   rstVeriFlowFlag();
 		int	 			   getDPID(std::string IP);
 		int  			   getOutputPort(std::string srcIP, std::string dstIP);
-		std::string 	   getIPFromStats(int port);
+		std::string		   getIPFromOutputPort(std::string srcIP, int outputPort);
 
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 

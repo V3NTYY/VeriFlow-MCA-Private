@@ -104,7 +104,7 @@ class TCPAnalyzer {
 		pcap_set_immediate_mode(handle, 1);
 
 		// Start capturing packets
-		loggy << "[CCPDN]: Starting packet capture...\n";
+		loggy << "[CCPDN]: Successfully started packet capture\n";
 
 		const u_char* packet;
 		struct pcap_pkthdr header;
@@ -128,7 +128,7 @@ class TCPAnalyzer {
 		if (handle != nullptr) {
 			pcap_close(handle);
 		}
-		loggy << "[CCPDN]: Packet capture complete.\n";
+		loggy << "[CCPDN]: Packet capture complete\n";
 #endif
 	}
 		

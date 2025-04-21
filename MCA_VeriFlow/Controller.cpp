@@ -897,6 +897,43 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	return -1; // No matching link found
 }
 
+std::string Controller::getIPFromOutputPort(std::string srcIP, int outputPort)
+{
+    // Ensure srcIP exists within topology
+	int hostIndex = referenceTopology->hostIndex;
+	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
+		return "";
+	}
+
+	bool srcIPExists = false;
+	for (Node n : referenceTopology->topologyList[hostIndex]) {
+		if (n.getIP() == srcIP) {
+			srcIPExists = true;
+			break;
+		}
+	}
+
+	if (!srcIPExists) {
+		return "";
+	}
+
+	// Get the node associated with srcIP
+	Node srcNode = referenceTopology->getNodeByIP(srcIP);
+
+	// Get all links connected to srcNode, sort by their DPIDs
+	std::vector<std::string> srcLinks = srcNode.getLinks();
+	std::vector<int> dpidLinks;
+
+	for (std::string link : srcLinks) {
+		// Get the DPID associated with the link
+		int dpid = getDPID(link);
+		dpidLinks.push_back(dpid);
+	}
+
+	// Return the link based using the outputPort as an index
+	return srcLinks[outputPort];
+}
+
 Flow Controller::adjustCrossTopFlow(Flow f)
 {
 	/// Since we are only handling loops, this method should only handle loops logic (w/ resubmits)
@@ -1052,13 +1089,17 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 			break;
 		}
 
+		// Cast ptr to access ofp_action_header struct
+		ofp_action_header* action_header = reinterpret_cast<ofp_action_header*>(flow_stats->actions);
+
 		// Flow processing
 		uint32_t rulePrefixIP = ntohl(flow_stats->match.nw_src);
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
+		uint16_t output_port = ntohs(action_header->port);
 
 		// Create string formats
 		std::string targetSwitch = getSrcFromXID(reply->header.xid);
-		std::string nextHop = getDstFromXID(reply->header.xid);
+		std::string nextHop = getIPFromOutputPort(targetSwitch, output_port);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 		
 		// Add flow to shared flows
