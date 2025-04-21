@@ -44,6 +44,10 @@ class FlowInterface:
 
                 result = [ 0, 0, 0, 0, 0 ]  # Initialize
 
+                if not data:
+                    log.info("Client %s:%s disconnected.", client_socket.getpeername()[0], client_socket.getpeername()[1])
+                    break
+
                 if (data == None):
                     log.error("Received malformed/empty data.")
                     continue
@@ -80,8 +84,6 @@ class FlowInterface:
 
                 # Create action object based on srcDPID and dstDPID
                 action = of.ofp_action_output(port=outPort)
-
-                log.info("Parsed command: %s", result)
 
                 # Apply commands via controller
                 if result[0] == "addflow":
@@ -129,7 +131,7 @@ class FlowInterface:
         fm.actions.append(action)
 
         self.switches[dpid].send(fm)
-        log.info("Flow %s added to switch %s", fm, dpid)
+        log.info("Flow %s (wildcard %s) added to switch %s", fm, fm.match.wildcards, dpid)
 
     def remove_flow(self, dpid, match, action):
 
@@ -139,7 +141,7 @@ class FlowInterface:
         fm.actions.append(action)
 
         self.switches[dpid].send(fm)
-        log.info("Flow %s removed from switch %s", fm, dpid)
+        log.info("Flow %s (wildcard %s) removed from switch %s", fm, fm.match.wildcards, dpid)
 
     def list_flows(self, dpid):
 

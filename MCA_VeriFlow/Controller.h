@@ -78,12 +78,13 @@ class Controller {
 		bool performVerification(bool externalRequest, Flow f);
 
 		// Misc functions
-		bool addDomainNode(Node* n);
+		bool 			   addDomainNode(Node* n);
 		std::vector<Node*> getDomainNodes();
-		void rstControllerFlag();
-		void rstVeriFlowFlag();
-		int	 getDPID(std::string IP);
-		int  getOutputPort(std::string srcIP, std::string dstIP);
+		void 			   rstControllerFlag();
+		void 			   rstVeriFlowFlag();
+		int	 			   getDPID(std::string IP);
+		int  			   getOutputPort(std::string srcIP, std::string dstIP);
+		std::string 	   getIPFromStats(int port);
 
 		bool					  linking;
 		std::string				  controllerPort;

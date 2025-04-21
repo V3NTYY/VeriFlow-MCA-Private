@@ -152,7 +152,8 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 				break;
 			}
 			case OFPT_STATS_REPLY: {
-				// Handle stats reply -- used for listing flows
+				// Handle stats reply -- used for listing flows. Set fHFlag to true for list-flows
+				fhFlag = true;
 				loggy << "[CCPDN]: Received Stats_Reply." << std::endl;
 				ofp_stats_reply* reply = reinterpret_cast<ofp_stats_reply*>(packet.data() + offset);
 				handleStatsReply(reply);
@@ -522,7 +523,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	bool sent = false;
 	int localCount = 0;
 	pause_rst = true;
-	while (!ofFlag) {
+	while (!fhFlag) {
 		// Timeout
 		if (localCount > 10) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
@@ -544,6 +545,9 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		localCount++;
 	}
+
+	// Reset fHFlag since the statsreply packet has been received
+	fhFlag = false;
 
 	// Wait for 50ms
 	std::this_thread::sleep_for(std::chrono::milliseconds(50));
