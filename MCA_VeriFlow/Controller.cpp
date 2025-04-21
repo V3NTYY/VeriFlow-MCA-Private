@@ -1058,8 +1058,8 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
 
 		// Create string formats
-		std::string targetSwitch = getSrcFromXID(header->xid);
-		std::string nextHop = getDstFromXID(header->xid);
+		std::string targetSwitch = getSrcFromXID(reply->header->xid);
+		std::string nextHop = getDstFromXID(reply->header->xid);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 		
 		// Add flow to shared flows
@@ -1094,8 +1094,8 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	uint32_t wildcards = ntohl(mod->match.wildcards);
 
 	// Create string formats
-	std::string targetSwitch = getSrcFromXID(header->xid);
-	std::string nextHop = getDstFromXID(header->xid);
+	std::string targetSwitch = getSrcFromXID(mod->header->xid);
+	std::string nextHop = getDstFromXID(mod->header->xid);
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
@@ -1131,8 +1131,8 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	uint32_t wildcards = ntohl(removed->match.wildcards);
 
 	// Create string formats
-	std::string targetSwitch = getSrcFromXID(header->xid);
-	std::string nextHop = getDstFromXID(header->xid);
+	std::string targetSwitch = getSrcFromXID(removed->header->xid);
+	std::string nextHop = getDstFromXID(removed->header->xid);
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
