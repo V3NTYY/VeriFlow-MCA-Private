@@ -40,7 +40,15 @@ class TCPAnalyzer {
 		TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(userData);
 
 		// Ensure valid ptrs
-		if (!analyzer || !analyzer->con) {
+		if (!analyzer == nullptr) {
+			return;
+		}
+		if (!analyzer->con == nullptr) {
+			return;
+		}
+
+		// Ensure valid data
+		if (pkthdr == nullptr || packet == nullptr || pkthdr->len <= 0) {
 			return;
 		}
 
@@ -93,14 +101,22 @@ class TCPAnalyzer {
 
 		// Create thread loop
 		while (*run) {
+
+			// Prevent packet capture while we are parsing packets
+			if (con->fhFlag) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+				continue;
+			}
+
 			// Capture packets
-			int result = pcap_dispatch(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
+			int result = pcap_loop(handle, 0, packetHandler, reinterpret_cast<u_char*>(this));
 			if (result == -1) {
 				loggyErr("[CCPDN-ERROR]: Error capturing packets: ");
 				loggyErr(pcap_geterr(handle));
 				loggyErr("\n");
 				break;
 			}
+
 			// Sleep to prevent wasted resources
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}

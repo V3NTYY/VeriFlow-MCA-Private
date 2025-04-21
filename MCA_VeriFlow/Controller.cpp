@@ -21,9 +21,11 @@ void Controller::controllerThread(bool* run)
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
 
+		loggy << "Parsing packet...\n";
 		// Parse the packet
 		parsePacket(packet);
 
+		loggy << "Printing flows...\n";
 		// For now, print any flows received
 		for (Flow f : sharedFlows) {
 			f.print();
@@ -91,7 +93,7 @@ void Controller::parseFlow(Flow f)
 bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 
 	// Ensure we have a valid packet
-	if (packet.empty()) {
+	if (packet.empty() || packet.size() < 0) {
 		return false;
 	}
 
