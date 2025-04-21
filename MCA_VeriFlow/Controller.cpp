@@ -1034,12 +1034,13 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 	// Calculate body size
 	size_t body_size = reply->header.length - sizeof(ofp_stats_reply);
-	
+	size_t offset = 0;
+
 	// Iterate through each flow_stat given in the packet
 	while (body_size >= sizeof(ofp_flow_stats)) {
 
 		// Cast ptr to access flow_stats struct
-		ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(reply->body + sizeof(ofp_stats_reply));
+		ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(reply->body + offset);
 
 		// Process length of current entry -- handle end of ptr
 		size_t flow_length = ntohs(flow_stats->length);
@@ -1064,7 +1065,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
 
 		// Move to next entry
-		ofp_flow_stats_ptr += flow_length;
+		offset += flow_length;
 		body_size -= flow_length;
 	}
 #endif
