@@ -1110,10 +1110,16 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
 		uint16_t output_port = ntohs(action_header->port);
 
+		loggy << "rulePrefixIP: " << rulePrefixIP << std::endl;
+		loggy << "wildcards: " << wildcards << std::endl;
+		loggy << "output_port: " << output_port << std::endl;
+
 		// Create string formats
 		std::string targetSwitch = getSrcFromXID(reply->header.xid);
 		std::string nextHop = getIPFromOutputPort(targetSwitch, output_port);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
+
+		loggy << "[CCPDN]: Flow rule: " << rulePrefix << " on switch: " << targetSwitch << " to next hop: " << nextHop << std::endl;
 		
 		// Add flow to shared flows
 		sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
