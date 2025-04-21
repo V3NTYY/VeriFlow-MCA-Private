@@ -116,7 +116,7 @@ class FlowInterface:
             return None
 
         # Returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
-        return { args[0], args[1], args[3], Nw_src, Wildcards }
+        return [ args[0], args[1], args[3], Nw_src, Wildcards ]
 
     def add_flow(self, dpid, match, action):
 
