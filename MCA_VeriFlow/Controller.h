@@ -45,6 +45,7 @@ class Controller {
 		// Thread loop functions
 		void controllerThread(bool* run);
 		void flowHandlerThread(bool* run);
+		void enqueuePacket(const std::vector<uint8_t>& packet);
 
 		// Reading + Parsing functions
 		bool parsePacket(std::vector<uint8_t>& packet);
@@ -84,13 +85,13 @@ class Controller {
 		int	 getDPID(std::string IP);
 		int  getOutputPort(std::string srcIP, std::string dstIP);
 
-		bool					  linking;
-		std::string				  controllerPort;
-		std::string				  veriflowPort;
-		std::string				  flowPort;
-		std::vector<Flow>		  sharedFlows;
-		std::vector<uint8_t>	  sharedPacket;
-		bool					  fhFlag;
+		bool					  			  linking;
+		std::string				  			  controllerPort;
+		std::string				  			  veriflowPort;
+		std::string				  			  flowPort;
+		std::vector<Flow>		  			  sharedFlows;
+		std::vector<std::vector<uint8_t>>	  sharedPackets;
+		bool					  			  fhFlag;
 
 	private:
 		int						  sockfd;
@@ -105,6 +106,8 @@ class Controller {
 		bool					  vfFlag;
 		bool					  ofFlag;
 		bool					  pause_rst;
+		std::mutex				  packetMutex;
+		std::condition_variable	  packetCondition;
 
 		// Private Functions
 		bool linkVeriFlow();
