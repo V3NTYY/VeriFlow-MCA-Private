@@ -41,7 +41,7 @@ class FlowInterface:
             data = client_socket.recv(1024).decode("utf-8")
             log.info("Received command: %s", data)
 
-            result = { 0, 0, 0, 0, 0 }  # Initialize
+            result = [ 0, 0, 0, 0, 0 ]  # Initialize
 
             if (data == None):
                 log.error("Received malformed/empty data.")
@@ -57,9 +57,7 @@ class FlowInterface:
             # Parse listflows version of the command
             if (data.startswith("listflows")):
                 result = data.split("-")
-                result[2] = 0
-                result[3] = 0
-                result[4] = 0
+                result = [ result[0], result[1], 0, 0, 0 ]
 
             # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             if (result == None):
@@ -92,7 +90,7 @@ class FlowInterface:
                 self.add_flow(srcDPID, match, action)
             elif result[0] == "remove_flow":
                 self.remove_flow(srcDPID, match, action)
-            elif (result[0] == "listflows"):
+            elif result[0] == "listflows":
                 self.list_flows(srcDPID)
         except Exception as e:
             log.error("Error handling client: %s", e)
