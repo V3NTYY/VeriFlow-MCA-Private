@@ -12,7 +12,7 @@ public:
         static Log instance;
         return instance;
     }
-
+    
     // Overload the `<<` operator for stream-like logging
     template <typename T>
     Log& operator<<(const T& message) {

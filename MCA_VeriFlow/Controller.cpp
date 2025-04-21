@@ -117,14 +117,6 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, std::string dstIP) {
 						sendOpenFlowMessage(OpenFlowMessage::createDescStatsReply(host_endian_XID));
 						break;
 					}
-					case OFPST_FLOW: {
-						loggy << "[CCPDN]: Received Flow Stats Request." << std::endl;
-						sendOpenFlowMessage(OpenFlowMessage::createFlowStatsReply(host_endian_XID));
-						break;
-					}
-					default:
-						loggy << "[CCPDN]: Unknown stats request type received. Type: " << std::to_string(static_cast<int>(request_type)) << std::endl;
-						break;
 				}
 				break;
 			}
@@ -661,7 +653,6 @@ bool Controller::sendVeriFlowMessage(std::string message)
 
 bool Controller::sendFlowHandlerMessage(std::string message)
 {
-	loggy << "Sending flow handler message: " << message << std::endl;
 	// Convert message to sendable format
 	std::vector<char> Msg(message.begin(), message.end());
 
