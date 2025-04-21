@@ -58,15 +58,17 @@ class FlowInterface:
             if (result == None):
                 log.error("Error parsing data: %s", data)
                 return
+            
+            srcDPID = int(result[1])
+            if (result[0] == "listflows"):
+                self.list_flows(srcDPID)
+            dstDPID = int(result[2])
 
             # Create match object from our nw_src, Wildcards and dstDPID
             match = of.ofp_match()
             match.nw_src = result[3]
             match.wildcards = result[4]
             match.dl_type = 0x0800  # IPv4
-
-            srcDPID = int(result[1])
-            dstDPID = int(result[2])
 
             # Create action object based on srcDPID and dstDPID
             output_port = self.get_output_port(srcDPID, dstDPID)
@@ -79,8 +81,6 @@ class FlowInterface:
                 self.add_flow(srcDPID, match, action)
             elif result[0] == "remove_flow":
                 self.remove_flow(srcDPID, match, action)
-            elif result[0] == "list_flows":
-                self.list_flows(srcDPID)
         except Exception as e:
             log.error("Error handling client: %s", e)
         finally:
