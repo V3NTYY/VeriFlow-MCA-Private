@@ -26,6 +26,10 @@ typedef std::vector<byte> packet;
 struct TimestampPacket {
 	std::chrono::time_point<std::chrono::high_resolution_clock> timestamp;
 	packet data;
+
+	const bool smallerTime(const TimestampPacket other) const {
+		return timestamp < other.timestamp;
+	}
 };
 
 class TCPAnalyzer {
