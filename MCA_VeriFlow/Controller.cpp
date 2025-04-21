@@ -553,7 +553,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 			updateXIDMapping(genXID, IP, "");
 
 			// Send the FlowHandler message and wait for response
-			if (!sendFlowHandlerMessage("listflows-" + dpid + std::to_string(genXID))) {
+			if (!sendFlowHandlerMessage("listflows-" + dpid + "-" + std::to_string(genXID))) {
 				loggyErr("[CCPDN-ERROR]: Failed to retrieve flow list\n");
 				pause_rst = false;
 				return flows;

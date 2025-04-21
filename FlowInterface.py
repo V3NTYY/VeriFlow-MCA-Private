@@ -62,7 +62,7 @@ class FlowInterface:
                 # Parse listflows version of the command
                 if (data.startswith("listflows")):
                     result = data.split("-")
-                    result = [ result[0], result[1], 0, 0, 0, 0 ]
+                    result = [ result[0], result[1], 0, 0, 0, result[2] ]
 
                 # Parse the command, returns a set with {command, srcDPID, output_port, nw_src, Wildcards, XID}
                 if (result == [0, 0, 0, 0, 0, 0]):
@@ -132,7 +132,12 @@ class FlowInterface:
         fm.actions.append(action)
         fm.xid = XID
 
-        self.switches[dpid].send(fm)
+        try:
+            self.switches[dpid].send(fm)
+        except Exception as e:
+            log.error("Error sending flow mod to switch %s: %s", dpid, e)
+            return
+        
         log.info("Flow %s added to switch %s", fm.xid, dpid)
 
     def remove_flow(self, dpid, match, action, XID):
@@ -143,7 +148,12 @@ class FlowInterface:
         fm.actions.append(action)
         fm.xid = XID
 
-        self.switches[dpid].send(fm)
+        try:
+            self.switches[dpid].send(fm)
+        except Exception as e:
+            log.error("Error sending flow remove to switch %s: %s", dpid, e)
+            return
+        
         log.info("Flow %s removed from switch %s", fm.xid, dpid)
 
     def list_flows(self, dpid, XID):
@@ -153,7 +163,12 @@ class FlowInterface:
         req = of.ofp_stats_request(body=of.ofp_flow_stats_request())
         req.xid = XID
 
-        connection.send(req)
+        try:
+            connection.send(req)
+        except Exception as e:
+            log.error("Error sending stats request to switch %s: %s", dpid, e)
+            return
+        
         log.info("Flow %s requested stats from switch %s", req.xid, dpid)
 
 def launch():
