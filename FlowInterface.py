@@ -41,6 +41,10 @@ class FlowInterface:
             data = client_socket.recv(1024).decode("utf-8")
             log.info("Received command: %s", data)
 
+            if (data == None):
+                log.error("Received malformed/empty data.")
+                return
+
             # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             result = self.parse_data(data)
 

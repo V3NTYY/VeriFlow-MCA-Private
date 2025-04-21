@@ -462,6 +462,7 @@ int main() {
         }
 
         std::string input;
+        loggy << std::endl;
         loggyMsg(">>> ");
         std::cin.clear();
         std::getline(std::cin, input);

@@ -633,6 +633,7 @@ bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 
 bool Controller::sendVeriFlowMessage(std::string message)
 {
+	loggy << "Sending veriflow message: " << message << std::endl;
 	// Convert message to sendable format, add null-terminating char
 	std::vector<char> Msg(message.begin(), message.end());
 	Msg.push_back('\0');
@@ -653,6 +654,7 @@ bool Controller::sendVeriFlowMessage(std::string message)
 
 bool Controller::sendFlowHandlerMessage(std::string message)
 {
+	loggy << "Sending flow handler message: " << message << std::endl;
 	// Convert message to sendable format
 	std::vector<char> Msg(message.begin(), message.end());
 
