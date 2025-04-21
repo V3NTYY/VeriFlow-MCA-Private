@@ -38,7 +38,7 @@ class MCA_VeriFlow {
 		double test_tcp_connection_time(const std::string& host, int port, int timeout);
 
 		Topology topology;
-		Controller controller;
+		Controller* controller;
 		bool controller_running;
 		bool runTCPDump;
 		bool controller_linked;

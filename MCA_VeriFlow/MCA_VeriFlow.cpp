@@ -61,7 +61,7 @@ MCA_VeriFlow::MCA_VeriFlow()
 {
     Topology t;
     topology = t;
-    controller = Controller(&topology);
+    controller = new Controller(&topology);
     controller_running = false;
     controller_linked = false;
     topology_initialized = false;
@@ -76,7 +76,7 @@ MCA_VeriFlow::~MCA_VeriFlow()
 void MCA_VeriFlow::run() 
 {
     // Link the CCPDN to the veriflow server
-    if (!controller.start()) {
+    if (!controller->start()) {
 		std::cerr << "Error linking to VeriFlow server." << std::endl;
 		return;
 	}
@@ -270,7 +270,7 @@ bool MCA_VeriFlow::createDomainNodes()
         std::string connectingTopologies = std::to_string(i) + ":" + std::to_string(i + 1);
         Node* n = topology.getNodeReference(candidate_domain_nodes.at(domainNodeIndex));
         n->setDomainNode(true, connectingTopologies);
-        controller.addDomainNode(n);
+        controller->addDomainNode(n);
     }
 
     return success;
@@ -457,7 +457,7 @@ int main() {
     while (true) {
 
         // If link_controller is sending packets/receiving packets, wait for that to finish
-        while (mca_veriflow->controller.linking) {
+        while (mca_veriflow->controller->linking) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
@@ -523,8 +523,8 @@ int main() {
             } else if (!mca_veriflow->controller_linked) {
                 loggy << "Controller not linked! Try link-controller first\n" << std::endl;
             } else {
-                mca_veriflow->controller.setFlowHandlerIP(args.at(1), args.at(2));
-                mca_veriflow->flowhandler_linked = mca_veriflow->controller.startFlow(&(mca_veriflow->flowhandler_linked));
+                mca_veriflow->controller->setFlowHandlerIP(args.at(1), args.at(2));
+                mca_veriflow->flowhandler_linked = mca_veriflow->controller->startFlow(&(mca_veriflow->flowhandler_linked));
             }
         }
 
@@ -556,7 +556,7 @@ int main() {
                 }
 
                 // Request flows from controller
-                std::vector<Flow> flows = mca_veriflow->controller.retrieveFlows(targetIP);
+                std::vector<Flow> flows = mca_veriflow->controller->retrieveFlows(targetIP);
 
                 // Print all flows
                 loggy << "--- FLOWS " << targetIP << " ---" << std::endl;
@@ -587,7 +587,7 @@ int main() {
                 Flow add(args.at(1), args.at(2), args.at(3), true);
 
 				// Add flow to controller
-				mca_veriflow->controller.addFlowToTable(add);
+				mca_veriflow->controller->addFlowToTable(add);
 			}
 		}
 
@@ -608,7 +608,7 @@ int main() {
 				Flow remove(args.at(1), args.at(2), args.at(3), false);
 
 				// Delete flow from controller
-                mca_veriflow->controller.removeFlowFromTable(remove);
+                mca_veriflow->controller->removeFlowFromTable(remove);
             }
         }
 
@@ -621,8 +621,8 @@ int main() {
                 loggy << "Controller already linked. Try reset-controller first\n" << std::endl;
             }
             else {
-				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
-				mca_veriflow->controller_linked = mca_veriflow->controller.startController(&(mca_veriflow->controller_running));
+				mca_veriflow->controller->setControllerIP(args.at(1), args.at(2));
+				mca_veriflow->controller_linked = mca_veriflow->controller->startController(&(mca_veriflow->controller_running));
 			}
         }
 
@@ -634,7 +634,7 @@ int main() {
                 loggy << "All services are running, please use stop first.\n" << std::endl;
             }
             else {
-                mca_veriflow->controller.freeLink();
+                mca_veriflow->controller->freeLink();
                 mca_veriflow->controller_linked = false;
             }
         }
@@ -748,7 +748,7 @@ int main() {
             } else if (args.size() < 3) {
                 loggy << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]\n" << std::endl;
             } else {
-                mca_veriflow->controller.setVeriFlowIP(args.at(1), args.at(2));
+                mca_veriflow->controller->setVeriFlowIP(args.at(1), args.at(2));
                 mca_veriflow->run();
                 loggy << "[CCPDN]: App started.\n" << std::endl;
             }
@@ -799,7 +799,7 @@ int main() {
         }
 
         else if (args.at(0) == "test-method") {
-            int dpid = mca_veriflow->controller.getDPID(args.at(1));
+            int dpid = mca_veriflow->controller->getDPID(args.at(1));
             loggy << "DPID of " << args.at(1) << " is: " << dpid << std::endl;
         }
 
