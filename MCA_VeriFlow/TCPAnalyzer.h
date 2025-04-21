@@ -62,12 +62,6 @@ class TCPAnalyzer {
 
 		// Utilize parsing methods from controller, and update controller remotely
 		analyzer->con->parsePacket(payload, DstIP);
-
-		// For now, print any flows received
-		for (Flow f : analyzer->con->sharedFlows) {
-			f.print();
-			analyzer->con->parseFlow(f);
-		}
 	}
 #endif
 
