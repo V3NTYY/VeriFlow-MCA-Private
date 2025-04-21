@@ -51,7 +51,7 @@ class FlowInterface:
             if (data.startswith("listflows")):
                 result = data.split("-")
                 result[0] = "list_flows"
-                result[1] = result[1][2:]
+                result[1] = result[1][1:]
 
             # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             if (result == None):
