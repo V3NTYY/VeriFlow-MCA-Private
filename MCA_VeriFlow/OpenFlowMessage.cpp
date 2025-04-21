@@ -223,8 +223,8 @@ std::string OpenFlowMessage::getRulePrefix(uint32_t wildcards, uint32_t srcIP) /
 	// Output string. This method expects host-endian order
 	std::string output = "";
 
-	// Extract the number of bits to wildcard (top 6 bits of wildcards field). Use to get subnet mask
-    int wildcard_bits = (wildcards >> 21) & 0x3F;
+	// Use wildcard to get subnet mask
+    int wildcard_bits = (wildcards >> 6) & 0x3F;
     int mask_length = 32 - wildcard_bits;
 	
 	// get ip address from nw_src
