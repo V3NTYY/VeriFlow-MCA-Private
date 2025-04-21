@@ -41,6 +41,12 @@ class TCPAnalyzer {
 
 #ifdef __unix__
 	void packetHandler(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
+
+		// Give our other threads a notifier if they have packets to work on!
+		if (currentPackets.size() > 0) {
+			pingFlag = true;
+		}
+
 		// Ensure valid data
 		if (pkthdr == nullptr || packet == nullptr) {
 			return;
@@ -58,6 +64,13 @@ class TCPAnalyzer {
 
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
+
+		// print packet data
+		loggy << "[CCPDN]: Libpcap Packet data: ";
+		for (auto byte : payload) {
+			loggy << std::hex << static_cast<int>(byte) << " ";
+		}
+		loggy << std::dec << std::endl;
 
 		// Utilize parsing methods from controller, and update controller remotely
 		currentPackets.push_back(payload);
@@ -90,6 +103,7 @@ class TCPAnalyzer {
 			return;
 		}
 
+		pcap_set_buffer_size(handle, 10 * 1024 * 1024); // 10 MB buffer
 		pcap_set_immediate_mode(handle, 1);
 
 		// Start capturing packets
