@@ -522,7 +522,7 @@ bool Controller::removeFlowFromTable(Flow f)
 			updateXIDMapping(genXID, existingFlow.getSwitchIP(), existingFlow.getNextHopIP());
             
 			// Send the removal message to the controller
-			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true) + "-" + std::to_string(genXID)); // false for delete action
+			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true) + "-" + std::to_string(genXID));
         }
     }
     
@@ -578,6 +578,11 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		if (f.getSwitchIP() == IP) {
 			flows.push_back(f);
 		}
+	}
+
+	// Recursively call this function if we picked the wrong stats_reply
+	if (sharedFlows.empty()) {
+		return retrieveFlows(IP);
 	}
 
 	pause_rst = false;
