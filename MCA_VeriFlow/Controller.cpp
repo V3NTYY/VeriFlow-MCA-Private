@@ -3,6 +3,7 @@
 
 bool TCPAnalyzer::pingFlag = false;
 std::vector<std::vector<byte>> TCPAnalyzer::currentPackets;
+std::mutex TCPAnalyzer::currentPacketsMutex;
 
 /// Temporary solution for getting flows and finding flow mods
 
