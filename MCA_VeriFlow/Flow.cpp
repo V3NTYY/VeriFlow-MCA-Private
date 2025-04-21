@@ -3,10 +3,11 @@
 std::string Flow::flowToStr(bool printDPID)
 {
 	// #switchIP-rulePrefix-nextHopIP
+	// or #switchDPID-rulePrefix-outputPort
 	std::string output;
 	std::string actionStr = action ? "A" : "R";
 	std::string outputSrcIP = printDPID ? switchDPID : switchIP;
-	std::string outputHopIP = printDPID ? nextHopDPID : nextHopIP;
+	std::string outputHopIP = printDPID ? outPort : nextHopIP;
 	output = actionStr + "#" + outputSrcIP + "-" + rulePrefix + "-" + outputHopIP;
 	return output;
 }
@@ -58,7 +59,7 @@ Flow::Flow(std::string SwitchIP, std::string RulePrefix, std::string NextHopIP, 
 	nextHopIP = NextHopIP;
 	action = Action;
 	switchDPID = "";
-	nextHopDPID = "";
+	outPort = "";
 }
 
 Flow::Flow()
@@ -67,7 +68,7 @@ Flow::Flow()
 	rulePrefix = "";
 	nextHopIP = "";
 	switchDPID = "";
-	nextHopDPID = "";
+	outPort = "";
 	action = false;
 }
 

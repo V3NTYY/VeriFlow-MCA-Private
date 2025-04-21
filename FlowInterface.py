@@ -59,7 +59,7 @@ class FlowInterface:
                 result = data.split("-")
                 result = [ result[0], result[1], 0, 0, 0 ]
 
-            # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
+            # Parse the command, returns a set with {command, srcDPID, output_port, nw_src, Wildcards}
             if (result == None):
                 result = self.parse_data(data)
 
@@ -71,7 +71,7 @@ class FlowInterface:
             log.info("Parsed result: %s", result)
             
             srcDPID = int(result[1])
-            dstDPID = int(result[2])
+            outPort = int(result[2])
 
             # Create match object from our nw_src, Wildcards and dstDPID
             match = of.ofp_match()
@@ -80,10 +80,7 @@ class FlowInterface:
             match.dl_type = 0x0800  # IPv4
 
             # Create action object based on srcDPID and dstDPID
-            output_port = self.get_output_port(srcDPID, dstDPID)
-            if (output_port == None and srcDPID != dstDPID):
-                log.error("No output port found for %s to %s", srcDPID, dstDPID)
-            action = of.ofp_action_output(port=output_port)
+            action = of.ofp_action_output(port=outPort)
 
             # Apply commands via controller
             if result[0] == "add_flow":

@@ -585,9 +585,6 @@ int main() {
 				}
 
                 Flow add(args.at(1), args.at(2), args.at(3), true);
-                std::string switchDP = std::to_string(mca_veriflow->controller.getDPID(args.at(1)));
-                std::string hopDP = std::to_string(mca_veriflow->controller.getDPID(args.at(3)));
-                add.setDPID(switchDP, hopDP);
 
 				// Add flow to controller
 				mca_veriflow->controller.addFlowToTable(add);
@@ -609,9 +606,6 @@ int main() {
                 }
 
 				Flow remove(args.at(1), args.at(2), args.at(3), false);
-                std::string switchDP = std::to_string(mca_veriflow->controller.getDPID(args.at(1)));
-                std::string hopDP = std::to_string(mca_veriflow->controller.getDPID(args.at(3)));
-                remove.setDPID(switchDP, hopDP);
 
 				// Delete flow from controller
                 mca_veriflow->controller.removeFlowFromTable(remove);

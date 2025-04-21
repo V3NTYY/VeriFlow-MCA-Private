@@ -457,6 +457,10 @@ bool Controller::freeLink()
 
 bool Controller::addFlowToTable(Flow f)
 {    
+	std::string switchDP = std::to_string(getDPID(f.getSwitchIP()));
+    std::string output = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
+	f.setDPID(switchDP, output);
+
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
 	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true)); // true for add action
 }
@@ -475,8 +479,8 @@ bool Controller::removeFlowFromTable(Flow f)
 
 			// Set our DPIDs for reference
 			std::string switchDP = std::to_string(getDPID(existingFlow.getSwitchIP()));
-        	std::string hopDP = std::to_string(getDPID(existingFlow.getNextHopIP()));
-			existingFlow.setDPID(switchDP, hopDP);
+			std::string output = std::to_string(getOutputPort(existingFlow.getSwitchIP(), existingFlow.getNextHopIP()));
+			existingFlow.setDPID(switchDP, output);
             
 			// Send the removal message to the controller
 			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true)); // false for delete action
@@ -794,6 +798,56 @@ int Controller::getDPID(std::string IP)
 	std::string dpid = exec(sysCommand.c_str(), "-1");
 
 	return std::stoi(dpid);
+}
+
+int Controller::getOutputPort(std::string srcIP, std::string dstIP)
+{
+    // Ensure both IPs exist within current topology
+	int hostIndex = referenceTopology->hostIndex;
+	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
+		return -1;
+	}
+
+	bool srcIPExists = false;
+	bool dstIPExists = false;
+
+	for (Node n : referenceTopology->topologyList[hostIndex]) {
+		if (n.getIP() == srcIP) {
+			srcIPExists = true;
+		}
+		if (n.getIP() == dstIP) {
+			dstIPExists = true;
+		}
+	}
+
+	// If either IP doesn't exist, return a fail
+	if (!srcIPExists || !dstIPExists) {
+		return -1;
+	}
+
+	// Get nodes associated with srcIP and dstIP, and analyze their links
+	Node srcNode = referenceTopology->getNodeByIP(srcIP);
+	Node dstNode = referenceTopology->getNodeByIP(dstIP);
+
+	// Get all links connected to srcNode, sort by their DPIDs
+	std::vector<std::string> srcLinks = srcNode.getLinks();
+	std::vector<int> dpidLinks;
+	int dstDPID = getDPID(dstIP);
+
+	for (std::string link : srcLinks) {
+		// Get the DPID associated with the link
+		int dpid = getDPID(link);
+		dpidLinks.push_back(dpid);
+	}
+
+	// Select the DPID matching the dstNode IP, and return the index of the link
+	for (int i = 0; i < dpidLinks.size(); ++i) {
+		if (dpidLinks[i] == dstDPID) {
+			return i; // Return the index of the link
+		}
+	}
+
+	return -1; // No matching link found
 }
 
 Flow Controller::adjustCrossTopFlow(Flow f)

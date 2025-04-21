@@ -82,6 +82,7 @@ class Controller {
 		void rstControllerFlag();
 		void rstVeriFlowFlag();
 		int	 getDPID(std::string IP);
+		int  getOutputPort(std::string srcIP, std::string dstIP);
 
 		bool					  linking;
 		std::string				  controllerPort;

@@ -26,11 +26,11 @@ class Flow {
 		std::string getNextHopIP();
 		bool actionType();
 
-		void setDPID(std::string switchDP, std::string hopDP) { switchDPID = switchDP; nextHopDPID = hopDP; }
+		void setDPID(std::string switchDP, std::string hopDP) { switchDPID = switchDP; outPort = hopDP; }
 
 	private:
 		std::string switchDPID;
-		std::string nextHopDPID;
+		std::string outPort;
 
 		std::string switchIP;
 		std::string rulePrefix;
