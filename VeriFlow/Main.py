@@ -85,7 +85,7 @@ def main():
 	## Setup VeriFlow server for CCPDN to pass messages to
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
 	veriflow_ip = input("> ")
-	print("Enter port to host VeriFlow on (i.e. 6655)")
+	print("Enter port to host VeriFlow on (i.e. 6657)")
 	veriflow_port = int(input("> "))
 	start_veriflow_server(veriflow_ip, veriflow_port)
 

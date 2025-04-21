@@ -251,6 +251,7 @@ Controller::Controller()
 	veriflowPort = "";
 	sockfd = -1;
 	sockvf = -1;
+	sockfh = -1;
 	referenceTopology = nullptr;
 	ofFlag = false;
 	linking = false;
@@ -268,6 +269,7 @@ Controller::Controller(Topology* t) {
 	veriflowPort = "";
 	sockfd = -1;
 	sockvf = -1;
+	sockfh = -1;
 	referenceTopology = t;
 	ofFlag = false;
 	linking = false;
@@ -369,8 +371,8 @@ bool Controller::linkFlow()
 {
     #ifdef __unix__
 		// Setup socket
-		sockfd = socket(AF_INET, SOCK_STREAM, 0);
-		if (sockfd < 0) {
+		sockfh = socket(AF_INET, SOCK_STREAM, 0);
+		if (sockfh < 0) {
 			loggy << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
 			return false;
 		}

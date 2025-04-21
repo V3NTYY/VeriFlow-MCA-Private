@@ -486,7 +486,7 @@ int main() {
                 " - exit:" << std::endl <<
                 "   Exit the CCPDN App.\n" << std::endl <<
                 " - start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
-                "   Start the CCPDN Service by linking to VeriFlow. Controller must be linked, and topology initialized.\n" << std::endl <<
+                "   Start the CCPDN Service by linking to VeriFlow (default port = 6657).\n" << std::endl <<
                 " - stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
                 " - rdn [topology_file]:" << std::endl <<
@@ -496,11 +496,11 @@ int main() {
                 " - output-top [file-name]:" << std::endl <<
                 "   Output the current topology list to a new file.\n" << std::endl <<
                 " - link-controller [ip-address] [port]:" << std::endl <<
-                "   Link a currently running Pox Controller to this app.\n" << std::endl <<
+                "   Link a currently running Pox Controller to this app (default port = 6653).\n" << std::endl <<
                 " - reset-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
                 " - link-flowhandler [ip-address] [port]:" << std::endl <<
-                "   Link this app to the flow handler, allowing for dynamic flow access (list-flows, add-flow, remove-flow). Typical port = 6657.\n" << std::endl <<
+                "   Link this app to the flow handler, allowing for dynamic flow access (default port = 6655).\n" << std::endl <<
                 " - reset-fh" << std::endl <<
                 "   Free the flowhandler connection from this app.\n" << std::endl <<
                 " * list-flows [switch-ip-address]:" << std::endl <<
