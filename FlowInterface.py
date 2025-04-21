@@ -116,7 +116,7 @@ class FlowInterface:
             rule_prefix = args[2].split("/")
             Nw_src = rule_prefix[0]
             mask = int(rule_prefix[1])
-            Wildcards = (32 - mask) & 0xFF;
+            Wildcards = (32 - mask) << of.OFPFW_NW_SRC_SHIFT
         except Exception as e:
             log.error("Error parsing rule prefix: %s", e)
             return None
