@@ -75,9 +75,10 @@ class TCPAnalyzer {
 		{
 			// Lock mutex to ensure thread safety
 			std::lock_guard<std::mutex> lock(currentPacketsMutex);
+			loggy << "[CCPDN]: Packet size: " + std::to_string(payload.size()) + "\n";
 			currentPackets.push_back(payload);
+			pingFlag = true;
 		}
-		pingFlag = true;
 	}
 #endif
 

@@ -169,7 +169,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
 				// debug print out bytes
 				loggy << "[CCPDN]: Stats Reply Bytes: ";
 				for (int i = 0; i < msg_length; i++) {
-					loggy << std::hex << std::to_string(packet[i]) << " ";
+					loggy << std::hex << static_cast<int>(packet[i]) << " ";
 				}
 				loggy << std::dec << std::endl;
 
