@@ -47,15 +47,15 @@ class Controller {
 		void flowHandlerThread(bool* run);
 
 		// Reading + Parsing functions
-		bool parsePacket(std::vector<uint8_t>& packet, std::string dstIP);
+		bool parsePacket(std::vector<uint8_t>& packet);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
 		void parseFlow(Flow f);
 
 		// OpenFlow packet decode functions
-		void handleStatsReply(ofp_stats_reply* reply, std::string dstIP);
-		void handleFlowMod(ofp_flow_mod* mod, std::string dstIP);
-		void handleFlowRemoved(ofp_flow_removed* removed, std::string dstIP);
+		void handleStatsReply(ofp_stats_reply* reply);
+		void handleFlowMod(ofp_flow_mod* mod);
+		void handleFlowRemoved(ofp_flow_removed* removed);
 
 		// Send msg functions (for controller)
 		bool sendOpenFlowMessage(std::vector<unsigned char> data);

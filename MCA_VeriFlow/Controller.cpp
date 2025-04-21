@@ -22,7 +22,7 @@ void Controller::controllerThread(bool* run)
 		std::vector<uint8_t> packet = recvControllerMessages();
 
 		// Parse the packet
-		parsePacket(packet, "");
+		parsePacket(packet);
 
 		// For now, print any flows received
 		for (Flow f : sharedFlows) {
@@ -68,7 +68,7 @@ void Controller::parseFlow(Flow f)
 	// Action: Do nothing, another method will be handling this
 }
 
-bool Controller::parsePacket(std::vector<uint8_t>& packet, std::string dstIP) {
+bool Controller::parsePacket(std::vector<uint8_t>& packet) {
 
 	// Ensure we have a valid packet
 	if (packet.empty()) {
@@ -131,21 +131,21 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, std::string dstIP) {
 				// Handle stats reply -- used for listing flows
 				loggy << "[CCPDN]: Received Stats_Reply." << std::endl;
 				ofp_stats_reply* reply = reinterpret_cast<ofp_stats_reply*>(packet.data() + offset);
-				handleStatsReply(reply, dstIP);
+				handleStatsReply(reply);
 				break;
 			}
 			case OFPT_FLOW_MOD: {
 				// Handle flow modification -- used for verification
 				loggy << "[CCPDN]: Received Flow_Mod." << std::endl;
 				ofp_flow_mod* mod = reinterpret_cast<ofp_flow_mod*>(packet.data() + offset);
-				handleFlowMod(mod, dstIP);
+				handleFlowMod(mod);
 				break;
 			}
 			case OFPT_FLOW_REMOVED: {
 				// Handle flow removal -- used for verification
 				loggy << "[CCPDN]: Received Flow_Removed." << std::endl;
 				ofp_flow_removed* removed = reinterpret_cast<ofp_flow_removed*>(packet.data() + offset);
-				handleFlowRemoved(removed, dstIP);
+				handleFlowRemoved(removed);
 				break;
 			}
 			case OFPT_SET_CONFIG: {
@@ -916,7 +916,7 @@ void Controller::recvVeriFlowMessages()
 #endif
 }
 
-void Controller::handleStatsReply(ofp_stats_reply* reply, std::string dstIP)
+void Controller::handleStatsReply(ofp_stats_reply* reply)
 {
 	// Null check
 	if (reply == nullptr) {
@@ -955,8 +955,8 @@ void Controller::handleStatsReply(ofp_stats_reply* reply, std::string dstIP)
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
 
 		// Create string formats
-		std::string targetSwitch = dstIP;
-		std::string nextHop = "";
+		std::string targetSwitch = "0";
+		std::string nextHop = "0";
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 		
 		// Add flow to shared flows
@@ -969,7 +969,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply, std::string dstIP)
 #endif
 }
 
-void Controller::handleFlowMod(ofp_flow_mod *mod, std::string dstIP)
+void Controller::handleFlowMod(ofp_flow_mod *mod)
 {
 	// Null check
 	if (mod == nullptr) {
@@ -991,9 +991,9 @@ void Controller::handleFlowMod(ofp_flow_mod *mod, std::string dstIP)
 	uint32_t wildcards = ntohl(mod->match.wildcards);
 
 	// Create string formats
-	std::string targetSwitch = dstIP;
+	std::string targetSwitch = "0";
 	loggy << "[CCPDN]: Target Switch: " << targetSwitch << std::endl;
-	std::string nextHop = "";
+	std::string nextHop = "0";
 	loggy << "[CCPDN]: Next Hop: " << nextHop << std::endl;
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 	loggy << "[CCPDN]: Rule Prefix: " << rulePrefix << std::endl;
@@ -1009,7 +1009,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod, std::string dstIP)
 #endif
 }
 
-void Controller::handleFlowRemoved(ofp_flow_removed *removed, std::string dstIP)
+void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 {
 	// Null check
 	if (removed == nullptr) {
@@ -1031,8 +1031,8 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed, std::string dstIP)
 	uint32_t wildcards = ntohl(removed->match.wildcards);
 
 	// Create string formats
-	std::string targetSwitch = dstIP;
-	std::string nextHop = "";
+	std::string targetSwitch = "0";
+	std::string nextHop = "0";
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
