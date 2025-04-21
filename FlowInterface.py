@@ -80,10 +80,14 @@ class FlowInterface:
                 # Create action object based on srcDPID and dstDPID
                 action = of.ofp_action_output(port=outPort)
 
+                log.info("Parsed command: %s", result)
+
                 # Apply commands via controller
                 if result[0] == "addflow":
+                    log.info("Adding flow to switch %s", srcDPID)
                     self.add_flow(srcDPID, match, action)
                 elif result[0] == "removeflow":
+                    log.info("Removing flow from switch %s", srcDPID)
                     self.remove_flow(srcDPID, match, action)
                 elif result[0] == "listflows":
                     self.list_flows(srcDPID)
