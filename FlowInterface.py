@@ -38,57 +38,55 @@ class FlowInterface:
     def handle_client(self, client_socket):
         # Process client commands
         try:
-            data = client_socket.recv(1024).decode("utf-8")
-            log.info("Received command: %s", data)
+            while True:
+                data = client_socket.recv(1024).decode("utf-8")
+                log.info("Received command: %s", data)
 
-            result = [ 0, 0, 0, 0, 0 ]  # Initialize
+                result = [ 0, 0, 0, 0, 0 ]  # Initialize
 
-            if (data == None):
-                log.error("Received malformed/empty data.")
-                return
+                if (data == None):
+                    log.error("Received malformed/empty data.")
+                    return
 
-            # Ensure data consistency
-            data = data.strip()
-            data = data.replace(" ", "")  # Remove spaces
-            data = data.replace("\n", "")  # Remove newlines
-            data = data.replace("\r", "")  # Remove carriage returns
-            data = data.replace("\t", "")  # Remove tabs
-            
-            # Parse listflows version of the command
-            if (data.startswith("listflows")):
-                result = data.split("-")
-                result = [ result[0], result[1], 0, 0, 0 ]
+                # Ensure data consistency
+                data = data.strip()
+                data = data.replace(" ", "")  # Remove spaces
+                data = data.replace("\n", "")  # Remove newlines
+                data = data.replace("\r", "")  # Remove carriage returns
+                data = data.replace("\t", "")  # Remove tabs
+                
+                # Parse listflows version of the command
+                if (data.startswith("listflows")):
+                    result = data.split("-")
+                    result = [ result[0], result[1], 0, 0, 0 ]
 
-            # Parse the command, returns a set with {command, srcDPID, output_port, nw_src, Wildcards}
-            if (result == None):
-                result = self.parse_data(data)
+                # Parse the command, returns a set with {command, srcDPID, output_port, nw_src, Wildcards}
+                if (result == None):
+                    result = self.parse_data(data)
 
-            if (result == None):
-                log.error("Error parsing data: %s", data)
-                return
-            
-            # print contents of result
-            log.info("Parsed result: %s", result)
-            
-            srcDPID = int(result[1])
-            outPort = int(result[2])
+                if (result == None):
+                    log.error("Error parsing data: %s", data)
+                    return
+                
+                srcDPID = int(result[1])
+                outPort = int(result[2])
 
-            # Create match object from our nw_src, Wildcards and dstDPID
-            match = of.ofp_match()
-            match.nw_src = result[3]
-            match.wildcards = result[4]
-            match.dl_type = 0x0800  # IPv4
+                # Create match object from our nw_src, Wildcards and dstDPID
+                match = of.ofp_match()
+                match.nw_src = result[3]
+                match.wildcards = result[4]
+                match.dl_type = 0x0800  # IPv4
 
-            # Create action object based on srcDPID and dstDPID
-            action = of.ofp_action_output(port=outPort)
+                # Create action object based on srcDPID and dstDPID
+                action = of.ofp_action_output(port=outPort)
 
-            # Apply commands via controller
-            if result[0] == "add_flow":
-                self.add_flow(srcDPID, match, action)
-            elif result[0] == "remove_flow":
-                self.remove_flow(srcDPID, match, action)
-            elif result[0] == "listflows":
-                self.list_flows(srcDPID)
+                # Apply commands via controller
+                if result[0] == "add_flow":
+                    self.add_flow(srcDPID, match, action)
+                elif result[0] == "remove_flow":
+                    self.remove_flow(srcDPID, match, action)
+                elif result[0] == "listflows":
+                    self.list_flows(srcDPID)
         except Exception as e:
             log.error("Error handling client: %s", e)
         finally:
@@ -145,6 +143,7 @@ class FlowInterface:
         # Send a stats request to the switch
         connection = self.switches[dpid]
         connection.send(of.ofp_stats_request(body=of.ofp_flow_stats_request()))
+        log.info("Flow stats requested from switch %s", dpid)
 
 def launch():
     core.registerNew(FlowInterface)
