@@ -65,6 +65,10 @@ class TCPAnalyzer {
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
 
+		if (payload.empty()) {
+			return;
+		}
+
 		// Utilize parsing methods from controller, and update controller remotely
 		currentPackets.push_back(payload);
 		pingFlag = true;
