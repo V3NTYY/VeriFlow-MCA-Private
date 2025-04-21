@@ -90,6 +90,7 @@ class Controller {
 		std::string				  flowPort;
 		std::vector<Flow>		  sharedFlows;
 		std::vector<uint8_t>	  sharedPacket;
+		bool					  fhFlag;
 
 	private:
 		int						  sockfd;
@@ -103,7 +104,6 @@ class Controller {
 		char					  vfBuffer[1024];
 		bool					  vfFlag;
 		bool					  ofFlag;
-		bool					  fhFlag;
 		bool					  pause_rst;
 
 		// Private Functions
