@@ -1033,7 +1033,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 	}
 
 	// Calculate pointer and body size information to find current flow_stat object
-	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(reply) + sizeof(ofp_stats_reply);
+	uint8_t* ofp_flow_stats_ptr = reinterpret_cast<uint8_t*>(reply + sizeof(ofp_stats_reply));
 	size_t body_size = reply->header.length - sizeof(ofp_stats_reply);
 	
 	// Iterate through each flow_stat given in the packet
@@ -1048,9 +1048,13 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 			break;
 		}
 
-		// Flow processing -- HANDLE GETTING DST IP FROM ACTION
+		// Flow processing
 		uint32_t rulePrefixIP = ntohl(flow_stats->match.nw_src);
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
+
+		loggy << "Rule Prefix IP: " << rulePrefixIP << std::endl;
+		loggy << "Wildcards: " << wildcards << std::endl;
+		loggy << "Flow Length: " << flow_length << std::endl;
 
 		// Create string formats
 		std::string targetSwitch = getSrcFromXID(reply->header.xid);
@@ -1084,7 +1088,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 		return;
 	}
 
-	// Flow processing -- HANDLE GETTING DST IP FROM ACTION
+	// Flow processing
 	uint32_t rulePrefixIP = ntohl(mod->match.nw_src);
 	uint32_t wildcards = ntohl(mod->match.wildcards);
 
@@ -1121,7 +1125,7 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 		return;
 	}
 
-	// Flow processing -- HANDLE GETTING DST IP FROM ACTION
+	// Flow processing
 	uint32_t rulePrefixIP = ntohl(removed->match.nw_src);
 	uint32_t wildcards = ntohl(removed->match.wildcards);
 
