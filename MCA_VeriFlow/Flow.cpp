@@ -7,7 +7,7 @@ std::string Flow::flowToStr(bool printDPID)
 	std::string actionStr = action ? "A" : "R";
 	std::string outputSrcIP = printDPID ? switchDPID : switchIP;
 	std::string outputHopIP = printDPID ? nextHopDPID : nextHopIP;
-	output = actionStr + "#" + switchIP + "-" + rulePrefix + "-" + nextHopIP;
+	output = actionStr + "#" + outputSrcIP + "-" + rulePrefix + "-" + outputHopIP;
 	return output;
 }
 

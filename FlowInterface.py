@@ -57,6 +57,9 @@ class FlowInterface:
             # Parse listflows version of the command
             if (data.startswith("listflows")):
                 result = data.split("-")
+                result[2] = 0
+                result[3] = 0
+                result[4] = 0
 
             # Parse the command, returns a set with {command, srcDPID, dstDPID, nw_src, Wildcards}
             if (result == None):
@@ -70,9 +73,6 @@ class FlowInterface:
             log.info("Parsed result: %s", result)
             
             srcDPID = int(result[1])
-            if (result[0] == "listflows"):
-                self.list_flows(srcDPID)
-                return
             dstDPID = int(result[2])
 
             # Create match object from our nw_src, Wildcards and dstDPID
@@ -83,7 +83,7 @@ class FlowInterface:
 
             # Create action object based on srcDPID and dstDPID
             output_port = self.get_output_port(srcDPID, dstDPID)
-            if (output_port == None):
+            if (output_port == None and srcDPID != dstDPID):
                 log.error("No output port found for %s to %s", srcDPID, dstDPID)
             action = of.ofp_action_output(port=output_port)
 
@@ -92,6 +92,8 @@ class FlowInterface:
                 self.add_flow(srcDPID, match, action)
             elif result[0] == "remove_flow":
                 self.remove_flow(srcDPID, match, action)
+            elif (result[0] == "listflows"):
+                self.list_flows(srcDPID)
         except Exception as e:
             log.error("Error handling client: %s", e)
         finally:

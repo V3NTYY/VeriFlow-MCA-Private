@@ -457,10 +457,6 @@ bool Controller::freeLink()
 
 bool Controller::addFlowToTable(Flow f)
 {    
-	std::string switchDP = std::to_string(getDPID(f.getSwitchIP()));
-    std::string hopDP = std::to_string(getDPID(f.getNextHopIP()));
-    f.setDPID(switchDP, hopDP);
-	loggy << "Adding flow " << f.flowToStr(true) << " to table.\n";
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
 	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true)); // true for add action
 }
