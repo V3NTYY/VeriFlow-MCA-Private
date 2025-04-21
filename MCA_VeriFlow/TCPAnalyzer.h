@@ -65,13 +65,6 @@ class TCPAnalyzer {
 		// Extract TCP Payload as vector of bytes
 		std::vector<byte> payload(tcpHeader + TCP_HEADER_SIZE, tcpHeader + pkthdr->len - ETHERNET_HEADER_SIZE - IP_HEADER_SIZE);
 
-		// print packet data
-		loggy << "[CCPDN]: Libpcap Packet data: ";
-		for (auto byte : payload) {
-			loggy << std::hex << static_cast<int>(byte) << " ";
-		}
-		loggy << std::dec << std::endl;
-
 		// Utilize parsing methods from controller, and update controller remotely
 		currentPackets.push_back(payload);
 		pingFlag = true;
