@@ -553,7 +553,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 			updateXIDMapping(genXID, IP, "");
 
 			// Send the FlowHandler message and wait for response
-			if (!sendFlowHandlerMessage("listflows-" + dpid)) {
+			if (!sendFlowHandlerMessage("listflows-" + dpid + std::to_string(genXID))) {
 				loggyErr("[CCPDN-ERROR]: Failed to retrieve flow list\n");
 				pause_rst = false;
 				return flows;
@@ -927,8 +927,6 @@ bool Controller::updateXIDMapping(uint32_t xid, std::string srcIP, std::string d
 
 	xidFlowMap[xid] = std::make_pair(srcIP, dstIP);
 
-	loggyMsg("[CCPDN]: Added XID mapping: " + std::to_string(xid) + " -> " + srcIP + " -> " + dstIP + "\n");
-
 	return returnVal;
 }
 
@@ -1089,8 +1087,6 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	// Flow processing -- HANDLE GETTING DST IP FROM ACTION
 	uint32_t rulePrefixIP = ntohl(mod->match.nw_src);
 	uint32_t wildcards = ntohl(mod->match.wildcards);
-
-	loggy << "XID: " << mod->header.xid << std::endl;
 
 	// Create string formats
 	std::string targetSwitch = getSrcFromXID(mod->header.xid);

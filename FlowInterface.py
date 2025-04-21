@@ -86,8 +86,6 @@ class FlowInterface:
                 # Create action object based on srcDPID and dstDPID
                 action = of.ofp_action_output(port=outPort)
 
-                log.info("Parsed command: %s", result)
-
                 # Apply commands via controller
                 if result[0] == "addflow":
                     self.add_flow(srcDPID, match, action, xid)
@@ -135,7 +133,7 @@ class FlowInterface:
         fm.xid = XID
 
         self.switches[dpid].send(fm)
-        log.info("Flow %s (wildcard %s) added to switch %s", fm, fm.match.wildcards, dpid)
+        log.info("Flow %s added to switch %s", fm.xid, dpid)
 
     def remove_flow(self, dpid, match, action, XID):
 
@@ -146,7 +144,7 @@ class FlowInterface:
         fm.xid = XID
 
         self.switches[dpid].send(fm)
-        log.info("Flow %s (wildcard %s) removed from switch %s", fm, fm.match.wildcards, dpid)
+        log.info("Flow %s removed from switch %s", fm.xid, dpid)
 
     def list_flows(self, dpid, XID):
 
@@ -156,7 +154,7 @@ class FlowInterface:
         req.xid = XID
 
         connection.send(req)
-        log.info("Flow stats requested from switch %s", dpid)
+        log.info("Flow %s requested stats from switch %s", req.xid, dpid)
 
 def launch():
     core.registerNew(FlowInterface)
