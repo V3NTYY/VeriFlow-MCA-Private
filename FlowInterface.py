@@ -81,9 +81,9 @@ class FlowInterface:
                 action = of.ofp_action_output(port=outPort)
 
                 # Apply commands via controller
-                if result[0] == "add_flow":
+                if result[0] == "addflow":
                     self.add_flow(srcDPID, match, action)
-                elif result[0] == "remove_flow":
+                elif result[0] == "removeflow":
                     self.remove_flow(srcDPID, match, action)
                 elif result[0] == "listflows":
                     self.list_flows(srcDPID)
