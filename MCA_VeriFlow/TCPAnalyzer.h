@@ -107,13 +107,11 @@ class TCPAnalyzer {
 				pingFlag = true;
 			}
 
-			// Capture packets and process them
-			packet = pcap_next(handle, &header);
-			if (packet != nullptr) {
-				packetHandler(&header, packet);
-			} else {
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			}
+			// Capture packets
+			pcap_loop(handle, 0, [](u_char* user, const struct pcap_pkthdr* pkthdr, const u_char* packet) {
+				TCPAnalyzer* analyzer = reinterpret_cast<TCPAnalyzer*>(user);
+				analyzer->packetHandler(pkthdr, packet);
+			}, reinterpret_cast<u_char*>(this));
 		}
 
 		// Close the handle
