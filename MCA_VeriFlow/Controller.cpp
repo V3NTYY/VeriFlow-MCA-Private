@@ -51,19 +51,13 @@ void Controller::flowHandlerThread(bool *run)
 	loggy << "[CCPDN]: Starting flow handler thread...\n";
 	while (*run) {
 		// Wait until our flag is set to positive, then parse the packet
-		if (TCPAnalyzer::pingFlag) {
+		while (TCPAnalyzer::currentPackets.size() > 0) {
 			// Clear our current flow list
 			sharedFlows.clear();
 
 			// Grab copy of last read packet
-			std::vector<uint8_t> currPacket = TCPAnalyzer::currentPackets.back();
-			TCPAnalyzer::currentPackets.pop_back();
-
-			// print packet data
-			loggy << "[CCPDN]: Flow handler Packet data: ";
-			for (auto byte : currPacket) {
-				loggy << std::hex << static_cast<int>(byte) << " ";
-			}
+			std::vector<byte> currPacket = TCPAnalyzer::currentPackets.front();
+			TCPAnalyzer::currentPackets.erase(TCPAnalyzer::currentPackets.begin());
 
 			// Parse packet
 			parsePacket(currPacket);
