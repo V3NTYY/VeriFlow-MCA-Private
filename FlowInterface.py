@@ -61,9 +61,13 @@ class FlowInterface:
                 log.error("Error parsing data: %s", data)
                 return
             
+            # print contents of result
+            log.info("Parsed result: %s", result)
+            
             srcDPID = int(result[1])
             if (result[0] == "listflows"):
                 self.list_flows(srcDPID)
+                return
             dstDPID = int(result[2])
 
             # Create match object from our nw_src, Wildcards and dstDPID
