@@ -14,6 +14,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <atomic>
 
 #ifdef __unix__
 #include <pcap.h>
@@ -22,12 +23,17 @@
 typedef uint8_t byte;
 typedef std::vector<byte> packet;
 
+struct TimestampPacket {
+	std::chrono::time_point<std::chrono::high_resolution_clock> timestamp;
+	packet data;
+};
+
 class TCPAnalyzer {
 
 	public:
 
 		static bool pingFlag;
-		static std::vector<std::vector<byte>> currentPackets;
+		static std::vector<TimestampPacket> currentPackets;
 		static std::mutex currentPacketsMutex;
 
 		// Thread method
@@ -71,12 +77,14 @@ class TCPAnalyzer {
 			return;
 		}
 
+		// Create a timestamped packet
+		TimestampedPacket tsPacket = {std::chrono::steady_clock::now(), payload};
+
 		// Utilize parsing methods from controller, and update controller remotely
 		{
 			// Lock mutex to ensure thread safety
 			std::lock_guard<std::mutex> lock(currentPacketsMutex);
-			loggy << "[CCPDN]: Packet size: " + std::to_string(payload.size()) + "\n";
-			currentPackets.push_back(payload);
+			currentPackets.push_back(tsPacket);
 			pingFlag = true;
 		}
 	}

@@ -27,6 +27,15 @@
 	#include <unistd.h>
 #endif
 
+struct TimestampPacket {
+	std::chrono::time_point<std::chrono::high_resolution_clock> timestamp;
+	packet data;
+
+	const bool smallerTime(const TimestampPacket other) const {
+		return timestamp < other.timestamp;
+	}
+};
+
 class Controller {
 	public:
 		// Constructors and destructors

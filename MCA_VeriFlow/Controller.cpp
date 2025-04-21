@@ -2,7 +2,7 @@
 #include <thread>
 
 bool TCPAnalyzer::pingFlag = false;
-std::vector<std::vector<byte>> TCPAnalyzer::currentPackets;
+std::vector<TimestampPacket> TCPAnalyzer::currentPackets;
 std::mutex TCPAnalyzer::currentPacketsMutex;
 
 /// Temporary solution for getting flows and finding flow mods
@@ -59,9 +59,13 @@ void Controller::flowHandlerThread(bool *run)
 			// Lock mutex to ensure thread safety
 			std::lock_guard<std::mutex> lock(TCPAnalyzer::currentPacketsMutex);
 			if (!TCPAnalyzer::currentPackets.empty()) {
-				currPacket = TCPAnalyzer::currentPackets.front();
-				TCPAnalyzer::currentPackets.erase(TCPAnalyzer::currentPackets.begin());
-				TCPAnalyzer::pingFlag = false;
+				// Get the packet with the lowest timestamp
+				auto it = std::min_element(TCPAnalyzer::currentPackets.begin(), TCPAnalyzer::currentPackets.end(),
+					[](const TimestampPacket& a, const TimestampPacket& b) {
+						return a.smallerTime(b);
+					});
+				currPacket = it->data;
+				TCPAnalyzer::currentPackets.erase(it);
 			}
 		}
 
