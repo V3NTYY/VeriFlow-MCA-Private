@@ -282,6 +282,39 @@ bool Topology::outputToFile(std::string filename)
 	return true;
 }
 
+bool Topology::isLocal(std::string firstIP, std::string secondIP)
+{
+	// Ensure firstIP exists within current topology
+	int hostIndex = hostIndex;
+	if (hostIndex < 0 || hostIndex >= topologyList.size()) {
+		return false;
+	}
+
+	bool firstIPExists = false;
+	for (Node n : topologyList[hostIndex]) {
+		if (n.getIP() == firstIP) {
+			firstIPExists = true;
+			break;
+		}
+	}
+
+	// If firstIP doesn't exist, return a fail
+	if (!firstIPExists) {
+		return false;
+	}
+
+	// Ensure secondIP exists within current topology
+	bool secondIPExists = false;
+	for (Node n : topologyList[hostIndex]) {
+		if (n.getIP() == secondIP) {
+			secondIPExists = true;
+			break;
+		}
+	}
+
+	return secondIPExists;
+}
+
 std::string Topology::printTopology(int index)
 {
 	// Ensure index exists

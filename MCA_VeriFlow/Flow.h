@@ -26,6 +26,9 @@ class Flow {
 		std::string getNextHopIP();
 		bool actionType();
 
+		bool isMod();
+		void setMod(bool mod);
+
 		void setDPID(std::string switchDP, std::string hopDP) { switchDPID = switchDP; outPort = hopDP; }
 
 	private:
@@ -36,6 +39,7 @@ class Flow {
 		std::string rulePrefix;
 		std::string nextHopIP;
 		bool action;
+		bool isFlowMod;
 };
 
 #endif

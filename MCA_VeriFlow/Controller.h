@@ -93,6 +93,7 @@ class Controller {
 		int	 			   getDPID(std::string IP);
 		int  			   getOutputPort(std::string srcIP, std::string dstIP);
 		std::string		   getIPFromOutputPort(std::string srcIP, int outputPort);
+		void			   tryClearSharedFlows();
 
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 
@@ -105,6 +106,7 @@ class Controller {
 		std::vector<uint8_t>	  sharedPacket;
 		bool					  fhFlag;
 		int						  fhXID;
+		bool					  recvSharedFlag;
 
 	private:
 		int						  sockfd;

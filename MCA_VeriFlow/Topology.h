@@ -37,6 +37,7 @@ class Topology {
 		// Misc functions
 		void clear();
 		bool outputToFile(std::string filename);
+		bool isLocal(std::string firstIP, std::string secondIP);
 
 		// Marshalling functions
 		static std::vector<Node> string_toTopology(std::string payload);

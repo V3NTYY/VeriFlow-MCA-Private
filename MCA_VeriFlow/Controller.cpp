@@ -20,7 +20,7 @@ void Controller::controllerThread(bool* run)
 	while (*run) {
 
 		// Clear our current flow list
-		sharedFlows.clear();
+		tryClearSharedFlows();
 
 		// Receive next message from our socket
 		std::vector<uint8_t> packet = recvControllerMessages();
@@ -52,7 +52,7 @@ void Controller::flowHandlerThread(bool *run)
 	while (*run) {
 
 		// Clear our current flow list
-		sharedFlows.clear();
+		tryClearSharedFlows();
 		std::vector<byte> currPacket;
 
 		{
@@ -72,8 +72,10 @@ void Controller::flowHandlerThread(bool *run)
 		// Parse packet with scrutiny to XID
 		parsePacket(currPacket, true);
 
+		std::vector<Flow> operatingFlows = sharedFlows;
+
 		// Handle all received flows
-		for (Flow f : sharedFlows) {
+		for (Flow f : operatingFlows) {
 			parseFlow(f);
 		}
 	}
@@ -81,9 +83,14 @@ void Controller::flowHandlerThread(bool *run)
 
 void Controller::parseFlow(Flow f)
 {
-	// Case 0:
-	// Flow rule (target IP and forward hops) is within host topology
-	// Action: run verification on flow rule
+	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
+	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP());
+	if (f.isMod() && isLocal) {
+		// Run verification on the flow rule
+		recvSharedFlag = true;
+		performVerification(false, f);
+		return;
+	}
 
 	// Case 1:
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
@@ -298,6 +305,7 @@ Controller::Controller()
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
+	recvSharedFlag = false;
 
 	sharedFlows.clear();
 	sharedPacket.clear();
@@ -321,6 +329,7 @@ Controller::Controller(Topology* t) {
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
+	recvSharedFlag = false;
 
 	sharedPacket.clear();
 	sharedFlows.clear();
@@ -591,9 +600,6 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	// Reset fHFlag since the statsreply packet has been received
 	fhFlag = false;
 
-	// Wait for 50ms
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
 	for (Flow f : sharedFlows) {
 		if (f.getSwitchIP() == IP) {
 			flows.push_back(f);
@@ -601,6 +607,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 	}
 
 	pause_rst = false;
+	recvSharedFlag = false;
 	return flows;
 }
 
@@ -954,6 +961,16 @@ std::string Controller::getIPFromOutputPort(std::string srcIP, int outputPort)
 	return srcLinks[outputPort];
 }
 
+void Controller::tryClearSharedFlows()
+{
+	if (recvSharedFlag) {
+		return;
+	}
+
+	// Clear the shared flows vector
+	sharedFlows.clear();
+}
+
 Flow Controller::adjustCrossTopFlow(Flow f)
 {
 	/// Since we are only handling loops, this method should only handle loops logic (w/ resubmits)
@@ -1117,21 +1134,16 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		uint32_t wildcards = ntohl(flow_stats->match.wildcards);
 		uint16_t output_port = ntohs(action_header->port);
 
-		loggy << "[CCPDN]: wildcards: " << std::hex << wildcards << std::endl;
-		loggy << "[CCPDN]: rulePrefixIP: " << std::hex << rulePrefixIP << std::endl;
-		loggy << "[CCPDN]: output_port: " << std::hex << output_port << std::dec << std::endl;
-
 		// Create string formats
 		std::string targetSwitch = getSrcFromXID(reply->header.xid);
 		std::string nextHop = getIPFromOutputPort(targetSwitch, output_port);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
-		loggy << "[CCPDN]: targetSwitch: " << targetSwitch << std::endl;
-		loggy << "[CCPDN]: nextHop: " << nextHop << std::endl;
-		loggy << "[CCPDN]: rulePrefix: " << rulePrefix << std::endl;
-
 		// Add flow to shared flows
-		sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
+		recvSharedFlag = true;
+		Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
+		f.setMod(false);
+		sharedFlows.push_back(f);
 
 		// Set fhFlag if we are expecting this as a list-flows return
 		if (reply->header.xid == fhXID) {
@@ -1179,7 +1191,10 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	}
 	
 	// Add flow to shared flows -- since it is added, do true
-	sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, true));
+	recvSharedFlag = true;
+	Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
+	f.setMod(true);
+	sharedFlows.push_back(f);
 #endif
 }
 
@@ -1216,7 +1231,10 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 	}
 
 	// Add flow to shared flows -- since it is added, do true
-	sharedFlows.push_back(Flow(targetSwitch, rulePrefix, nextHop, false));
+	// recvSharedFlag = true;
+	Flow f = Flow(targetSwitch, rulePrefix, nextHop, false);
+	f.setMod(true);
+	sharedFlows.push_back(f);
 #endif
 }
 
