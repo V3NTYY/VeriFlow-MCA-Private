@@ -992,8 +992,11 @@ void Controller::handleFlowMod(ofp_flow_mod *mod, std::string dstIP)
 
 	// Create string formats
 	std::string targetSwitch = dstIP;
+	loggy << "[CCPDN]: Target Switch: " << targetSwitch << std::endl;
 	std::string nextHop = "";
+	loggy << "[CCPDN]: Next Hop: " << nextHop << std::endl;
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
+	loggy << "[CCPDN]: Rule Prefix: " << rulePrefix << std::endl;
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
