@@ -224,7 +224,7 @@ std::string OpenFlowMessage::getRulePrefix(uint32_t wildcards, uint32_t srcIP) /
 	std::string output = "";
 
 	// Calculate mask length
-    int mask_length = 32 - wildcards;
+    int mask_length = 32 - ((wildcards >> 8) & 0xFF);
 	
 	// get ip address from nw_src
 	std::string ip_str = ipToString(srcIP);

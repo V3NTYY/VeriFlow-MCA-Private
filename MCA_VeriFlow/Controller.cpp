@@ -83,6 +83,8 @@ void Controller::parseFlow(Flow f)
 	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP());
 	loggy << "[CCPDN]: isLocal " << std::to_string(isLocal) << std::endl;
 	f.print();
+	if (f.isMod())
+		recvSharedFlag = true;
 
 	if (f.isMod() && isLocal) {
 		// Run verification on the flow rule
