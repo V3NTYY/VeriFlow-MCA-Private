@@ -284,8 +284,8 @@ bool Topology::outputToFile(std::string filename)
 
 bool Topology::isLocal(std::string firstIP, std::string secondIP)
 {
+	loggy << "[CCPDN]: Checking if " << firstIP << " and " << secondIP << " are local." << std::endl;
 	// Ensure firstIP exists within current topology
-	int hostIndex = hostIndex;
 	if (hostIndex < 0 || hostIndex >= topologyList.size()) {
 		return false;
 	}
