@@ -81,11 +81,6 @@ void Controller::parseFlow(Flow f)
 {
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
 	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP());
-	loggy << "[CCPDN]: isLocal " << std::to_string(isLocal) << std::endl;
-	f.print();
-	if (f.isMod())
-		recvSharedFlag = true;
-
 	if (f.isMod() && isLocal) {
 		// Run verification on the flow rule
 		recvSharedFlag = true;
@@ -549,6 +544,7 @@ bool Controller::removeFlowFromTable(Flow f)
     
     // No matching flow found
     loggyErr("[CCPDN-ERROR]: No matching flow found to remove\n");
+	recvSharedFlag = true;
     return false;
 }
 
@@ -709,7 +705,6 @@ bool Controller::sendOpenFlowMessage(std::vector<unsigned char> data)
 
 bool Controller::sendVeriFlowMessage(std::string message)
 {
-	loggy << "Sending veriflow message: " << message << std::endl;
 	// Convert message to sendable format, add null-terminating char
 	std::vector<char> Msg(message.begin(), message.end());
 	Msg.push_back('\0');
