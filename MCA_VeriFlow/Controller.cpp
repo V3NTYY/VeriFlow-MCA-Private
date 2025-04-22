@@ -79,6 +79,12 @@ void Controller::flowHandlerThread(bool *run)
 
 void Controller::parseFlow(Flow f)
 {
+	// Error checking:
+	if (f.getSwitchIP() == "" || f.getNextHopIP() == "") {
+		recvSharedFlag = true;
+		return;
+	}
+
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
 	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP());
 	if (f.isMod() && isLocal) {
