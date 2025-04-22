@@ -69,7 +69,9 @@ void Controller::flowHandlerThread(bool *run)
 		// Parse packet with scrutiny to XID
 		parsePacket(currPacket, true);
 
+		// Create optimal vector of flows to parse -- remove duplicates
 		std::vector<Flow> operatingFlows = sharedFlows;
+		
 		// Handle all received flows
 		for (Flow f : operatingFlows) {
 			parseFlow(f);
@@ -1173,6 +1175,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	// Flow processing
 	uint32_t rulePrefixIP = ntohl(mod->match.nw_src);
 	uint32_t wildcards = ntohl(mod->match.wildcards);
+	bool command = mod->command == OFPFC_ADD ? true : false;
 
 	// Create string formats
 	std::string targetSwitch = getSrcFromXID(mod->header.xid);
@@ -1187,7 +1190,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	
 	// Add flow to shared flows -- since it is added, do true
 	recvSharedFlag = false;
-	Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
+	Flow f = Flow(targetSwitch, rulePrefix, nextHop, command);
 	f.setMod(true);
 	sharedFlows.push_back(f);
 #endif
