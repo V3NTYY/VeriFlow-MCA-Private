@@ -944,6 +944,39 @@ int main() {
             }
         }
 
+        else if (args.at(0) == "test-method") {
+            if (args.size() < 2) {
+                loggy << "Not enough arguments. Usage: test-method [integer]" << std::endl;
+                continue;
+            } else if (!mca_veriflow->runService) {
+                loggy << "Service should be running before we test." << std::endl;
+                continue;
+            } else {
+                int testMethod = 0;
+                try {
+                    testMethod = std::stoi(args.at(1));
+                } catch (const std::exception& e) {
+                    loggy << "Invalid argument. Usage: test-method [integer]" << std::endl;
+                    continue;
+                }
+
+                // Send different CCPDN digests
+                Flow f("10.0.0.5", "192.168.1.1/24", "10.0.0.6", true);
+                Digest reqVer(0, 0, 1, 0, 0, ""); // asks for perform verification with flow
+                reqVer.appendFlow(f);
+
+                // Get topology in string format
+                std::string topologyString = mca_veriflow->topology.topology_toString(mca_veriflow->topology.hostIndex); // get topology at index n
+                Digest sendUp(0, 1, 0, 0, 0, topologyString); // makes the topology located at index n the most up-to-date
+
+                // Send flow request to other CCPDN
+                mca_veriflow->controller.sendCCPDNMessage(1, reqVer.toJson());
+
+                // Send topology update to other CCPDN
+                mca_veriflow->controller.sendCCPDNMessage(1, sendUp.toJson());
+            }
+        }
+
         // Invalid response
         else {
             loggy << "Invalid command. Try entering 'help' to view commands." << std::endl;

@@ -152,16 +152,23 @@ void Controller::recvProcessCCPDNDigests(int socket)
 	// Based on code returned, apply functionality
 	switch (Digest::readDigest(packet_str)) {
 		case 0:
+			loggy << "[CCPDN]: Calling sendUpdate..." << std::endl;
 			break;
 		case 1:
+			loggy << "[CCPDN]: Calling synchTopology..." << std::endl;
 			break;
 		case 2:
+			loggy << "[CCPDN]: Calling performVerification..." << std::endl;
+			loggy << "Flow data: " << Digest::getFlow(packet_str).flowToStr(false) << std::endl;
 			break;
 		case 3:
+			loggy << "[CCPDN]: Sending verification results... (TRUE)" << std::endl;
 			break;
-		case 4: // 
+		case 4:
+			loggy << "[CCPDN]: Sending verification results... (FALSE)" << std::endl;
 			break;
 		default: // Not recognized digest
+			loggy << "[CCPDN]: Digest not recognized!" << std::endl;
 			break;
 	}
 }

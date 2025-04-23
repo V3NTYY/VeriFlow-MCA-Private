@@ -22,7 +22,7 @@ private:
 
 public:
     Digest(bool synch = false, bool update = false, bool verification = false, 
-           int hIndex = 0, int dIndex = 0, const std::string& data = "");
+           int hIndex = 0, int dIndex = 0, const std::string& topologyData = "");
     ~Digest();
 
     // JSON Marshalling methods
