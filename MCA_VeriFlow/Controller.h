@@ -74,7 +74,7 @@ class Controller {
 		// Flow functions
 		bool addFlowToTable(Flow f);
 		bool removeFlowFromTable(Flow f);
-		std::vector<Flow> retrieveFlows(std::string IP);
+		std::vector<Flow> retrieveFlows(std::string IP, bool pause);
 		Flow adjustCrossTopFlow(Flow f);
 
 		// XID Mapping functions

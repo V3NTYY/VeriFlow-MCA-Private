@@ -531,7 +531,7 @@ bool Controller::removeFlowFromTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask for removal and send
     std::string switchIP = f.getSwitchIP();
-    std::vector<Flow> flows = retrieveFlows(switchIP);
+    std::vector<Flow> flows = retrieveFlows(switchIP, false);
     
     // Search for matching flow
     for (Flow existingFlow : flows) {
@@ -555,25 +555,30 @@ bool Controller::removeFlowFromTable(Flow f)
     
     // No matching flow found
     loggyErr("[CCPDN-ERROR]: No matching flow found to remove\n");
+	pauseOutput = false;
 	recvSharedFlag = true;
     return false;
 }
 
-std::vector<Flow> Controller::retrieveFlows(std::string IP)
+std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 {
 	std::vector<Flow> flows;
 
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	bool sent = false;
 	int localCount = 0;
-	pause_rst = true;
+	if (pause) {
+		pause_rst = true;
+	}
 	fhFlag = false;
 	while (!fhFlag) {
 		// Timeout
 		if (localCount > 15) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
-			pauseOutput = false;
+			if (pause) {
+				pauseOutput = false;
+			}
 			return flows;
 		}
 		if (!sent) {
@@ -589,7 +594,9 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 			if (!sendFlowHandlerMessage("listflows-" + dpid + "-" + std::to_string(genXID))) {
 				loggyErr("[CCPDN-ERROR]: Failed to retrieve flow list\n");
 				pause_rst = false;
-				pauseOutput = false;
+				if (pause) {
+					pauseOutput = false;
+				}
 				return flows;
 			}
 			else {
@@ -602,7 +609,9 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 
 	// Reset fHFlag since the statsreply packet has been received
 	fhFlag = false;
-	pauseOutput = false;
+	if (pause) {
+		pauseOutput = false;
+	}
 
 	for (Flow f : sharedFlows) {
 		if (f.getSwitchIP() == IP && !f.isMod()) {

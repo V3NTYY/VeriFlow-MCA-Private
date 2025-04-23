@@ -609,7 +609,7 @@ int main() {
 
                 // Request flows from controller
                 Controller::pauseOutput = true;
-                std::vector<Flow> flows = mca_veriflow->controller.retrieveFlows(targetIP);
+                std::vector<Flow> flows = mca_veriflow->controller.retrieveFlows(targetIP, true);
 
                 // Print all flows
                 loggy << "--- FLOWS " << targetIP << " ---" << std::endl;
