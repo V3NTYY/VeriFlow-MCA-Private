@@ -1179,7 +1179,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
-		if (!veriflowPort = "") {
+		if (!(veriflowPort = "")) {
 			pauseOutput = false; // For flow mods, only set pauseOutput to false if veriflow is running (since otherwise we're just linking)
 		}
 		loggyErr("[CCPDN-ERROR]: Parsed flow rule contains no flow information.\n");
@@ -1188,7 +1188,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	
 	// Add flow to shared flows -- since it is added, do true
 	recvSharedFlag = false;
-	if (!veriflowPort = "") {
+	if (!(veriflowPort = "")) {
 		pauseOutput = false; // For flow mods, only set pauseOutput to false if veriflow is running (since otherwise we're just linking)
 	}
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, command);
