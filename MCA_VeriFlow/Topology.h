@@ -18,6 +18,12 @@
 
 class Topology {
 	public:
+
+		// Equal operator (for finding dupes)
+		bool operator==(const Topology& other) const {
+			return topologyList == other.topologyList;
+		}
+
 		// Node getters
 		Node getNodeByIP(std::string IP);
 		Node getNodeByIP(std::string IP, int index);

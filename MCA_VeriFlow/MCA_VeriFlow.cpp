@@ -732,11 +732,20 @@ int main() {
                 Topology partitioned_topologies = mca_veriflow->partitionTopology();
                 int hostIndex = mca_veriflow->topology.hostIndex;
 
+                // If we couldn't partition the topology, just return the current config
+                if (partitioned_topologies == Topology()) {
+                    mca_veriflow->topology.extractIndexTopology(hostIndex).outputToFile(args.at(1) + std::to_string(hostIndex));
+                    loggy << "Topology " << std::to_string(hostIndex) << " output to " << args.at(1) + std::to_string(hostIndex) << std::endl;
+                    continue;
+                }
+
                 // Output partitioned local topology to give to VeriFlow
                 if (partitioned_topologies.extractIndexTopology(hostIndex).outputToFile(args.at(1) + std::to_string(hostIndex))) {
                     loggy << "Topology " << std::to_string(hostIndex) << " output to " << args.at(1) + std::to_string(hostIndex) << std::endl;
+                    continue;
                 } else {
                     loggy << "Error outputting topology " << args.at(1) + std::to_string(hostIndex) << " to file." << std::endl;
+                    continue;
                 }
 			}
 		}
