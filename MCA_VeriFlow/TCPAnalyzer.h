@@ -11,6 +11,7 @@
 #include "Log.h"
 #include "OpenFlowMessage.h"
 #include "Flow.h"
+#include "Controller.h" // for pauseOutput
 #include <chrono>
 #include <thread>
 #include <mutex>
