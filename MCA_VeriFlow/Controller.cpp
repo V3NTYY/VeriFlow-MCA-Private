@@ -4,6 +4,7 @@
 bool TCPAnalyzer::pingFlag = false;
 std::vector<TimestampPacket> TCPAnalyzer::currentPackets;
 std::mutex TCPAnalyzer::currentPacketsMutex;
+bool Controller::pauseOutput = false;
 
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
