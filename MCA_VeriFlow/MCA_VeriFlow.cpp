@@ -767,7 +767,10 @@ int main() {
             if (args.size() < 2) {
                 loggy << "Not enough arguments. Usage: reg-top [topology_file]" << std::endl;
                 continue;
-			} else {
+			} else if (mca_veriflow->controller_linked) {
+                loggy << "Controller already linked. Try reset-controller first or stopping any existing services." << std::endl;
+                continue;
+            } else {
                 // Read the topology file and register it
                 if (!mca_veriflow->registerTopologyFile(args.at(1))) {
                     loggy << "Error reading topology file. Ensure the file exists and is in the correct format." << std::endl;
