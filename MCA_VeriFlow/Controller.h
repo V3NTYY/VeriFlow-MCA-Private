@@ -61,7 +61,7 @@ class Controller {
 		bool parsePacket(std::vector<uint8_t>& packet, bool xidCheck);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
-		void recvCCPDNDigests();
+		std::vector<uint8_t> recvCCPDNDigests();
 		void parseFlow(Flow f);
 
 		// OpenFlow packet decode functions

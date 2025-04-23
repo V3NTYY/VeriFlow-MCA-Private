@@ -81,17 +81,59 @@ void Controller::flowHandlerThread(bool *run)
 /// This method should setup the server receiver for CCPDN communication
 void Controller::CCPDNThread(bool *run)
 {
+	// Handles receiving packets from currently connected sockCC connections (CCPDN connections)
 	loggy << "[CCPDN]: Starting CCPDN thread...\n";
+	
 	while (*run) {
-		recvCCPDNDigests();
+		std::vector<uint8_t> packet = recvCCPDNDigests();
+
+		// Skip empty packets
+		if (packet.empty()) {
+			continue;
+		}
+
+		// Convert packet to string format for JSON parsing
+		std::string packet_str(packet.begin(), packet.end());
+
+		// Based on code returned, apply functionality
+		switch (Digest::readDigest(packet_str)) {
+			case 0:
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			case 4:
+				break;
+			default: // Not recognized
+				break;
+		}
 	}
 }
 
-void Controller::recvCCPDNDigests()
+// How do we handle received digests? (Call verification functions, topology updates or synchroncity)
+std::vector<uint8_t> Controller::recvCCPDNDigests()
 {
+	// Clear packet and fix size before receival
+	int hostIndex = referenceTopology->hostIndex;
+	std::vector<uint8_t> packet;
+	packet.clear();
+	packet.resize(4096);
+
 #ifdef __unix__
-	// Recv handler
+	// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
+	ssize_t bytes_received = recv(sockCC[hostIndex], packet.data(), packet.size(), 0);
+	if (bytes_received < 0) {
+		loggyErr("[CCPDN-ERROR]: Failed to receive message from CCPDN instance\n");
+		return {};
+	} else if (bytes_received == 0) {
+		loggyErr("[CCPDN-ERROR]: Connection closed by CCPDN instance\n");
+		return {};
+	}
 #endif
+	return packet;
 }
 
 /// This method should establish a connection to each CCPDN instance within the topology file
@@ -99,20 +141,83 @@ bool Controller::initCCPDN()
 {
 	// For each topology instance, create a socket and connect to it
 	for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
-		
+		if (i == referenceTopology->hostIndex) {
+			continue; // Skip our own instance
+		}
+
+
 	}
+
     return false;
 }
 
 bool Controller::startCCPDNServer(int port)
 {
-	// Create socket, bind
+	int hostIndex = referenceTopology->hostIndex;
+	int opt = 1;
+	#ifdef __unix__
+	// Create socket descriptor
+	if ((sockCC[hostIndex] = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+		loggy << "[CCPDN-ERROR]: Could not create socket." << std::endl;
+		pauseOutput = false;
+		return false;
+	}
+
+	// Set socket options for server reuse
+	if (setsockopt(sockCC[hostIndex], SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+		loggy << "[CCPDN-ERROR]: Could not set socket options." << std::endl;
+		close(sockCC[hostIndex]);
+		pauseOutput = false;
+		return false;
+	}
+
+	// Setup the address to connect to (use controller IP and a new port)
+	struct sockaddr_in server_address;
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = INADDR_ANY;
+	server_address.sin_port = htons(port);
+
+	// Bind the socket to port (allows for listening)
+	if (bind(socketCC[hostIndex], (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+		loggy << "[CCPDN-ERROR]: Could not bind to port " << std::to_string(port) << std::endl;
+		close(sockCC[hostIndex]);
+		pauseOutput = false;
+		return false;
+	}
+
+	// Listen for incoming connections (non-blocking call)
+	if (listen(sockCC[hostIndex], referenceTopology->getTopologyCount()) < 0) {
+		loggy << "[CCPDN-ERROR]: Could not listen on port " << std::to_string(port) << std::endl;
+		close(sockCC[hostIndex]);
+		pauseOutput = false;
+		return false;
+	}
+
+	//  Accept incoming connections -- modifies the socket to be used for communication
+	if ((sockCC[hostIndex] = accept(server_address, (struct sockaddr*)&server_address, sizeof(server_address))) < 0) {
+		loggy << "[CCPDN-ERROR]: Could not accept incoming connection." << std::endl;
+		close(sockCC[hostIndex]);
+		pauseOutput = false;
+		return false;
+	} else {
+		loggy << "[CCPDN]: Listening on port " << std::to_string(port) << std::endl;
+		pauseOutput = false;
+		return true;
+	}
+	#endif
 
     return false;
 }
 
 bool Controller::stopCCPDNServer()
 {
+	// Close all connected CCPDN sockets
+	for (int i = 0; i < sockCC.size(); i++) {
+	#ifdef __unix__
+		close(sockCC[i]);
+	#endif
+	}
+
     return false;
 }
 
@@ -382,7 +487,9 @@ Controller::~Controller()
 		close(sockfd);
 		close(sockvf);
 		close(sockfh);
-		close(sockCC);
+		for (int i = 0; i < sockCC.size(); i++) {
+			close(sockCC[i]);
+		}
 	#endif
 }
 

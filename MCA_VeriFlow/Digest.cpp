@@ -47,23 +47,6 @@ void Digest::fromJson(const std::string& json_str) {
     }
 }
 
-bool Digest::sendDigest()
-{
-    int sockCC = 0;
-    std::string jsonData = toJson();
-    
-    // Send data on given socket
-    #ifdef __unix__
-        ssize_t bytes_sent = send(sockCC, jsonData.c_str(), jsonData.size(), 0);
-        if (bytes_sent < 0) {
-            loggyErr("[CCPDN]: Error sending digest!\n");
-            return false;
-        }
-    #endif
-    
-    return true;
-}
-
 int Digest::readDigest(const std::string& data) {
     try {
         nlohmann::json j = nlohmann::json::parse(data);
@@ -100,6 +83,22 @@ int Digest::readDigest(const std::string& data) {
         std::cerr << "Digest parsing error: " << e.what() << std::endl;
         return -1;
     }
+}
+
+Flow Digest::getFlow(const std::string &raw_data)
+{
+    nlohmann::json j = nlohmann::json::parse(raw_data);
+    std::string parsedFlow = j["flow_data"].get<std::string>();
+
+    Flow f = *Flow::strToFlow(parsedFlow);
+    Flow empty;
+
+    // If we couldn't parse anything, return an empty flow object
+    if (f == empty) {
+        return Flow("", "", "", false);
+    }
+
+    return f;
 }
 
 void Digest::appendFlow(Flow f)
