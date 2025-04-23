@@ -96,6 +96,7 @@ class Controller {
 		int  			   getOutputPort(std::string srcIP, std::string dstIP);
 		std::string		   getIPFromOutputPort(std::string srcIP, int outputPort);
 		void			   tryClearSharedFlows();
+		void               testVerificationTime();
 
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 

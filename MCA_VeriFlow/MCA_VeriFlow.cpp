@@ -891,7 +891,13 @@ int main() {
             }
         }
 
-        else if (args.at(0) == "test-method") {
+        else if (args.at(0) == "test-verification-time") {
+            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
+                loggy << "Ensure topology is initialized and controller is linked first." << std::endl;
+                continue;
+            } else {
+                mca_veriflow->controller.testVerificationTime();
+            }
         }
 
         // Invalid response

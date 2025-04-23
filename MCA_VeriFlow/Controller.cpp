@@ -1262,4 +1262,56 @@ std::string Controller::readBuffer(char* buf)
 	return output;
 }
 
+void Controller::testVerificationTime() {
+    std::vector<std::string> switchIPs;
+    for (Node n : referenceTopology->getTopology(referenceTopology->hostIndex)) {
+        if (n.isSwitch() && switchIPs.size() < 5) {
+            switchIPs.push_back(n.getIP());
+        }
+    }
 
+    if (switchIPs.size() < 5) {
+        loggy << "Not enough switches in topology (need at least 5)" << std::endl;
+        return;
+    }
+
+    // Create test flows using these switches
+    std::vector<Flow> testFlows = {
+        Flow(switchIPs[0], "192.168.1.0/24", switchIPs[1], true),
+        Flow(switchIPs[1], "10.0.0.0/16", switchIPs[2], true),
+        Flow(switchIPs[2], "172.16.0.0/12", switchIPs[3], true),
+        Flow(switchIPs[3], "192.168.2.0/24", switchIPs[4], true),
+        Flow(switchIPs[4], "10.1.0.0/16", switchIPs[0], true)
+    };
+
+    std::vector<double> verificationTimes;
+
+    // Test each flow and record verification time
+    for (Flow& flow : testFlows) {
+        auto start = std::chrono::high_resolution_clock::now();
+        performVerification(false, flow);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> duration = end - start;
+        verificationTimes.push_back(duration.count());
+        
+        loggy << "Flow verification: " << flow.flowToStr(false) 
+              << " took " << duration.count() * 1000 << " ms" << std::endl;
+    }
+
+    // Calculate statistics
+    if (!verificationTimes.empty()) {
+        std::sort(verificationTimes.begin(), verificationTimes.end());
+        
+        double sum = std::accumulate(verificationTimes.begin(), verificationTimes.end(), 0.0);
+        double average = sum / verificationTimes.size();
+        double median = verificationTimes[verificationTimes.size()/2];
+        double lowest = verificationTimes.front();
+        double highest = verificationTimes.back();
+
+        loggy << "\nVerification Time Statistics:" << std::endl;
+        loggy << "Average: " << average * 1000 << " ms" << std::endl;
+        loggy << "Median: " << median * 1000 << " ms" << std::endl;
+        loggy << "Lowest: " << lowest * 1000 << " ms" << std::endl;
+        loggy << "Highest: " << highest * 1000 << " ms" << std::endl;
+    }
+}
