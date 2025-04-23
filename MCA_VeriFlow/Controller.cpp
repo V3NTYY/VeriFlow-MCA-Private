@@ -94,7 +94,7 @@ void Controller::CCPDNThread(bool *run)
 		// Add current sockets to our monitoring list
 		for (int currentSock : acceptedCC) {
 			FD_SET(currentSock, &read_sockets);
-			if (currentSock > max_fd) {
+			if (currentSock > max_read) {
 				max_read = currentSock;
 			}
 		}
@@ -182,7 +182,7 @@ bool Controller::initCCPDN()
 }
 
 #ifdef __unix__
-void Controller::CCPDNServerThread(bool *run)
+void Controller::CCPDNServerThread(int port, bool *run)
 {
 	/// INITIALIZATION LOGIC
 	int hostIndex = referenceTopology->hostIndex;
@@ -370,16 +370,6 @@ void Controller::parseFlow(Flow f)
 	if (referenceTopology->getTopologyIndex(f.getSwitchIP()) == -1 ||
         referenceTopology->getTopologyIndex(f.getNextHopIP()) == -1) {
         loggy << "[CCPDN-WARNING]: Black hole detected for flow: " << f.flowToStr(false) << std::endl;
-        pauseOutput = false;
-        return;
-    }
-
-	// Case 3:
-	// We are receiving an openflow message with return flow list.
-	// Action: Do nothing, another method will be handling this
-	if (!f.isMod()) {
-        // Just store the flow, no verification needed
-        sharedFlows.push_back(f);
         pauseOutput = false;
         return;
     }
@@ -619,14 +609,9 @@ Controller::Controller(Topology* t) {
 // Destructor
 Controller::~Controller()
 {
-	#ifdef __unix__
-		close(sockfd);
-		close(sockvf);
-		close(sockfh);
-		for (int i = 0; i < sockCC.size(); i++) {
-			close(sockCC[i]);
-		}
-	#endif
+	stopCCPDNServer();
+	closeSockets();
+	acceptedCC.clear();
 }
 
 void Controller::setControllerIP(std::string Controller_IP, std::string Controller_Port)
