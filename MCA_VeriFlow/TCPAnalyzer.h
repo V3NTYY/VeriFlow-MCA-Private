@@ -33,7 +33,10 @@ struct TimestampPacket {
 };
 
 // Use forward declaration to access pauseOutput static bool
-class Controller;
+class Controller {
+	public:
+		static bool pauseOutput;
+};
 
 class TCPAnalyzer {
 
