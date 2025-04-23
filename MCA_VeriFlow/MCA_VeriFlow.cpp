@@ -531,6 +531,8 @@ int main() {
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " * run-tcp-test" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" <<
+                " * test-verification-time" << std::endl <<
+                "   Test Verification Time.\n" <<
                 "";
         }
 
