@@ -5,14 +5,6 @@ bool TCPAnalyzer::pingFlag = false;
 std::vector<TimestampPacket> TCPAnalyzer::currentPackets;
 std::mutex TCPAnalyzer::currentPacketsMutex;
 
-/// Temporary solution for getting flows and finding flow mods
-
-/// Run a separate thread for the command sudo tcpdump -i lo tcp port 6653
-/// Parse every individual packet received by tcpdump
-/// OpenFlow packets from the controller (srcPort 6653) will be analyzed and used as "interception"
-/// Format these packets, and run them through parsePacket()
-/// Problem solved -- stupid problem too. I love losing probably near triple digit hours to this!
-
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
 {
@@ -173,7 +165,7 @@ bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
 				// Send a barrier reply -- required for OF protocol
 				loggy << "[CCPDN]: Received Barrier_Request." << std::endl;
 				sendOpenFlowMessage(OpenFlowMessage::createBarrierReply(host_endian_XID));
-				linking = false;
+				pauseOutput = false;
 				break;
 			}
 			case OFPT_STATS_REPLY: {
@@ -221,7 +213,7 @@ std::string exec(const std::string& command, std::string match) {
     std::string result;
 
     #ifdef __unix__
-		// Open a pipe to read the output of tcpdump
+		// Open a pipe to read the output of a command
 		FILE* pipe = popen(command.c_str(), "r");
 		if (!pipe) {
 			throw std::runtime_error("Failed to pipe command: " + std::string(strerror(errno)));
@@ -298,7 +290,7 @@ Controller::Controller()
 	ofFlag = false;
 	vfFlag = false;
 	fhFlag = false;
-	linking = false;
+	pauseOutput = false;
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
@@ -322,7 +314,7 @@ Controller::Controller(Topology* t) {
 	ofFlag = false;
 	vfFlag = false;
 	fhFlag = false;
-	linking = false;
+	pauseOutput = false;
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
@@ -386,12 +378,11 @@ bool Controller::linkVeriFlow()
 
 bool Controller::linkController() {
 
-	linking = true;
 	#ifdef __unix__
 		// Setup socket
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd < 0) {
-			linking = false;
+			pauseOutput = false;
 			loggy << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
 			return false;
 		}
@@ -404,7 +395,7 @@ bool Controller::linkController() {
 
 		// Connect to the controller
 		if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-			linking = false;
+			pauseOutput = false;
 			loggy << "[CCPDN-ERROR]: Could not connect to controller." << std::endl;
 			return false;
 		}
@@ -439,7 +430,7 @@ bool Controller::linkFlow()
 
 		// Connect to the controller
 		if (connect(sockfh, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-			linking = false;
+			pauseOutput = false;
 			loggy << "[CCPDN-ERROR]: Could not connect to FlowHandler." << std::endl;
 			return false;
 		}
@@ -570,6 +561,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 		if (localCount > 15) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
+			pauseOutput = false;
 			return flows;
 		}
 		if (!sent) {
@@ -585,6 +577,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 			if (!sendFlowHandlerMessage("listflows-" + dpid + "-" + std::to_string(genXID))) {
 				loggyErr("[CCPDN-ERROR]: Failed to retrieve flow list\n");
 				pause_rst = false;
+				pauseOutput = false;
 				return flows;
 			}
 			else {
@@ -597,6 +590,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP)
 
 	// Reset fHFlag since the statsreply packet has been received
 	fhFlag = false;
+	pauseOutput = false;
 
 	for (Flow f : sharedFlows) {
 		if (f.getSwitchIP() == IP && !f.isMod()) {
@@ -1169,6 +1163,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Ensure our packet matches the minimum size of an ofp_flow_mod
 	if (mod->header.length < sizeof(ofp_flow_mod)) {
+		pauseOutput = false;
 		return;
 	}
 
@@ -1184,12 +1179,18 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
+		if (!veriflowPort = "") {
+			pauseOutput = false; // For flow mods, only set pauseOutput to false if veriflow is running (since otherwise we're just linking)
+		}
 		loggyErr("[CCPDN-ERROR]: Parsed flow rule contains no flow information.\n");
 		return;
 	}
 	
 	// Add flow to shared flows -- since it is added, do true
 	recvSharedFlag = false;
+	if (!veriflowPort = "") {
+		pauseOutput = false; // For flow mods, only set pauseOutput to false if veriflow is running (since otherwise we're just linking)
+	}
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, command);
 	f.setMod(true);
 	sharedFlows.push_back(f);

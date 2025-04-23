@@ -124,6 +124,7 @@ class TCPAnalyzer {
 
 		// Start capturing packets
 		loggy << "[CCPDN]: Successfully started packet capture\n";
+		Controller::pauseOutput = false;
 
 		const u_char* packet;
 		struct pcap_pkthdr header;

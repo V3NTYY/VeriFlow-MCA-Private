@@ -98,7 +98,7 @@ class Controller {
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 
 
-		bool					  linking;
+		static bool				  pauseOutput;
 		std::string				  controllerPort;
 		std::string				  veriflowPort;
 		std::string				  flowPort;

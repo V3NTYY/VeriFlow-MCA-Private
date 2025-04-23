@@ -66,6 +66,7 @@ MCA_VeriFlow::MCA_VeriFlow()
     controller_linked = false;
     topology_initialized = false;
     runTCPDump = false;
+    flowhandler_linked = false;
 }
 
 MCA_VeriFlow::~MCA_VeriFlow()
@@ -346,6 +347,21 @@ bool MCA_VeriFlow::pingTest(Node n)
     return result == 0;
 }
 
+void MCA_VeriFlow::printPorts(int VeriFlowPort)
+{
+    // Print VeriFlowPort + 1. For each topology instance, increment this and print it out
+    loggy << " ----CCPDN Ports---- " << std::endl;
+    for (int i = 0; i < topology.getTopologyCount(); i++) {
+        int port = VeriFlowPort + i + 1;
+        if (i != topology.hostIndex) {
+            loggy << "[CCPDN-" << i << "] " << std::to_string(VeriFlowPort+1) << std::endl;
+        } else {
+            loggy << "[CCPDN-" << i << "] " << std::to_string(port) << " (This instance)" << std::endl;
+        }
+    }
+    loggy << std::endl;
+}
+
 #ifdef __unix__
     std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string& host, int port, int num_pings) {
         std::vector<double> rtts;
@@ -457,7 +473,7 @@ int main() {
     while (true) {
 
         // If link_controller is sending packets/receiving packets, wait for that to finish
-        while (mca_veriflow->controller.linking) {
+        while (Controller::pauseOutput) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
@@ -491,11 +507,13 @@ int main() {
                 " - stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
                 " - rdn [topology_file]:" << std::endl <<
-                "   Identifies and links all candidates for domain nodes based on given topology file.\n" << std::endl <<
-                " - refactor-top [file-name]:" << std::endl <<
-                "   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
+                "   Registers a given topology file to this CCPDN instance and identifies domain nodes.\n" << std::endl <<
+                // DEPRECATED COMMAND" - refactor-top [file-name]:" << std::endl <<
+                // DEPRECATED COMMAND"   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
                 " - output-top [file-name]:" << std::endl <<
-                "   Output the current topology list to a new file.\n" << std::endl <<
+                "   Outputs the configuration for this local topology's VeriFlow instance.\n" << std::endl <<
+                " - ccpdn-ports [veriflow-port]:" << std::endl <<
+                "   Displays the ports each CCPDN will use based on the intended VeriFlow port (keep these open!).\n" << std::endl <<
                 " - link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app (default port = 6653).\n" << std::endl <<
                 " - reset-controller:" << std::endl <<
@@ -511,28 +529,35 @@ int main() {
                 " * del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " * run-tcp-test" << std::endl <<
-                "   Run's the TCP connection setup latency test.\n" << std::endl <<
+                "   Run's the TCP connection setup latency test.\n" <<
                 "";
         }
 
+        // link-flowhandler command
         else if (args.at(0) == "link-flowhandler") {
             if (args.size() < 3) {
-                loggy << "Not enough arguments. Usage: link-flowhandler [ip-address] [port]\n" << std::endl;
+                loggy << "Not enough arguments. Usage: link-flowhandler [ip-address] [port]" << std::endl;
+                continue;
             } else if (mca_veriflow->flowhandler_linked) {
-                loggy << "FlowHandler already linked. Try reset-fh first\n" << std::endl;
+                loggy << "FlowHandler already linked. Try reset-fh first" << std::endl;
+                continue;
             } else if (!mca_veriflow->controller_linked) {
-                loggy << "Controller not linked! Try link-controller first\n" << std::endl;
+                loggy << "Controller not linked! Try link-controller first" << std::endl;
+                continue;
             } else {
                 mca_veriflow->controller.setFlowHandlerIP(args.at(1), args.at(2));
                 mca_veriflow->flowhandler_linked = mca_veriflow->controller.startFlow(&(mca_veriflow->flowhandler_linked));
             }
         }
 
+        // reset-fh command
         else if (args.at(0) == "reset-fh") {
             if (!mca_veriflow->flowhandler_linked) {
-                loggy << "FlowHandler not linked. Try link-flowhandler first\n" << std::endl;
+                loggy << "FlowHandler not linked. Try link-flowhandler first" << std::endl;
+                continue;
             } else if (mca_veriflow->runTCPDump) {
-                loggy << "All services are running, please use stop first.\n" << std::endl;
+                loggy << "All services are running, please use stop first." << std::endl;
+                continue;
             }
             else {
                 // Once this is false, thread will auto-cleanup
@@ -540,23 +565,50 @@ int main() {
             }
         }
 
+        else if (args.at(0) == "ccpdn-ports") {
+            if (args.size() < 2) {
+                loggy << "Not enough arguments. Usage: ccpdn-ports [veriflow-port]" << std::endl;
+                continue;
+            } else if (!mca_veriflow->topology_initialized) {
+                loggy << "Topology not initialized. Please run rdn [topology_file] first." << std::endl;
+                continue;
+            } else {
+                int veriflowPort = 6657; // Default port
+                try {
+                    veriflowPort = std::stoi(args.at(1));
+                } catch (const std::invalid_argument& e) {
+                    loggy << "Invalid port number. Usage: ccpdn-ports [veriflow-port]" << std::endl;
+                    continue;
+                }
+                if (veriflowPort < 0 || veriflowPort > 65535) {
+                    loggy << "Port number should range from 0-65535. Usage: ccpdn-ports [veriflow-port]" << std::endl;
+                    continue;
+                }
+                mca_veriflow->printPorts(veriflowPort);
+            }
+        }
+
+        // list-flows command
         else if (args.at(0) == "list-flows") {
             if (!mca_veriflow->runTCPDump) {
-                loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
+                loggy << "Ensure CCPDN Service is started first." << std::endl;
+                continue;
             }
             else if (args.size() < 2) {
-                loggy << "Not enough arguments. Usage: list-flows [switch-ip-address]\n" << std::endl;
+                loggy << "Not enough arguments. Usage: list-flows [switch-ip-address]" << std::endl;
+                continue;
             }
             else {
                 std::string targetIP = args.at(1);
                 // Ensure IP exists within host topology
                 Node n = mca_veriflow->topology.getNodeByIP(targetIP);
                 if (n.isEmptyNode()) {
-                    loggy << "No such switch in topology.\n" << std::endl;
+                    loggy << "No such switch in topology." << std::endl;
                     continue;
                 }
 
                 // Request flows from controller
+                Controller::pauseOutput = true;
                 std::vector<Flow> flows = mca_veriflow->controller.retrieveFlows(targetIP);
 
                 // Print all flows
@@ -570,41 +622,48 @@ int main() {
             }
         }
 
+        // add-flow command
         else if (args.at(0) == "add-flow") {
 			if (!mca_veriflow->runTCPDump) {
-				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
+				loggy << "Ensure CCPDN Service is started first." << std::endl;
+                continue;
 			}
 			else if (args.size() < 4) {
-				loggy << "Not enough arguments. Usage: add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
+				loggy << "Not enough arguments. Usage: add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl;
+                continue;
 			}
             else {
 				std::string targetIP = args.at(1);
 				// Ensure IP exists within host topology
 				Node n = mca_veriflow->topology.getNodeByIP(targetIP);
 				if (n.isEmptyNode()) {
-					loggy << "No such switch in topology.\n" << std::endl;
+					loggy << "No such switch in topology." << std::endl;
                     continue;
 				}
 
                 Flow add(args.at(1), args.at(2), args.at(3), true);
 
 				// Add flow to controller
+                Controller::pauseOutput = true;
 				mca_veriflow->controller.addFlowToTable(add);
 			}
 		}
 
+        // del-flow command
 		else if (args.at(0) == "del-flow") {
 			if (!mca_veriflow->runTCPDump) {
-				loggy << "Ensure CCPDN Service is started first.\n" << std::endl;
+				loggy << "Ensure CCPDN Service is started first." << std::endl;
+                continue;
 			}
             else if (args.size() < 4) {
-				loggy << "Not enough arguments. Usage: del-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]\n" << std::endl;
+				loggy << "Not enough arguments. Usage: del-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl;
+                continue;
 			}
 			else {
                 // Ensure IP exists within host topology
                 Node n = mca_veriflow->topology.getNodeByIP(args.at(1));
                 if (n.isEmptyNode()) {
-                    loggy << "[CCPDN-ERROR]: No such switch in topology.\n" << std::endl;
+                    loggy << "[CCPDN-ERROR]: No such switch in topology." << std::endl;
                     continue;
                 }
 
@@ -618,13 +677,16 @@ int main() {
         // link-controller command
         else if (args.at(0) == "link-controller") {
             if (args.size() < 3) {
-				loggy << "Not enough arguments. Usage: link-controller [ip-address] [port]\n" << std::endl;
+				loggy << "Not enough arguments. Usage: link-controller [ip-address] [port]" << std::endl;
+                continue;
 			}
             else if (mca_veriflow->controller_linked) {
-                loggy << "Controller already linked. Try reset-controller first\n" << std::endl;
+                loggy << "Controller already linked. Try reset-controller first" << std::endl;
+                continue;
             }
             else {
 				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
+                Controller::pauseOutput = true;
 				mca_veriflow->controller_linked = mca_veriflow->controller.startController(&(mca_veriflow->controller_running));
 			}
         }
@@ -632,9 +694,11 @@ int main() {
         // reset-controller command
         else if (args.at(0) == "reset-controller") {
             if (!mca_veriflow->controller_linked) {
-                loggy << "Controller not linked. Try link-controller first\n" << std::endl;
+                loggy << "Controller not linked. Try link-controller first" << std::endl;
+                continue;
             } else if (mca_veriflow->runTCPDump) {
-                loggy << "All services are running, please use stop first.\n" << std::endl;
+                loggy << "All services are running, please use stop first." << std::endl;
+                continue;
             }
             else {
                 mca_veriflow->controller.freeLink();
@@ -645,67 +709,73 @@ int main() {
         // output-top command
         else if (args.at(0) == "output-top") {
 			if (!mca_veriflow->topology_initialized) {
-				loggy << "Topology not initialized. Try rdn first.\n" << std::endl;
+				loggy << "Topology not initialized. Try rdn first." << std::endl;
+                continue;
 			}
 			else if (args.size() < 2) {
-				loggy << "Not enough arguments. Usage: output-top [file-name]\n" << std::endl;
+				loggy << "Not enough arguments. Usage: output-top [file-name]" << std::endl;
+                continue;
 			}
 			else {
                 if (mca_veriflow->topology.outputToFile(args.at(1))) {
                     loggy << "Topology output to " << args.at(1) << std::endl << std::endl;
+                    continue;
 				}
 				else {
-					loggy << "Error outputting topology to file.\n" << std::endl;
+					loggy << "Error outputting topology to file." << std::endl;
+                    continue;
                 }
 			}
 		}
 
-        // refactor-top command
-        else if (args.at(0) == "refactor-top") {
-            if (!mca_veriflow->topology_initialized) {
-                loggy << "Topology not initialized. Try rdn first.\n" << std::endl;
-            }
-			else if (args.size() < 2) {
-				loggy << "Not enough arguments. Usage: refactor-top [file-name]\n" << std::endl;
-			}
-			else {
-                // Use partitioning algorithm to split the topology into multiple topologies
-                Topology partitioned_topologies = mca_veriflow->partitionTopology();
+        // // refactor-top command -- DEPRECATED
+        // else if (args.at(0) == "refactor-top") {
+        //     if (!mca_veriflow->topology_initialized) {
+        //         loggy << "Topology not initialized. Try rdn first.\n" << std::endl;
+        //     }
+		// 	else if (args.size() < 2) {
+		// 		loggy << "Not enough arguments. Usage: refactor-top [file-name]\n" << std::endl;
+		// 	}
+		// 	else {
+        //         // Use partitioning algorithm to split the topology into multiple topologies
+        //         Topology partitioned_topologies = mca_veriflow->partitionTopology();
 
-                for (int i = 0; i < partitioned_topologies.getTopologyCount(); i++) {
-					loggy << "--- PARTITIONED TOPOLOGY " << i << " ---" << std::endl;
-					loggy << partitioned_topologies.printTopology(i);
+        //         for (int i = 0; i < partitioned_topologies.getTopologyCount(); i++) {
+		// 			loggy << "--- PARTITIONED TOPOLOGY " << i << " ---" << std::endl;
+		// 			loggy << partitioned_topologies.printTopology(i);
 
-                    // Output new, partitioned topology file to give to VeriFlow
-                    if (partitioned_topologies.extractIndexTopology(i).outputToFile(args.at(1) + std::to_string(i))) {
-                        loggy << "Topology " << std::to_string(i) << " output to " << args.at(1) + std::to_string(i) << std::endl << std::endl;
-                    }
-                    else {
-                        loggy << "Error outputting topology " << args.at(1) + std::to_string(i) << " to file.\n" << std::endl;
-                    }
-				}
-			}
-        }
+        //             // Output new, partitioned topology file to give to VeriFlow
+        //             if (partitioned_topologies.extractIndexTopology(i).outputToFile(args.at(1) + std::to_string(i))) {
+        //                 loggy << "Topology " << std::to_string(i) << " output to " << args.at(1) + std::to_string(i) << std::endl << std::endl;
+        //             }
+        //             else {
+        //                 loggy << "Error outputting topology " << args.at(1) + std::to_string(i) << " to file.\n" << std::endl;
+        //             }
+		// 		}
+		// 	}
+        // }
 
         // rdn command
         else if (args.at(0) == "rdn") {
             if (!mca_veriflow->controller_linked) {
-                loggy << "Controller not linked. Try link-controller first\n" << std::endl;
+                loggy << "Controller not linked. Try link-controller first" << std::endl;
+                continue;
             }
             else if (args.size() < 2) {
-                loggy << "Not enough arguments. Usage: rdn [topology_file]\n" << std::endl;
+                loggy << "Not enough arguments. Usage: rdn [topology_file]" << std::endl;
+                continue;
 			}
             else {
                 // Read the topology file and register it
                 if (!mca_veriflow->registerTopologyFile(args.at(1))) {
-                    loggy << "Error reading topology file. Ensure the file exists and is in the correct format.\n" << std::endl;
+                    loggy << "Error reading topology file. Ensure the file exists and is in the correct format." << std::endl;
 					continue;
                 }
 
                 // Verify the nodes exist in the topology
-                loggy << "Performing ping test on all nodes for verification...\n" << std::endl;
+                loggy << "Performing ping test on all nodes for verification..." << std::endl;
                 if (!mca_veriflow->verifyTopology()) {
-                    loggy << "Topology verification failed. Are all switches reachable?\n" << std::endl;
+                    loggy << "Topology verification failed. Are all switches reachable?" << std::endl;
                 }
 
                 // Find the best candidates for domain nodes, create them.
@@ -727,7 +797,7 @@ int main() {
 
                     // Ensure the topology index is valid
                     if (HostIndex < 0 || HostIndex >= mca_veriflow->topology.getTopologyCount()) {
-                        loggy << "Invalid topology index. Please try again.\n";
+                        loggy << "Invalid topology index. Please try again." << std::endl;
                         continue;
                     }
                     else {
@@ -747,34 +817,42 @@ int main() {
         // run command
         else if (args.at(0) == "start") {
             if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->flowhandler_linked) {
-                loggy << "Cannot start CCPDN App. Ensure the controller is linked, Flow Handler is linked and topology is initialized.\n" << std::endl;
+                loggy << "Cannot start CCPDN App. Ensure the controller is linked, Flow Handler is linked and topology is initialized." << std::endl;
+                continue;
             } else if (args.size() < 3) {
-                loggy << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]\n" << std::endl;
+                loggy << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]" << std::endl;
+                continue;
             } else {
                 mca_veriflow->controller.setVeriFlowIP(args.at(1), args.at(2));
+                Controller::pauseOutput = true;
                 mca_veriflow->run();
-                loggy << "[CCPDN]: App started.\n" << std::endl;
+                loggy << "[CCPDN]: App started." << std::endl;
+                continue;
             }
         }
 
         // stop command
         else if (args.at(0) == "stop") {
             if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->controller_running) {
-                loggy << "CCPDN App is not running.\n" << std::endl;
+                loggy << "CCPDN App is not running." << std::endl;
+                continue;
             } else {
                 mca_veriflow->stop();
-                loggy << "[CCPDN]: App stopped.\n" << std::endl;
+                loggy << "[CCPDN]: App stopped." << std::endl;
+                continue;
             }
         }
     
 
         else if (args.at(0) == "run-tcp-test") {
             if (args.size() < 3) {
-                loggy << "Usage: run-tcp-test [target-ip] [port]\n";
+                loggy << "Usage: run-tcp-test [target-ip] [port]" << std::endl;
+                continue;
             } else if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
-                loggy << "Ensure topology is initialized and controller is linked first.\n\n";
+                loggy << "Ensure topology is initialized and controller is linked first." << std::endl;
+                continue;
             } else {
-                loggy << "Running TCP test...\n" << std::endl;
+                loggy << "Running TCP test..." << std::endl;
                 #ifdef __unix__
                     std::vector<double> times = mca_veriflow->measure_tcp_connection(args.at(1), std::stoi(args.at(2)), 10);
                     
@@ -798,17 +876,17 @@ int main() {
                     }
                     
                 #endif
+                continue;
             }
         }
 
         else if (args.at(0) == "test-method") {
-            int dpid = mca_veriflow->controller.getDPID(args.at(1));
-            loggy << "DPID of " << args.at(1) << " is: " << dpid << std::endl;
         }
 
         // Invalid response
         else {
-            loggy << "Invalid command. Try entering 'help' to view commands.\n" << std::endl;
+            loggy << "Invalid command. Try entering 'help' to view commands." << std::endl;
+            continue;
         }
     }
 
