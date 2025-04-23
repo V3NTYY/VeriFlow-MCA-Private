@@ -673,6 +673,7 @@ int main() {
 				Flow remove(args.at(1), args.at(2), args.at(3), false);
 
 				// Delete flow from controller
+                Controller::pauseOutput = true;
                 mca_veriflow->controller.removeFlowFromTable(remove);
             }
         }
