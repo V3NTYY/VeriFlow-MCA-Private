@@ -11,7 +11,6 @@
 #include "Log.h"
 #include "OpenFlowMessage.h"
 #include "Flow.h"
-#include "Controller.h" // for pauseOutput
 #include <chrono>
 #include <thread>
 #include <mutex>
@@ -33,6 +32,9 @@ struct TimestampPacket {
 	}
 };
 
+// Use forward declaration to access pauseOutput static bool
+class Controller;
+
 class TCPAnalyzer {
 
 	public:
@@ -40,7 +42,6 @@ class TCPAnalyzer {
 		static bool pingFlag;
 		static std::vector<TimestampPacket> currentPackets;
 		static std::mutex currentPacketsMutex;
-		static Controller c;
 
 		// Thread method
 		void thread(bool *run, std::string controllerPort) {
@@ -126,7 +127,7 @@ class TCPAnalyzer {
 
 		// Start capturing packets
 		loggy << "[CCPDN]: Successfully started packet capture\n";
-		c.pauseOutput = false;
+		Controller::pauseOutput = false;
 
 		const u_char* packet;
 		struct pcap_pkthdr header;
