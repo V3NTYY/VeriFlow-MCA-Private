@@ -30,7 +30,7 @@ public:
     void fromJson(const std::string& json_str);
 
     // Digest methods
-    bool sendDigest(void* send);
+    bool sendDigest();
     static int readDigest(const std::string& raw_data);
 
     // Flow methods

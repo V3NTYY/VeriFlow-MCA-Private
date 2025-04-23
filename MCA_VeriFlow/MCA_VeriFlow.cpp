@@ -78,13 +78,23 @@ void MCA_VeriFlow::run()
 {
     // Link the CCPDN to the veriflow server
     if (!controller.start()) {
-		std::cerr << "Error linking to VeriFlow server." << std::endl;
+		loggyErr("Error linking to VeriFlow server.\n");
 		return;
 	}
 
+    runTCPDump = true;
+    // Start CCPDN instance listener thread (for digests)
+    std::thread ccpdnThread(&Controller::CCPDNThread, &controller, &runTCPDump);
+    ccpdnThread.detach();
+
+    // Initiate CCPDN connections
+    if (!controller.initCCPDN()) {
+        loggyErr("Error initializing CCPDN connections.\n");
+        return;
+    }
+
     // Start TCPDump thread
     TCPAnalyzer tcp;
-    runTCPDump = true;
     std::thread tcpDumpThread(&TCPAnalyzer::thread, &tcp, &runTCPDump, controller.controllerPort);
     tcpDumpThread.detach();
 }

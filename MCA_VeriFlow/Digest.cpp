@@ -47,62 +47,18 @@ void Digest::fromJson(const std::string& json_str) {
     }
 }
 
-bool Digest::sendDigest(void* sendC) {
-
-    // Static cast the void pointer as a controller object since we want to avoid circular dependency
-    Controller* controller = static_cast<Controller*>(sendC);
-    std::vector<Node*> domainNodes = controller->getDomainNodes();
-    
-    // Find the domain node that matches the destination index
-    Node* destinationNode = nullptr;
-    for (Node* node : domainNodes) {
-        if (node->getTopologyID() == destinationIndex) {
-            destinationNode = node;
-            break;
-        }
-    }
-    
-    if (!destinationNode) {
-        loggyErr("Error: No domain node found ");
-        loggyErr(destinationIndex);
-        loggyErr("\n");
-
-        return false;
-    }
-    
-    destination_ip = destinationNode->getIP();
-    
+bool Digest::sendDigest()
+{
+    int sockCC = 0;
     std::string jsonData = toJson();
     
-    // Create a socket and send the data
+    // Send data on given socket
     #ifdef __unix__
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (sockfd < 0) {
-            loggyErr("Error creating socket\n");
-            return false;
-        }
-
-        struct sockaddr_in server_address;
-        server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(6633);
-        inet_pton(AF_INET, destination_ip.c_str(), &server_address.sin_addr);
-
-        if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-            loggyErr("Error connecting to destination controller at ");
-            loggyErr(destination_ip);
-            loggyErr("\n");
-            close(sockfd);
-            return false;
-        }
-
-        ssize_t bytes_sent = send(sockfd, jsonData.c_str(), jsonData.size(), 0);
+        ssize_t bytes_sent = send(sockCC, jsonData.c_str(), jsonData.size(), 0);
         if (bytes_sent < 0) {
-            loggyErr("Error sending data\n");
-            close(sockfd);
+            loggyErr("[CCPDN]: Error sending digest!\n");
             return false;
         }
-
-        close(sockfd);
     #endif
     
     return true;

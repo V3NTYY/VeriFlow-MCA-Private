@@ -50,11 +50,16 @@ class Controller {
 		// Thread loop functions
 		void controllerThread(bool* run);
 		void flowHandlerThread(bool* run);
+		void CCPDNThread(bool* run);
+
+		// CCPDN communication funcs
+		bool initCCPDN();
 
 		// Reading + Parsing functions
 		bool parsePacket(std::vector<uint8_t>& packet, bool xidCheck);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
+		void recvCCPDNDigests();
 		void parseFlow(Flow f);
 
 		// OpenFlow packet decode functions
@@ -62,7 +67,7 @@ class Controller {
 		void handleFlowMod(ofp_flow_mod* mod);
 		void handleFlowRemoved(ofp_flow_removed* removed);
 
-		// Send msg functions (for controller)
+		// Send msg functions
 		bool sendOpenFlowMessage(std::vector<unsigned char> data);
 		bool sendVeriFlowMessage(std::string message);
 		bool sendFlowHandlerMessage(std::string message);
@@ -114,6 +119,7 @@ class Controller {
 		int						  sockfd;
 		int						  sockvf;
 		int						  sockfh;
+		std::vector<int>		  sockCC;
 		std::string				  controllerIP;
 		std::string				  veriflowIP;
 		std::string				  flowIP;

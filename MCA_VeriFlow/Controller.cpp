@@ -78,6 +78,34 @@ void Controller::flowHandlerThread(bool *run)
 	}
 }
 
+/// This method should setup the server receiver for CCPDN communication
+void Controller::CCPDNThread(bool *run)
+{
+	loggy << "[CCPDN]: Starting CCPDN thread...\n";
+	while (*run) {
+		recvCCPDNDigests();
+	}
+}
+
+void Controller::recvCCPDNDigests()
+{
+#ifdef __unix__
+	// Recv handler
+#endif
+}
+
+/// This method should establish a connection to each CCPDN instance within the topology file
+bool Controller::initCCPDN()
+{
+	// Calculate port from veriflow port + hostIndex
+	int portCC = std::stoi(veriflowPort) + referenceTopology->hostIndex + 1;
+	// Example: veriflow port 6657, and this topology 0, means this listens on 6658
+
+
+
+    return false;
+}
+
 void Controller::parseFlow(Flow f)
 {
 	// Error checking:
@@ -263,7 +291,7 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 	Digest verificationMessage(false, false, true, referenceTopology->hostIndex, destinationIndex, "");
 	verificationMessage.appendFlow(verifyFlow);
 
-	return verificationMessage.sendDigest(this);
+	return verificationMessage.sendDigest();
 }
 
 bool Controller::performVerification(bool externalRequest, Flow f)
@@ -306,6 +334,7 @@ Controller::Controller()
 	fhXID = -1;
 	recvSharedFlag = true;
 
+	sockCC.clear();
 	sharedFlows.clear();
 	sharedPacket.clear();
 	domainNodes.clear();
@@ -330,6 +359,7 @@ Controller::Controller(Topology* t) {
 	fhXID = -1;
 	recvSharedFlag = true;
 
+	sockCC.clear();
 	sharedPacket.clear();
 	sharedFlows.clear();
 	domainNodes.clear();
@@ -340,6 +370,9 @@ Controller::~Controller()
 {
 	#ifdef __unix__
 		close(sockfd);
+		close(sockvf);
+		close(sockfh);
+		close(sockCC);
 	#endif
 }
 
@@ -788,7 +821,6 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 
 	// Get the index that this CCPDN instance is located on
 	int hostIndex = referenceTopology->hostIndex;
-
 	if (hostIndex == destinationIndex) {
 		loggyErr("[CCPDN-ERROR]: Cannot send update to self.\n");
 		return false;
@@ -812,7 +844,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 			if (i != hostIndex) {
 				Digest message(false, true, false, hostIndex, i, topOutput);
 				// Send the digest
-				if (!message.sendDigest(this)) {
+				if (!message.sendDigest()) {
 					success = false;
 				}
 			}
@@ -821,7 +853,7 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 	}
 
 	// Send the digest
-	return singleMessage.sendDigest(this);
+	return singleMessage.sendDigest();
 }
 
 std::vector<Node*> Controller::getDomainNodes()
