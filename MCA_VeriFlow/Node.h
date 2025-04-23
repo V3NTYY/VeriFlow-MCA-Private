@@ -9,6 +9,7 @@ class Node {
 	static int nodeCount;
 	static int topologyID;
 	public:
+
 		Node(int TopologyIndex, bool SwitchNode, std::string ip, std::vector<std::string> LinkList);
 		Node();
 		~Node();
