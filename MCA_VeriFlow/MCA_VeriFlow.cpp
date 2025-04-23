@@ -83,6 +83,13 @@ void MCA_VeriFlow::run()
 	}
 
     runTCPDump = true;
+    // Create CCPDN server, bind to the correct port and listen for connections
+    int portCC = std::stoi(controller.veriflowPort) + topology.hostIndex + 1;
+    if (!controller.startCCPDNServer(portCC)) {
+        loggyErr("Error starting CCPDN server.\n");
+        return;
+    }
+
     // Start CCPDN instance listener thread (for digests)
     std::thread ccpdnThread(&Controller::CCPDNThread, &controller, &runTCPDump);
     ccpdnThread.detach();
@@ -100,6 +107,14 @@ void MCA_VeriFlow::run()
 }
 
 void MCA_VeriFlow::stop() {
+
+    // Close currently running CCPDN server
+    controller.stopCCPDNServer();
+
+    // Close any connected sockets
+    controller.closeSockets();
+
+    // Signal all flags
     runTCPDump = false;
     controller_running = false;
 	controller_linked = false;

@@ -54,6 +54,8 @@ class Controller {
 
 		// CCPDN communication funcs
 		bool initCCPDN();
+		bool startCCPDNServer(int port);
+		bool stopCCPDNServer();
 
 		// Reading + Parsing functions
 		bool parsePacket(std::vector<uint8_t>& packet, bool xidCheck);
@@ -102,6 +104,7 @@ class Controller {
 		std::string		   getIPFromOutputPort(std::string srcIP, int outputPort);
 		void			   tryClearSharedFlows();
 		void               testVerificationTime();
+		void			   closeSockets();
 
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 

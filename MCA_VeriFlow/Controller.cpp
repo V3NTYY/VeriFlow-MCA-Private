@@ -97,12 +97,22 @@ void Controller::recvCCPDNDigests()
 /// This method should establish a connection to each CCPDN instance within the topology file
 bool Controller::initCCPDN()
 {
-	// Calculate port from veriflow port + hostIndex
-	int portCC = std::stoi(veriflowPort) + referenceTopology->hostIndex + 1;
-	// Example: veriflow port 6657, and this topology 0, means this listens on 6658
+	// For each topology instance, create a socket and connect to it
+	for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
+		
+	}
+    return false;
+}
 
+bool Controller::startCCPDNServer(int port)
+{
+	// Create socket, bind
 
+    return false;
+}
 
+bool Controller::stopCCPDNServer()
+{
     return false;
 }
 
@@ -1345,5 +1355,35 @@ void Controller::testVerificationTime() {
         loggy << "Median: " << median * 1000 << " ms" << std::endl;
         loggy << "Lowest: " << lowest * 1000 << " ms" << std::endl;
         loggy << "Highest: " << highest * 1000 << " ms" << std::endl;
+    }
+}
+
+void Controller::closeSockets()
+{
+	if (sockvf != -1) {
+        #ifdef __unix__
+            close(sockvf);
+        #endif
+        sockvf = -1;
+    }
+    if (sockfd != -1) {
+        #ifdef __unix__
+            close(sockfd);
+        #endif
+        sockfd = -1;
+    }
+    if (sockfh != -1) {
+        #ifdef __unix__
+            close(sockfh);
+        #endif
+        sockfh = -1;
+    }
+    if (sockCC.size() > 0) {
+        for (int i = 0; i < sockCC.size(); i++) {
+            #ifdef __unix__
+                close(sockCC.at(i));
+            #endif
+            sockCC.at(i) = -1;
+        }
     }
 }
