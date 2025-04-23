@@ -39,6 +39,7 @@ void Controller::controllerThread(bool* run)
 void Controller::flowHandlerThread(bool *run)
 {
 	loggy << "[CCPDN]: Starting flow handler thread...\n";
+	pauseOutput = false;
 	while (*run) {
 
 		// Clear our current flow list
@@ -481,7 +482,6 @@ bool Controller::startFlow(bool *thread)
 	flowThread.detach();
 
 	if (linkFlow()) {
-		pauseOutput = false;
 		return true;
 	}
 
