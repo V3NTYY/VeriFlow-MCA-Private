@@ -105,7 +105,7 @@ void Controller::CCPDNThread(bool *run)
 				break;
 			case 3:
 				break;
-			case 4:
+			case 4: // 
 				break;
 			default: // Not recognized
 				break;
@@ -178,7 +178,7 @@ bool Controller::startCCPDNServer(int port)
 	server_address.sin_port = htons(port);
 
 	// Bind the socket to port (allows for listening)
-	if (bind(socketCC[hostIndex], (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+	if (bind(sockCC[hostIndex], (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 		loggy << "[CCPDN-ERROR]: Could not bind to port " << std::to_string(port) << std::endl;
 		close(sockCC[hostIndex]);
 		pauseOutput = false;
@@ -194,7 +194,7 @@ bool Controller::startCCPDNServer(int port)
 	}
 
 	//  Accept incoming connections -- modifies the socket to be used for communication
-	if ((sockCC[hostIndex] = accept(server_address, (struct sockaddr*)&server_address, sizeof(server_address))) < 0) {
+	if (accept(server_address, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 		loggy << "[CCPDN-ERROR]: Could not accept incoming connection." << std::endl;
 		close(sockCC[hostIndex]);
 		pauseOutput = false;
@@ -406,7 +406,8 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 	Digest verificationMessage(false, false, true, referenceTopology->hostIndex, destinationIndex, "");
 	verificationMessage.appendFlow(verifyFlow);
 
-	return verificationMessage.sendDigest();
+	// Send digest method here
+	return true;
 }
 
 bool Controller::performVerification(bool externalRequest, Flow f)
@@ -960,8 +961,8 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 		for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
 			if (i != hostIndex) {
 				Digest message(false, true, false, hostIndex, i, topOutput);
-				// Send the digest
-				if (!message.sendDigest()) {
+				// Send the digest (use sendDigest from controller)
+				if (false) {
 					success = false;
 				}
 			}
@@ -969,8 +970,8 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 		return success;
 	}
 
-	// Send the digest
-	return singleMessage.sendDigest();
+	// Send the digest (use sendDigest from controller)
+	return true;
 }
 
 std::vector<Node*> Controller::getDomainNodes()
