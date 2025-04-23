@@ -32,12 +32,6 @@ struct TimestampPacket {
 	}
 };
 
-// Use forward declaration to access pauseOutput static bool
-class Controller {
-	public:
-		static bool pauseOutput;
-};
-
 class TCPAnalyzer {
 
 	public:
@@ -56,6 +50,8 @@ class TCPAnalyzer {
 				startPacketCapture("lo", "tcp port " + controllerPort, run);
 			}
 		}
+
+		void updatePauseOutput(bool update);
 
 #ifdef __unix__
 	void packetHandler(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
@@ -130,7 +126,7 @@ class TCPAnalyzer {
 
 		// Start capturing packets
 		loggy << "[CCPDN]: Successfully started packet capture\n";
-		Controller::pauseOutput = false;
+		updatePauseOutput(false);
 
 		const u_char* packet;
 		struct pcap_pkthdr header;
