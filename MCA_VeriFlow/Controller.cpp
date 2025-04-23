@@ -1551,7 +1551,7 @@ std::string Controller::readBuffer(char* buf)
 	return output;
 }
 
-void Controller::testVerificationTime() {
+void Controller::testVerificationTime(int numFlows) {
     std::vector<std::string> switchIPs;
     for (Node n : referenceTopology->getTopology(referenceTopology->hostIndex)) {
         if (n.isSwitch() && switchIPs.size() < 5) {
@@ -1559,19 +1559,37 @@ void Controller::testVerificationTime() {
         }
     }
 
-    if (switchIPs.size() < 5) {
-        loggy << "Not enough switches in topology (need at least 5)" << std::endl;
+    if (switchIPs.size() < 2) {
+        loggy << "Not enough switches in topology (need at least 2)" << std::endl;
         return;
     }
 
     // Create test flows using these switches
-    std::vector<Flow> testFlows = {
-        Flow(switchIPs[0], "192.168.1.0/24", switchIPs[1], true),
-        Flow(switchIPs[1], "10.0.0.0/16", switchIPs[2], true),
-        Flow(switchIPs[2], "172.16.0.0/12", switchIPs[3], true),
-        Flow(switchIPs[3], "192.168.2.0/24", switchIPs[4], true),
-        Flow(switchIPs[4], "10.1.0.0/16", switchIPs[0], true)
-    };
+    std::vector<Flow> testFlows;
+	for (int i = 0; i < numFlows; i++) {
+		bool willRemove = std::rand() % 2;
+		int randMask = std::rand() % 32 + 1;
+		int randIPs[4];
+		for (int j = 0; j < 4; j++) {
+			randIPs[j] = std::rand() % 256;
+		}
+		std::string randPrefix = std::to_string(randIPs[0]) + "." + std::to_string(randIPs[1]) 
+		+ "." + std::to_string(randIPs[2]) + "." + std::to_string(randIPs[3]) + "/" + std::to_string(randMask);
+
+		Flow add = Flow(switchIPs[0], randPrefix, switchIPs[1], true);
+		Flow remove = Flow(switchIPs[0], randPrefix, switchIPs[1], false);
+
+		// Add flows to the vector
+		testFlows.push_back(add);
+		if (willRemove && (i == (numFlows - 1))) {
+			testFlows.push_back(remove);
+		}
+	}
+
+	// Order all adds to be first in the vector, then remove flows
+	std::sort(testFlows.begin(), testFlows.end(), [](Flow& a, Flow& b) {
+		return a.actionType() && !b.actionType();
+	});
 
     std::vector<double> verificationTimes;
 

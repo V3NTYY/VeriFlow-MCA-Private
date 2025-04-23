@@ -105,7 +105,7 @@ class Controller {
 		int  			   getOutputPort(std::string srcIP, std::string dstIP);
 		std::string		   getIPFromOutputPort(std::string srcIP, int outputPort);
 		void			   tryClearSharedFlows();
-		void               testVerificationTime();
+		void               testVerificationTime(int numFlows);
 		void			   closeSockets();
 
 		// Map every XID to a flow, specifically the source and destination IPs

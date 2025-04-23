@@ -552,9 +552,9 @@ int main() {
                 " * del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " * run-tcp-test" << std::endl <<
-                "   Run's the TCP connection setup latency test.\n" <<
-                " * test-verification-time" << std::endl <<
-                "   Test Verification Time.\n" <<
+                "   Run's the TCP connection setup latency test.\n" << std::endl <<
+                " * test-verification-time [num-flows]" << std::endl <<
+                "   Test verification time for a given number of flows.\n" <<
                 "";
         }
 
@@ -928,8 +928,19 @@ int main() {
             if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
                 loggy << "Ensure topology is initialized and controller is linked first." << std::endl;
                 continue;
+            } else if (args.size() < 2) {
+                loggy << "Not enough arguments. Usage: test-verification-time [num-flows]" << std::endl;
+                continue;
             } else {
-                mca_veriflow->controller.testVerificationTime();
+                int numFlows = 0;
+                try {
+                    numFlows = std::stoi(args.at(1));
+                } catch (const std::exception& e) {
+                    loggy << "Invalid number of flows. Usage: test-verification-time [num-flows]" << std::endl;
+                    continue;
+                }
+
+                mca_veriflow->controller.testVerificationTime(numFlows);
             }
         }
 
