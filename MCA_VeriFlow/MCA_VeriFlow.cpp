@@ -457,18 +457,18 @@ int main() {
     MCA_VeriFlow* mca_veriflow = new MCA_VeriFlow();
 
     #ifdef _WIN32
-    loggyMsg("WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n\n");
+    loggyMsg("WARNING: This app only runs on UNIX systems due to specific socket libraries. Most things won't work.\n");
     #endif
 
     // Check if we are running with root privileges
     #ifdef __unix__
         if (getuid() != 0) {
-            loggyMsg("WARNING: This app requires root privileges to run properly.\n\n");
+            loggyMsg("WARNING: This app requires root privileges to run properly.\n");
         }
     #endif
 
     loggyMsg("Welcome to the CCPDN. If you do not see >>>, it may have been overshadowed by console output.\n");
-    loggyMsg("Type 'help' for a list of commands.\n\n");
+    loggyMsg("Type 'help' for a list of commands.\n");
    
     while (true) {
 
@@ -617,7 +617,10 @@ int main() {
 					loggy << "Rule Prefix: " << f.getRulePrefix() << std::endl;
 					loggy << "Next Hop IP: " << f.getNextHopIP() << std::endl;
 					loggy << "Action: " << (f.actionType() ? "Forward" : "Drop") << std::endl;
-					loggy << std::endl;
+                    // Only print a newline if we aren't about to end the iteration
+                    if (&f != &flows.back()) {
+                        loggy << std::endl;
+                    }
 				}
             }
         }
@@ -792,12 +795,11 @@ int main() {
                 int HostIndex = 0;
 
                 while (userInputLoop) {
-                    loggy << std::endl;
                     HostIndex = getUserInputInt("Please enter the index of the topology this CCPDN is running on: ");
 
                     // Ensure the topology index is valid
                     if (HostIndex < 0 || HostIndex >= mca_veriflow->topology.getTopologyCount()) {
-                        loggy << "Invalid topology index. Please try again." << std::endl;
+                        loggy << "Invalid topology index. Please try again.\n" << std::endl;
                         continue;
                     }
                     else {

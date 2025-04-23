@@ -64,6 +64,8 @@ void Controller::flowHandlerThread(bool *run)
 
 		// Create optimal vector of flows to parse -- remove duplicates
 		std::vector<Flow> operatingFlows = sharedFlows;
+		auto end = std::unique(operatingFlows.begin(), operatingFlows.end());
+		operatingFlows.erase(end, operatingFlows.end());
 		
 		// Handle all received flows
 		for (Flow f : operatingFlows) {
@@ -81,7 +83,7 @@ void Controller::parseFlow(Flow f)
 	}
 
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
-	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP());
+	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP(), f.isMod());
 	if (f.isMod() && isLocal) {
 		// Run verification on the flow rule
 		recvSharedFlag = true;
@@ -1078,7 +1080,7 @@ void Controller::recvVeriFlowMessages()
 		ssize_t bytes_received = recv(sockvf, vfBuffer, sizeof(vfBuffer), 0);
 		loggyMsg("[CCPDN]: Message from VeriFlow\n");
 		loggyMsg(readBuffer(vfBuffer));
-		loggyMsg("\n\n");
+		loggyMsg("\n");
 		vfFlag = true;
 	}
 #endif

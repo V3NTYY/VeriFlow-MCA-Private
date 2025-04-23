@@ -46,7 +46,7 @@ class TCPAnalyzer {
 				pingFlag = false;
 				currentPackets.clear();
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				loggy << "\n\n[CCPDN]: Starting LibPCap thread...\n";
+				loggy << "[CCPDN]: Starting LibPCap thread...\n";
 				startPacketCapture("lo", "tcp port " + controllerPort, run);
 			}
 		}
