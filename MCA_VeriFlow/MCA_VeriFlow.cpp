@@ -65,7 +65,7 @@ MCA_VeriFlow::MCA_VeriFlow()
     controller_running = false;
     controller_linked = false;
     topology_initialized = false;
-    runTCPDump = false;
+    runService = false;
     flowhandler_linked = false;
 }
 
@@ -82,40 +82,37 @@ void MCA_VeriFlow::run()
 		return;
 	}
 
-    runTCPDump = true;
+    runService = true;
     // Create CCPDN server, bind to the correct port and listen for connections
     int portCC = std::stoi(controller.veriflowPort) + topology.hostIndex + 1;
-    if (!controller.startCCPDNServer(portCC)) {
-        loggyErr("Error starting CCPDN server.\n");
-        return;
-    }
+    
+    // Start CCPDN server connection handler thread (for accepting new connections)
+    std::thread ccpdnServerThread(&Controller::CCPDNServerThread, &controller, portCC, &runService);
+    ccpdnServerThread.detach();
 
-    // Start CCPDN instance listener thread (for digests)
-    std::thread ccpdnThread(&Controller::CCPDNThread, &controller, &runTCPDump);
-    ccpdnThread.detach();
+    // Start CCPDN message receiver thread (for digests)
+    std::thread ccpdnMessageThread(&Controller::CCPDNThread, &controller, &runService);
+    ccpdnMessageThread.detach();
 
     // Initiate CCPDN connections
-    if (!controller.initCCPDN()) {
-        loggyErr("Error initializing CCPDN connections.\n");
-        return;
-    }
+    controller.initCCPDN();
 
-    // Start TCPDump thread
+    // Start TCPDump thread to listen for controller messages
     TCPAnalyzer tcp;
-    std::thread tcpDumpThread(&TCPAnalyzer::thread, &tcp, &runTCPDump, controller.controllerPort);
+    std::thread tcpDumpThread(&TCPAnalyzer::thread, &tcp, &runService, controller.controllerPort);
     tcpDumpThread.detach();
 }
 
 void MCA_VeriFlow::stop() {
 
-    // Close currently running CCPDN server
+    // Close current connections
     controller.stopCCPDNServer();
 
     // Close any connected sockets
     controller.closeSockets();
 
     // Signal all flags
-    runTCPDump = false;
+    runService = false;
     controller_running = false;
 	controller_linked = false;
     topology_initialized = false;
@@ -569,7 +566,7 @@ int main() {
             } else if (mca_veriflow->flowhandler_linked) {
                 loggy << "FlowHandler already linked. Try reset-fh first" << std::endl;
                 continue;
-            } else if (mca_veriflow->runTCPDump) {
+            } else if (mca_veriflow->runService) {
                 loggy << "All services are running, please use stop first." << std::endl;
                 continue;
             } else if (!mca_veriflow->controller_linked) {
@@ -587,7 +584,7 @@ int main() {
             if (!mca_veriflow->flowhandler_linked) {
                 loggy << "FlowHandler not linked. Try link-flowhandler first" << std::endl;
                 continue;
-            } else if (mca_veriflow->runTCPDump) {
+            } else if (mca_veriflow->runService) {
                 loggy << "All services are running, please use stop first." << std::endl;
                 continue;
             }
@@ -622,7 +619,7 @@ int main() {
 
         // list-flows command
         else if (args.at(0) == "list-flows") {
-            if (!mca_veriflow->runTCPDump) {
+            if (!mca_veriflow->runService) {
                 loggy << "Ensure CCPDN Service is started first." << std::endl;
                 continue;
             }
@@ -659,7 +656,7 @@ int main() {
 
         // add-flow command
         else if (args.at(0) == "add-flow") {
-			if (!mca_veriflow->runTCPDump) {
+			if (!mca_veriflow->runService) {
 				loggy << "Ensure CCPDN Service is started first." << std::endl;
                 continue;
 			}
@@ -686,7 +683,7 @@ int main() {
 
         // del-flow command
 		else if (args.at(0) == "del-flow") {
-			if (!mca_veriflow->runTCPDump) {
+			if (!mca_veriflow->runService) {
 				loggy << "Ensure CCPDN Service is started first." << std::endl;
                 continue;
 			}
@@ -736,7 +733,7 @@ int main() {
             } else if (mca_veriflow->flowhandler_linked) {
                 loggy << "FlowHandler is linked. Try reset-fh first or stopping all services" << std::endl;
                 continue;
-            } else if (mca_veriflow->runTCPDump) {
+            } else if (mca_veriflow->runService) {
                 loggy << "All services are running, please use stop first" << std::endl;
                 continue;
             }
@@ -880,7 +877,7 @@ int main() {
 
         // stop command
         else if (args.at(0) == "stop") {
-            if (!mca_veriflow->runTCPDump || !mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->flowhandler_linked) {
+            if (!mca_veriflow->runService || !mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->flowhandler_linked) {
                 loggy << "CCPDN App is not running." << std::endl;
                 continue;
             } else {

@@ -50,11 +50,12 @@ class Controller {
 		// Thread loop functions
 		void controllerThread(bool* run);
 		void flowHandlerThread(bool* run);
+		void CCPDNServerThread(int port, bool* run);
 		void CCPDNThread(bool* run);
 
 		// CCPDN communication funcs
 		bool initCCPDN();
-		bool startCCPDNServer(int port);
+		bool startCCPDNServer(int port, bool *run);
 		bool stopCCPDNServer();
 
 		// Reading + Parsing functions
@@ -122,7 +123,8 @@ class Controller {
 		int						  sockfd;
 		int						  sockvf;
 		int						  sockfh;
-		std::vector<int>		  sockCC;
+		int						  sockCC;
+		std::vector<int>		  acceptedCC;
 		std::string				  controllerIP;
 		std::string				  veriflowIP;
 		std::string				  flowIP;

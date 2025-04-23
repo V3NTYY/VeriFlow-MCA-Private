@@ -151,24 +151,29 @@ bool Controller::initCCPDN()
     return false;
 }
 
-bool Controller::startCCPDNServer(int port)
+#ifdef __unix__
+void Controller::CCPDNServerThread(bool *run)
 {
+	/// INITIALIZATION LOGIC
 	int hostIndex = referenceTopology->hostIndex;
 	int opt = 1;
-	#ifdef __unix__
+
 	// Create socket descriptor
-	if ((sockCC[hostIndex] = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+	if ((sockCC = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
 		loggy << "[CCPDN-ERROR]: Could not create socket." << std::endl;
 		pauseOutput = false;
-		return false;
+		*run = false;
+		return;
 	}
 
 	// Set socket options for server reuse
-	if (setsockopt(sockCC[hostIndex], SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+	if (setsockopt(sockCC, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
 		loggy << "[CCPDN-ERROR]: Could not set socket options." << std::endl;
-		close(sockCC[hostIndex]);
+		close(sockCC);
+		sockCC = -1;
 		pauseOutput = false;
-		return false;
+		*run = false;
+		return;
 	}
 
 	// Setup the address to connect to (use controller IP and a new port)
@@ -178,47 +183,96 @@ bool Controller::startCCPDNServer(int port)
 	server_address.sin_port = htons(port);
 
 	// Bind the socket to port (allows for listening)
-	if (bind(sockCC[hostIndex], (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+	if (bind(sockCC, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 		loggy << "[CCPDN-ERROR]: Could not bind to port " << std::to_string(port) << std::endl;
-		close(sockCC[hostIndex]);
+		close(sockCC);
+		sockCC = -1;
 		pauseOutput = false;
-		return false;
+		*run = false;
+		return;
 	}
 
-	// Listen for incoming connections (non-blocking call)
-	if (listen(sockCC[hostIndex], referenceTopology->getTopologyCount()) < 0) {
-		loggy << "[CCPDN-ERROR]: Could not listen on port " << std::to_string(port) << std::endl;
-		close(sockCC[hostIndex]);
-		pauseOutput = false;
-		return false;
+	// Start CCPDN Server Thread
+	loggy << "[CCPDN]: Starting server on port " << std::to_string(port) << std::endl;
+
+	int errorCount = 0;
+	/// LOOP LOGIC
+	while(*run) {
+		// Check if our errors have exceeded 5+
+		if (errorCount > 4) {
+			loggy << "[CCPDN-ERROR]: Too many failures. Stopping CCPDN service" << std::endl;
+			close(sockCC);
+			sockCC = -1;
+			pauseOutput = false;
+			*run = false;
+			return;
+		}
+
+		// Listen for incoming connections (non-blocking call)
+		if (listen(sockCC, referenceTopology->getTopologyCount()) < 0) {
+			loggy << "[CCPDN-ERROR]: Could not listen on port " << std::to_string(port) << std::endl;
+			pauseOutput = false;
+			errorCount++;
+			continue;
+		}
+
+		// Only decrement error count if we had a failure
+		if (errorCount > 0) {
+			errorCount--;
+		}
+
+		//  Accept incoming connections -- modifies the socket to be used for communication
+		socklen_t addrLen = sizeof(server_address);
+		int acceptedConnection = -1;
+		if ((acceptedConnection = accept(server_address, (struct sockaddr*)&server_address, &addrLen)) < 0) {
+
+			// Check if we just had a sys interrupt (try again in that case)
+			if (errno == EINTR) {
+				continue;
+			}
+
+			loggy << "[CCPDN-ERROR]: Could not accept incoming connection." << std::endl;
+			pauseOutput = false;
+			errorCount++;
+			continue;
+		}
+
+		// Add new connection to list of our connections
+		acceptedCC.push_back(acceptedConnection);
+		// Print our shiny new connection :)
+		std::string clientIP = inet_ntoa(server_address.sin_addr);
+		int clientPort = ntohs(server_address.sin_port);
+		loggy << "[CCPDN]: Accepted new connection from " clientIP << ":" << clientPort << std::endl;
 	}
 
-	//  Accept incoming connections -- modifies the socket to be used for communication
-	if (accept(server_address, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-		loggy << "[CCPDN-ERROR]: Could not accept incoming connection." << std::endl;
-		close(sockCC[hostIndex]);
-		pauseOutput = false;
-		return false;
-	} else {
-		loggy << "[CCPDN]: Listening on port " << std::to_string(port) << std::endl;
-		pauseOutput = false;
-		return true;
+	// Server and socket closure incase we somehow exit loop
+	if (sockCC != -1) {
+		close(sockCC);
+		sockCC = -1;
 	}
-	#endif
-
-    return false;
+	stopCCPDNServer();
+	*run = false;
 }
+#endif
 
 bool Controller::stopCCPDNServer()
 {
 	// Close all connected CCPDN sockets
-	for (int i = 0; i < sockCC.size(); i++) {
+	if (sockCC != -1) {
+		#ifdef __unix__
+			close(sockCC);
+		#endif
+		sockCC = -1;
+	}
+
+	for (int i = 0; i < acceptedCC.size(); i++) {
 	#ifdef __unix__
-		close(sockCC[i]);
+		close(acceptedCC[i]);
+		acceptedCC[i] = -1;
 	#endif
 	}
 
-    return false;
+    return true;
 }
 
 void Controller::parseFlow(Flow f)
@@ -477,6 +531,7 @@ Controller::Controller()
 	sockfd = -1;
 	sockvf = -1;
 	sockfh = -1;
+	sockCC = -1;
 	referenceTopology = nullptr;
 	ofFlag = false;
 	vfFlag = false;
@@ -487,7 +542,7 @@ Controller::Controller()
 	fhXID = -1;
 	recvSharedFlag = true;
 
-	sockCC.clear();
+	acceptedCC.clear();
 	sharedFlows.clear();
 	sharedPacket.clear();
 	domainNodes.clear();
@@ -502,6 +557,7 @@ Controller::Controller(Topology* t) {
 	sockfd = -1;
 	sockvf = -1;
 	sockfh = -1;
+	sockCC = -1;
 	referenceTopology = t;
 	ofFlag = false;
 	vfFlag = false;
@@ -512,7 +568,7 @@ Controller::Controller(Topology* t) {
 	fhXID = -1;
 	recvSharedFlag = true;
 
-	sockCC.clear();
+	acceptedCC.clear();
 	sharedPacket.clear();
 	sharedFlows.clear();
 	domainNodes.clear();
@@ -1522,13 +1578,5 @@ void Controller::closeSockets()
             close(sockfh);
         #endif
         sockfh = -1;
-    }
-    if (sockCC.size() > 0) {
-        for (int i = 0; i < sockCC.size(); i++) {
-            #ifdef __unix__
-                close(sockCC.at(i));
-            #endif
-            sockCC.at(i) = -1;
-        }
     }
 }

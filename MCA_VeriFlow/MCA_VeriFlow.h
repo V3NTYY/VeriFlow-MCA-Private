@@ -41,7 +41,7 @@ class MCA_VeriFlow {
 		Topology topology;
 		Controller controller;
 		bool controller_running;
-		bool runTCPDump;
+		bool runService;
 		bool controller_linked;
 		bool flowhandler_linked;
 		bool topology_initialized;
