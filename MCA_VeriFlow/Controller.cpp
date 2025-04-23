@@ -67,6 +67,9 @@ void Controller::flowHandlerThread(bool *run)
 		std::vector<Flow> operatingFlows = sharedFlows;
 		auto end = std::unique(operatingFlows.begin(), operatingFlows.end());
 		operatingFlows.erase(end, operatingFlows.end());
+		// Erase all "empty" flows
+		Flow empty("", "", "", false);
+		operatingFlows.erase(std::remove(operatingFlows.begin(), operatingFlows.end(), empty), operatingFlows.end());
 		
 		// Handle all received flows
 		for (Flow f : operatingFlows) {
@@ -80,7 +83,6 @@ void Controller::parseFlow(Flow f)
 	// Error checking:
 	if (f.getSwitchIP() == "" || f.getNextHopIP() == "") {
 		recvSharedFlag = true;
-		pauseOutput = false;
 		return;
 	}
 
@@ -535,10 +537,7 @@ bool Controller::removeFlowFromTable(Flow f)
     
     // Search for matching flow
     for (Flow existingFlow : flows) {
-        if (existingFlow.getSwitchIP() == f.getSwitchIP() &&
-            existingFlow.getRulePrefix() == f.getRulePrefix() &&
-            existingFlow.getNextHopIP() == f.getNextHopIP()) {
-
+        if (existingFlow == f) {
 			// Set our DPIDs for reference
 			std::string switchDP = std::to_string(getDPID(existingFlow.getSwitchIP()));
 			std::string output = std::to_string(getOutputPort(existingFlow.getSwitchIP(), existingFlow.getNextHopIP()));
@@ -567,9 +566,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	bool sent = false;
 	int localCount = 0;
-	if (pause) {
-		pause_rst = true;
-	}
+	pause_rst = true;
 	fhFlag = false;
 	while (!fhFlag) {
 		// Timeout

@@ -15,7 +15,7 @@ class Flow {
 
 		// Equality operator (for finding dupes)
 		bool operator==(const Flow& other) const {
-			return (switchIP == other.switchIP && rulePrefix == other.rulePrefix && nextHopIP == other.nextHopIP && action == other.action);
+			return (switchIP == other.switchIP && rulePrefix == other.rulePrefix && nextHopIP == other.nextHopIP);
 		}
 
 		// Marshalling methods
