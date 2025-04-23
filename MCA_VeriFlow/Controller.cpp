@@ -85,36 +85,43 @@ void Controller::CCPDNThread(bool *run)
 	loggy << "[CCPDN]: Starting CCPDN thread...\n";
 	
 	while (*run) {
-		std::vector<uint8_t> packet = recvCCPDNDigests();
+		// Check if we have any connections to read from by using select()
+		#ifdef __unix__
+		fd_set read_sockets;
+		FD_ZERO(&read_sockets);
+		int max_read = -1;
 
-		// Skip empty packets
-		if (packet.empty()) {
+		// Add current sockets to our monitoring list
+		for (int currentSock : acceptedCC) {
+			FD_SET(currentSock, &read_sockets);
+			if (currentSock > max_fd) {
+				max_read = currentSock;
+			}
+		}
+
+		// Monitor all sockets
+		int activity = select(max_read + 1, &read_sockets, nullptr, nullptr, nullptr);
+
+		// Select() had an error -- add to error count
+		if (activity < 0) {
+			continue;
+		} else if (activity == 0) { // No activity on sockets
 			continue;
 		}
 
-		// Convert packet to string format for JSON parsing
-		std::string packet_str(packet.begin(), packet.end());
-
-		// Based on code returned, apply functionality
-		switch (Digest::readDigest(packet_str)) {
-			case 0:
-				break;
-			case 1:
-				break;
-			case 2:
-				break;
-			case 3:
-				break;
-			case 4: // 
-				break;
-			default: // Not recognized
-				break;
+		// If we are at this point, theres data on a socket. Find it and do recv() and parse it
+		for (int currentSock : acceptedCC) {
+			if (FD_ISSET(currentSock, &read_sockets)) {
+				recvProcessCCPDNDigests(currentSock);
+			}
 		}
+
+		#endif
 	}
 }
 
 // How do we handle received digests? (Call verification functions, topology updates or synchroncity)
-std::vector<uint8_t> Controller::recvCCPDNDigests()
+void Controller::recvProcessCCPDNDigests(int socket)
 {
 	// Clear packet and fix size before receival
 	int hostIndex = referenceTopology->hostIndex;
@@ -123,17 +130,40 @@ std::vector<uint8_t> Controller::recvCCPDNDigests()
 	packet.resize(4096);
 
 #ifdef __unix__
-	// Receive a message from the socket -- only do so when our ofFlag is inactive, meaning we're NOT using the buffer
-	ssize_t bytes_received = recv(sockCC[hostIndex], packet.data(), packet.size(), 0);
+	ssize_t bytes_received = recv(socket, packet.data(), packet.size(), 0);
 	if (bytes_received < 0) {
 		loggyErr("[CCPDN-ERROR]: Failed to receive message from CCPDN instance\n");
-		return {};
+		return;
 	} else if (bytes_received == 0) {
 		loggyErr("[CCPDN-ERROR]: Connection closed by CCPDN instance\n");
-		return {};
+		closeAcceptedSocket(socket);
+		return;
 	}
 #endif
-	return packet;
+
+	// Skip empty packets
+	if (packet.empty()) {
+		return;
+	}
+
+	// Convert packet to string format for JSON parsing
+	std::string packet_str(packet.begin(), packet.end());
+
+	// Based on code returned, apply functionality
+	switch (Digest::readDigest(packet_str)) {
+		case 0:
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4: // 
+			break;
+		default: // Not recognized digest
+			break;
+	}
 }
 
 /// This method should establish a connection to each CCPDN instance within the topology file
@@ -273,6 +303,18 @@ bool Controller::stopCCPDNServer()
 	}
 
     return true;
+}
+
+void Controller::closeAcceptedSocket(int socket)
+{
+	#ifdef __unix__
+		// Find the index that has the socket in acceptedCC
+		auto it = std::find(acceptedCC.begin(), acceptedCC.end(), socket);
+		if (it != acceptedCC.end()) {
+			acceptedCC.erase(it);
+		}
+		close(socket); // Close the socket
+	#endif
 }
 
 void Controller::parseFlow(Flow f)
@@ -984,7 +1026,7 @@ bool Controller::sendVeriFlowMessage(std::string message)
 		loggyMsg(Msg[i]);
 	}
 	loggyMsg("\n");
-	return false;
+	return true;
 }
 
 bool Controller::sendFlowHandlerMessage(std::string message)
@@ -1001,6 +1043,25 @@ bool Controller::sendFlowHandlerMessage(std::string message)
 	loggyMsg("[CCPDN]: Sent FlowHandler Request.\n");
 
     return true;
+}
+
+bool Controller::sendCCPDNMessage(int socket, std::string message)
+{
+    // Convert message to sendable format, add null-terminating char
+	std::vector<char> Msg(message.begin(), message.end());
+
+#ifdef __unix__
+	// Recast message as char array and send it
+	ssize_t bytes_sent = send(socket, Msg.data(), Msg.size(), 0);
+#endif
+
+	// Print send message
+	loggyMsg("[CCPDN]: Sent CCPDN Message.\n");
+	for (int i = 0; i < Msg.size(); ++i) {
+		loggyMsg(Msg[i]);
+	}
+	loggyMsg("\n");
+	return true;
 }
 
 bool Controller::synchTopology(Digest d)

@@ -55,14 +55,14 @@ class Controller {
 
 		// CCPDN communication funcs
 		bool initCCPDN();
-		bool startCCPDNServer(int port, bool *run);
 		bool stopCCPDNServer();
+		void closeAcceptedSocket(int socket);
 
 		// Reading + Parsing functions
 		bool parsePacket(std::vector<uint8_t>& packet, bool xidCheck);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
-		std::vector<uint8_t> recvCCPDNDigests();
+		void recvProcessCCPDNDigests(int socket);
 		void parseFlow(Flow f);
 
 		// OpenFlow packet decode functions
@@ -74,6 +74,7 @@ class Controller {
 		bool sendOpenFlowMessage(std::vector<unsigned char> data);
 		bool sendVeriFlowMessage(std::string message);
 		bool sendFlowHandlerMessage(std::string message);
+		bool sendCCPDNMessage(int socket, std::string message);
 
 		// Update functions
 		bool synchTopology(Digest d);
