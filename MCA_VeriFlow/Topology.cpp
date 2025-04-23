@@ -331,3 +331,14 @@ std::string Topology::printTopology(int index)
 
 	return output;
 }
+
+int Topology::getTopologyIndex(const std::string& ip) {
+    for (int i = 0; i < topologyList.size(); i++) {
+        for (Node& node : topologyList[i]) {
+            if (node.getIP() == ip) {
+                return i;
+            }
+        }
+    }
+    return -1; // Return -1 if IP not found in any topology
+}

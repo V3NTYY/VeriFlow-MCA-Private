@@ -242,14 +242,51 @@ void Controller::parseFlow(Flow f)
 	// Case 1:
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
+	if (f.isMod() && !isLocal) {
+        // Find the domain node
+        Node* domainNode = nullptr;
+        for (Node* dn : domainNodes) {
+            if (dn->connectsToTopology(referenceTopology->getTopologyIndex(f.getNextHopIP()))) {
+                domainNode = dn;
+                break;
+            }
+        }
 
-	// Case 3:
+        if (domainNode) {
+            // Create adjusted flow that routes through domain node
+            Flow adjustedFlow(f.getSwitchIP(), f.getRulePrefix(), domainNode->getIP(), true);
+            recvSharedFlag = true;
+            performVerification(false, adjustedFlow);
+            
+            // Forward verification request to next topology
+            int destTopology = referenceTopology->getTopologyIndex(f.getNextHopIP());
+            if (destTopology != -1) {
+                requestVerification(destTopology, f);
+            }
+        }
+        pauseOutput = false;
+        return;
+    }
+
+	// Case 2:
 	// For whatever reason, flow rule belongs to separate topology
 	// Action: cross-reference global topology -- if it doesn't exist at all, its a black hole and deny
+	if (referenceTopology->getTopologyIndex(f.getSwitchIP()) == -1 ||
+        referenceTopology->getTopologyIndex(f.getNextHopIP()) == -1) {
+        loggy << "[CCPDN-WARNING]: Black hole detected for flow: " << f.flowToStr(false) << std::endl;
+        pauseOutput = false;
+        return;
+    }
 
-	// Case 4:
+	// Case 3:
 	// We are receiving an openflow message with return flow list.
 	// Action: Do nothing, another method will be handling this
+	if (!f.isMod()) {
+        // Just store the flow, no verification needed
+        sharedFlows.push_back(f);
+        pauseOutput = false;
+        return;
+    }
 
 	pauseOutput = false;
 }

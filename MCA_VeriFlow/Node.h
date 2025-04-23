@@ -27,6 +27,7 @@ class Node {
 		bool hasAdjacentController();
 		void setControllerAdjacency(bool value);
 		void setPingResult(bool value);
+		bool connectsToTopology(int topologyIndex);
 
 		int getTopologyID();
 		bool getPingResult();
