@@ -1174,6 +1174,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	uint32_t rulePrefixIP = ntohl(mod->match.nw_src);
 	uint32_t wildcards = ntohl(mod->match.wildcards);
 	bool command = mod->command == OFPFC_ADD ? true : false;
+	bool flow_mod = mod->command == (OFPFC_MODIFY || OFPFC_MODIFY_STRICT) ? true : false;
 
 	// Create string formats
 	std::string targetSwitch = getSrcFromXID(mod->header.xid);

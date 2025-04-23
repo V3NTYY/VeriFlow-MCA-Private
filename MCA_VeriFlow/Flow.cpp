@@ -62,6 +62,7 @@ Flow::Flow(std::string SwitchIP, std::string RulePrefix, std::string NextHopIP, 
 	isFlowMod = false;
 	switchDPID = "";
 	outPort = "";
+	Modification = false;
 }
 
 Flow::Flow()
@@ -73,6 +74,7 @@ Flow::Flow()
 	outPort = "";
 	action = false;
 	isFlowMod = false;
+	Modification = false;
 }
 
 Flow::~Flow()
