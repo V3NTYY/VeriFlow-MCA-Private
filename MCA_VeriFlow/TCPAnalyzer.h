@@ -40,6 +40,7 @@ class TCPAnalyzer {
 		static bool pingFlag;
 		static std::vector<TimestampPacket> currentPackets;
 		static std::mutex currentPacketsMutex;
+		static Controller c;
 
 		// Thread method
 		void thread(bool *run, std::string controllerPort) {
@@ -125,7 +126,7 @@ class TCPAnalyzer {
 
 		// Start capturing packets
 		loggy << "[CCPDN]: Successfully started packet capture\n";
-		Controller::pauseOutput = false;
+		c.pauseOutput = false;
 
 		const u_char* packet;
 		struct pcap_pkthdr header;
