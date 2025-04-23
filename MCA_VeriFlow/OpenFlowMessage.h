@@ -70,7 +70,15 @@ enum ofp_type {
 	/* Queue Configuration messages. */
 	OFPT_QUEUE_GET_CONFIG_REQUEST, /* Controller/switch message */
 	OFPT_QUEUE_GET_CONFIG_REPLY /* Controller/switch message */
-	};
+};
+
+enum ofp_flow_mod_command {
+	OFPFC_ADD, /* New flow. */
+	OFPFC_MODIFY, /* Modify all matching flows. */
+	OFPFC_MODIFY_STRICT, /* Modify entry strictly matching wildcards */
+	OFPFC_DELETE, /* Delete all matching flows. */
+	OFPFC_DELETE_STRICT /* Strictly match wildcards and priority. */
+};
 
 enum ofp_version {
 	OFP_10 = 0x01,
