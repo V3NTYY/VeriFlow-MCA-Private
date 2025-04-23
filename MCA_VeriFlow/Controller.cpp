@@ -254,7 +254,7 @@ void Controller::CCPDNServerThread(int port, bool *run)
 		//  Accept incoming connections -- modifies the socket to be used for communication
 		socklen_t addrLen = sizeof(server_address);
 		int acceptedConnection = -1;
-		if ((acceptedConnection = accept(server_address, (struct sockaddr*)&server_address, &addrLen)) < 0) {
+		if ((acceptedConnection = accept(sockCC, (struct sockaddr*)&server_address, &addrLen)) < 0) {
 
 			// Check if we just had a sys interrupt (try again in that case)
 			if (errno == EINTR) {
@@ -272,7 +272,7 @@ void Controller::CCPDNServerThread(int port, bool *run)
 		// Print our shiny new connection :)
 		std::string clientIP = inet_ntoa(server_address.sin_addr);
 		int clientPort = ntohs(server_address.sin_port);
-		loggy << "[CCPDN]: Accepted new connection from " clientIP << ":" << clientPort << std::endl;
+		loggy << "[CCPDN]: Accepted new connection from " << clientIP << ":" << clientPort << std::endl;
 	}
 
 	// Server and socket closure incase we somehow exit loop
