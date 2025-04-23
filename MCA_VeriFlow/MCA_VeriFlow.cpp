@@ -542,6 +542,9 @@ int main() {
             } else if (mca_veriflow->flowhandler_linked) {
                 loggy << "FlowHandler already linked. Try reset-fh first" << std::endl;
                 continue;
+            } else if (mca_veriflow->runTCPDump) {
+                loggy << "All services are running, please use stop first." << std::endl;
+                continue;
             } else if (!mca_veriflow->controller_linked) {
                 loggy << "Controller not linked! Try link-controller first" << std::endl;
                 continue;
@@ -703,8 +706,11 @@ int main() {
             if (!mca_veriflow->controller_linked) {
                 loggy << "Controller not linked. Try link-controller first" << std::endl;
                 continue;
+            } else if (mca_veriflow->flowhandler_linked) {
+                loggy << "FlowHandler is linked. Try reset-fh first or stopping all services" << std::endl;
+                continue;
             } else if (mca_veriflow->runTCPDump) {
-                loggy << "All services are running, please use stop first." << std::endl;
+                loggy << "All services are running, please use stop first" << std::endl;
                 continue;
             }
             else {
@@ -838,7 +844,7 @@ int main() {
 
         // stop command
         else if (args.at(0) == "stop") {
-            if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->controller_running) {
+            if (!mca_veriflow->runTCPDump || !mca_veriflow->controller_linked || !mca_veriflow->topology_initialized || !mca_veriflow->flowhandler_linked) {
                 loggy << "CCPDN App is not running." << std::endl;
                 continue;
             } else {
