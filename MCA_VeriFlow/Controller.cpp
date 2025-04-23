@@ -79,6 +79,7 @@ void Controller::parseFlow(Flow f)
 	// Error checking:
 	if (f.getSwitchIP() == "" || f.getNextHopIP() == "") {
 		recvSharedFlag = true;
+		pauseOutput = false;
 		return;
 	}
 
@@ -88,6 +89,7 @@ void Controller::parseFlow(Flow f)
 		// Run verification on the flow rule
 		recvSharedFlag = true;
 		performVerification(false, f);
+		pauseOutput = false;
 		return;
 	}
 
@@ -102,6 +104,8 @@ void Controller::parseFlow(Flow f)
 	// Case 4:
 	// We are receiving an openflow message with return flow list.
 	// Action: Do nothing, another method will be handling this
+
+	pauseOutput = false;
 }
 
 bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
@@ -1171,7 +1175,6 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Ensure our packet matches the minimum size of an ofp_flow_mod
 	if (mod->header.length < sizeof(ofp_flow_mod)) {
-		pauseOutput = false;
 		return;
 	}
 
@@ -1188,18 +1191,12 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 
 	// Check if the flow rule is valid
 	if (targetSwitch == "0" || nextHop == "0") {
-		if (veriflowPort != "") {
-			pauseOutput = false; // For flow mods, only set pauseOutput to false if veriflow is running (since otherwise we're just linking)
-		}
 		loggyErr("[CCPDN-ERROR]: Parsed flow rule contains no flow information.\n");
 		return;
 	}
 	
 	// Add flow to shared flows -- since it is added, do true
 	recvSharedFlag = false;
-	if (veriflowPort != "") {
-		pauseOutput = false; // For flow mods, only set pauseOutput to false if veriflow is running (since otherwise we're just linking)
-	}
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, command);
 	f.setMod(true);
 	sharedFlows.push_back(f);
