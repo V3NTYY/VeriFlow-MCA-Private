@@ -34,8 +34,8 @@ class Flow {
 		bool isMod();
 		void setMod(bool mod);
 
-		bool isFlowMod() { return Modification; }
-		void setFlowMod(bool mod) { Modification = mod; }
+		bool isFlowModify() { return Modification; }
+		void setFlowModify(bool mod) { Modification = mod; }
 
 		void setDPID(std::string switchDP, std::string hopDP) { switchDPID = switchDP; outPort = hopDP; }
 
