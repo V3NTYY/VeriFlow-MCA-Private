@@ -314,7 +314,7 @@ Topology MCA_VeriFlow::partitionTopology()
 }
 
 bool MCA_VeriFlow::verifyTopology() {
-    // Iterate through topology list, run a ping test on each node
+    // Iterate through topology list, run a ping test on each node (only switches)
     bool success = true;
     for (int i = 0; i < topology.getTopologyCount(); i++) {
         for (Node n : topology.getTopology(i)) {
@@ -322,7 +322,9 @@ bool MCA_VeriFlow::verifyTopology() {
             // If our node is pingable, set the ping result to true for each node
             if (!pingTest(n)) {
                 ref->setPingResult(false);
-                success = false;
+                if (n.isSwitch()) { // We only care about switches being reachable
+                    success = false;
+                }
 			} else {
 				ref->setPingResult(true);
 			}
@@ -505,7 +507,7 @@ int main() {
                 "   Start the CCPDN Service by linking to VeriFlow (default port = 6657).\n" << std::endl <<
                 " - stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
-                " - rdn [topology_file]:" << std::endl <<
+                " - reg-top [topology_file]:" << std::endl <<
                 "   Registers a given topology file to this CCPDN instance and identifies domain nodes.\n" << std::endl <<
                 // DEPRECATED COMMAND" - refactor-top [file-name]:" << std::endl <<
                 // DEPRECATED COMMAND"   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
@@ -570,7 +572,7 @@ int main() {
                 loggy << "Not enough arguments. Usage: ccpdn-ports [veriflow-port]" << std::endl;
                 continue;
             } else if (!mca_veriflow->topology_initialized) {
-                loggy << "Topology not initialized. Please run rdn [topology_file] first." << std::endl;
+                loggy << "Topology not initialized. Try reg-top [topology_file] first." << std::endl;
                 continue;
             } else {
                 int veriflowPort = 6657; // Default port
@@ -683,12 +685,13 @@ int main() {
             if (args.size() < 3) {
 				loggy << "Not enough arguments. Usage: link-controller [ip-address] [port]" << std::endl;
                 continue;
-			}
-            else if (mca_veriflow->controller_linked) {
+			} else if (mca_veriflow->controller_linked) {
                 loggy << "Controller already linked. Try reset-controller first" << std::endl;
                 continue;
-            }
-            else {
+            } else if (!mca_veriflow->topology_initialized) {
+                loggy << "Topology not initialized. Try reg-top [topology_file] first." << std::endl;
+                continue;
+            } else {
 				mca_veriflow->controller.setControllerIP(args.at(1), args.at(2));
                 Controller::pauseOutput = true;
 				mca_veriflow->controller_linked = mca_veriflow->controller.startController(&(mca_veriflow->controller_running));
@@ -713,21 +716,21 @@ int main() {
         // output-top command
         else if (args.at(0) == "output-top") {
 			if (!mca_veriflow->topology_initialized) {
-				loggy << "Topology not initialized. Try rdn first." << std::endl;
+				loggy << "Topology not initialized. Try reg-top [topology_file] first." << std::endl;
                 continue;
-			}
-			else if (args.size() < 2) {
+			} else if (args.size() < 2) {
 				loggy << "Not enough arguments. Usage: output-top [file-name]" << std::endl;
                 continue;
-			}
-			else {
-                if (mca_veriflow->topology.outputToFile(args.at(1))) {
-                    loggy << "Topology output to " << args.at(1) << std::endl << std::endl;
-                    continue;
-				}
-				else {
-					loggy << "Error outputting topology to file." << std::endl;
-                    continue;
+			} else {
+                // Use partitioning algorithm to split the topology into multiple topologies
+                Topology partitioned_topologies = mca_veriflow->partitionTopology();
+                int hostIndex = mca_veriflow->topology.hostIndex;
+
+                // Output partitioned local topology to give to VeriFlow
+                if (partitioned_topologies.extractIndexTopology(hostIndex).outputToFile(args.at(1) + std::to_string(hostIndex))) {
+                    loggy << "Topology " << std::to_string(hostIndex) << " output to " << args.at(1) + std::to_string(hostIndex) << std::endl;
+                } else {
+                    loggy << "Error outputting topology " << args.at(1) + std::to_string(hostIndex) << " to file." << std::endl;
                 }
 			}
 		}
@@ -735,7 +738,7 @@ int main() {
         // // refactor-top command -- DEPRECATED
         // else if (args.at(0) == "refactor-top") {
         //     if (!mca_veriflow->topology_initialized) {
-        //         loggy << "Topology not initialized. Try rdn first.\n" << std::endl;
+        //         loggy << "Topology not initialized. Try reg-top [topology_file] first.\n" << std::endl;
         //     }
 		// 	else if (args.size() < 2) {
 		// 		loggy << "Not enough arguments. Usage: refactor-top [file-name]\n" << std::endl;
@@ -759,27 +762,16 @@ int main() {
 		// 	}
         // }
 
-        // rdn command
-        else if (args.at(0) == "rdn") {
-            if (!mca_veriflow->controller_linked) {
-                loggy << "Controller not linked. Try link-controller first" << std::endl;
+        // reg-top command
+        else if (args.at(0) == "reg-top") {
+            if (args.size() < 2) {
+                loggy << "Not enough arguments. Usage: reg-top [topology_file]" << std::endl;
                 continue;
-            }
-            else if (args.size() < 2) {
-                loggy << "Not enough arguments. Usage: rdn [topology_file]" << std::endl;
-                continue;
-			}
-            else {
+			} else {
                 // Read the topology file and register it
                 if (!mca_veriflow->registerTopologyFile(args.at(1))) {
                     loggy << "Error reading topology file. Ensure the file exists and is in the correct format." << std::endl;
 					continue;
-                }
-
-                // Verify the nodes exist in the topology
-                loggy << "Performing ping test on all nodes for verification..." << std::endl;
-                if (!mca_veriflow->verifyTopology()) {
-                    loggy << "Topology verification failed. Are all switches reachable?" << std::endl;
                 }
 
                 // Find the best candidates for domain nodes, create them.
@@ -811,6 +803,14 @@ int main() {
 
                 // Set the host index in the topology
                 mca_veriflow->topology.hostIndex = HostIndex;
+
+                // Verify the nodes exist in the topology
+                loggy << "Performing ping test on all nodes for verification..." << std::endl;
+                if (!mca_veriflow->verifyTopology()) {
+                    loggy << "Topology verification failed. Are all switches reachable?" << std::endl;
+                } else {
+                    loggy << "Topology verification successful. All switches are reachable." << std::endl;
+                }
 
                 mca_veriflow->topology_initialized = true;
             }
