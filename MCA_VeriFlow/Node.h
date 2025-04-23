@@ -10,12 +10,6 @@ class Node {
 	static int topologyID;
 	public:
 
-		// Equal operator
-		bool operator==(const Node& other) const {
-			return (this->IP == other.IP && this->topologyIndex == other.topologyIndex);
-		}
-		
-
 		Node(int TopologyIndex, bool SwitchNode, std::string ip, std::vector<std::string> LinkList);
 		Node();
 		~Node();
