@@ -359,7 +359,6 @@ void MCA_VeriFlow::printPorts(int VeriFlowPort)
             loggy << "[CCPDN-" << i << "] " << std::to_string(port) << " (This instance)" << std::endl;
         }
     }
-    loggy << std::endl;
 }
 
 #ifdef __unix__
@@ -546,6 +545,7 @@ int main() {
                 continue;
             } else {
                 mca_veriflow->controller.setFlowHandlerIP(args.at(1), args.at(2));
+                Controller::pauseOutput = true;
                 mca_veriflow->flowhandler_linked = mca_veriflow->controller.startFlow(&(mca_veriflow->flowhandler_linked));
             }
         }
@@ -613,12 +613,12 @@ int main() {
 
                 // Print all flows
                 loggy << "--- FLOWS " << targetIP << " ---" << std::endl;
-                for (Flow f : flows) {
+                for (int i = 0; i < flows.size(); i++) {
+                    Flow f = flows.at(i);
 					loggy << "Rule Prefix: " << f.getRulePrefix() << std::endl;
 					loggy << "Next Hop IP: " << f.getNextHopIP() << std::endl;
 					loggy << "Action: " << (f.actionType() ? "Forward" : "Drop") << std::endl;
-                    // Only print a newline if we aren't about to end the iteration
-                    if (&f != &flows.back()) {
+                    if (i < (flows.size() - 1)) {
                         loggy << std::endl;
                     }
 				}
@@ -803,7 +803,6 @@ int main() {
                         continue;
                     }
                     else {
-                        loggy << std::endl;
                         userInputLoop = false;
                         break;
                     }

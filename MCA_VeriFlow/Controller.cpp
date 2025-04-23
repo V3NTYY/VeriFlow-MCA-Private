@@ -360,7 +360,8 @@ bool Controller::linkVeriFlow()
 	// Setup socket
 	sockvf = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockvf < 0) {
-		std::cout << "[CCPDN-ERROR]: Could not create veriflow socket." << std::endl;
+		loggy << "[CCPDN-ERROR]: Could not create veriflow socket." << std::endl;
+		pauseOutput = false;
 		return false;
 	}
 
@@ -373,6 +374,7 @@ bool Controller::linkVeriFlow()
 	// Connect to the controller
 	if (connect(sockvf, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 		std::cout << "[CCPDN-ERROR]: Could not connect to veriflow." << std::endl;
+		pauseOutput = false;
 		return false;
 	}
 #endif
@@ -422,6 +424,7 @@ bool Controller::linkFlow()
 		sockfh = socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfh < 0) {
 			loggy << "[CCPDN-ERROR]: Could not create controller socket." << std::endl;
+			pauseOutput = false;
 			return false;
 		}
 
@@ -442,6 +445,7 @@ bool Controller::linkFlow()
 		struct sockaddr_in local_address;
 		socklen_t address_length = sizeof(local_address);
 		if (getsockname(sockfh, (struct sockaddr*)&local_address, &address_length) == 0) {
+			pauseOutput = false;
 			loggy << "[CCPDN]: Successfully connected to FlowHandler using port " << ntohs(local_address.sin_port) << std::endl;
 		}
 
@@ -473,6 +477,7 @@ bool Controller::startFlow(bool *thread)
 	flowThread.detach();
 
 	if (linkFlow()) {
+		pauseOutput = false;
 		return true;
 	}
 
@@ -724,7 +729,7 @@ bool Controller::sendVeriFlowMessage(std::string message)
 	for (int i = 0; i < Msg.size(); ++i) {
 		loggyMsg(Msg[i]);
 	}
-	loggyMsg("\n\n");
+	loggyMsg("\n");
 	return false;
 }
 
