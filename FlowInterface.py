@@ -174,4 +174,4 @@ class FlowInterface:
 
 def launch(flowport):
     flowport = int(flowport)
-    core.registerNew(FlowInterface)
+    core.registerNew(FlowInterface, flowport)
