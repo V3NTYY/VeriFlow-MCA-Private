@@ -112,7 +112,7 @@ void Controller::CCPDNThread(bool *run)
 		// If we are at this point, theres data on a socket. Find it and do recv() and parse it
 		for (int currentSock : acceptedCC) {
 			if (FD_ISSET(currentSock, &read_sockets)) {
-				recvProcessCCPDNDigests(currentSock);
+				recvProcessCCPDN(currentSock);
 			}
 		}
 

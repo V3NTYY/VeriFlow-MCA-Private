@@ -31,7 +31,7 @@ for ((i=0; i<TOPn; i++)); do
 done
 
 
-xterm -e "bash -c './RunPox.sh $poxPort'" &
-xterm -e "bash -c './RunVeriFlow.sh $TOP $vfPort'" &
-xterm -e "bash -c 'sudo python3 SingleTop.py $mnPort1 $mnPort2 $offset'" &
-xterm -e "bash -c './RunMCA.sh'" &
+xterm -e "./RunPox.sh $poxPort" &
+xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
+xterm -e "sudo python3 SingleTop.py $mnPort1 $mnPort2 $offset" &
+xterm -e "./RunMCA.sh" &
