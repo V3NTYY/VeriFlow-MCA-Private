@@ -1254,7 +1254,7 @@ int Controller::getDPID(std::string IP)
 	// Run sudo ovs-ofctl and parse output for dpid
 												   //   | awk '/dpid:/ {gsub(".*dpid:|\\s", ""); print}' -- Normal command string
 
-	std::string stringLiteral = R"( | awk '/dpid:/ {gsub(".*dpid:|\\s", ""); print})";
+	std::string stringLiteral = R"( | awk '/dpid:/ {gsub(".*dpid:|\s", ""); print})";
 	sysCommand = "sudo ovs-ofctl show " + interface;
 
 	sysCommand.append(stringLiteral);
