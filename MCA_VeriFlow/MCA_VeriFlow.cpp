@@ -376,7 +376,7 @@ void MCA_VeriFlow::printPorts(int VeriFlowPort)
     // Print VeriFlowPort + 1. For each topology instance, increment this and print it out
     loggy << " ----CCPDN Ports---- " << std::endl;
     for (int i = 0; i < topology.getTopologyCount(); i++) {
-        int port = VeriFlowPort + i + 1;
+        int port = VeriFlowPort + i;
         if (i != topology.hostIndex) {
             loggy << "[CCPDN-" << i << "] " << std::to_string(VeriFlowPort+1) << std::endl;
         } else {

@@ -54,7 +54,7 @@ for port in "${ports[@]}"; do
 done
 
 echo "Killing existing Main.py processes..."
-ps aux | grep "Main.py" | grep -v "grep" | awk '{print $2}' | sudo xargs kill -9
+ps aux | grep "Main.py" | grep -v "grep" | awk "$vfPort" | awk '{print $2}' | sudo xargs kill -9
 
 xterm -e "./RunPox.sh $poxPort" &
 xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
