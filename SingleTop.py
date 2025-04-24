@@ -45,6 +45,10 @@ def getPorts():
 
 def myNetwork(port1, port2, offset):
 
+    port1 = int(port1)
+    port2 = int(port2)
+    offset = int(offset)
+
     net = Mininet( topo=None,
                    build=False,
                    ipBase='10.0.0.0/8')

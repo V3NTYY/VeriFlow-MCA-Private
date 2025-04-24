@@ -90,6 +90,8 @@ def main():
 	print("Enter port to host VeriFlow on (i.e. 6657)")
 	# veriflow_port = int(input("> "))
 	veriflow_port = sys.argv[3]
+
+	veriflow_port = int(veriflow_port)
 	start_veriflow_server(veriflow_ip, veriflow_port)
 
 	generatedECs = network.getECsFromTrie()
