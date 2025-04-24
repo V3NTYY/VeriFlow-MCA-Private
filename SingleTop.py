@@ -61,15 +61,15 @@ def myNetwork(port1, port2, offset):
                       port=port1)
 
     info( '*** Add switches\n')
-    s1 = net.addSwitch('s1', cls=OVSKernelSwitch, dpid=f'{1*offset}')
-    s2 = net.addSwitch('s2', cls=OVSKernelSwitch, dpid=f'{5*offset}')
+    s1 = net.addSwitch('s1', cls=OVSKernelSwitch, dpid='{}'.format(1*offset))
+    s2 = net.addSwitch('s2', cls=OVSKernelSwitch, dpid='{}'.format(5*offset))
 
     info( '*** Add hosts\n')
 
     # Dynamically calculate IPs based on offset
-    h1_ip = f"10.0.0.{1 * offset}"
-    h2_ip = f"10.0.0.{2 * offset}"
-    h3_ip = f"10.0.0.{3 * offset}"
+    h1_ip = "10.0.0.{}".format(1 * offset)
+    h2_ip = "10.0.0.{}".format(2 * offset)
+    h3_ip = "10.0.0.{}".format(3 * offset)
 
     h2 = net.addHost('h2', cls=Host, ip=h1_ip, defaultRoute=None)
     h1 = net.addHost('h1', cls=Host, ip=h2_ip, defaultRoute=None)
@@ -91,8 +91,8 @@ def myNetwork(port1, port2, offset):
     net.get('s2').start([c0])
 
     info( '*** Post configure switches and hosts\n')
-    s1.cmd(f'ifconfig s1 10.0.0.{5*offset}')
-    s2.cmd(f'ifconfig s2 10.0.0.{6*offset}')
+    s1.cmd('ifconfig s1 10.0.0.{}'.format(5*offset))
+    s2.cmd('ifconfig s2 10.0.0.{}'.format(6*offset))
 
     CLI(net)
     net.stop()

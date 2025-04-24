@@ -1,10 +1,10 @@
 #!/bin/bash
 
 read -p "Enter the port number to use (default is 6636): " PORT
-PORT=${PORT:-6636}
+PORT=$1
 
 read -p "Enter the location of the topology file (default is ../SingleTop.topo): " TOP
-TOP=${TOP:-"../SingleTop.topo"}
+TOP=$2
 
 address="127.0.0.1"
 

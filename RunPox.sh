@@ -1,6 +1,6 @@
 #!/bin/bash
 read -p "Enter the port number to use (default is 6634): " PORT
-PORT=${PORT:-6653}
+PORT=$1
 
 FLOW=$((PORT+1))
 
