@@ -863,8 +863,8 @@ bool Controller::addFlowToTable(Flow f)
     std::string output = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
 	f.setDPID(switchDP, output);
 
-	if (switchDP == "-1") {
-		loggyErr("[CCPDN-ERROR]: Could not find DPID for IP: " + f.getSwitchIP() + "\n");
+	if (switchDP == "-1" || output == "-1") {
+		loggyErr("[CCPDN-ERROR]: Could not resolve DPID regarding flow for " + f.getSwitchIP() + "\n");
 		pauseOutput = false;
 		recvSharedFlag = true;
 		return false;
@@ -1252,7 +1252,8 @@ int Controller::getDPID(std::string IP)
 	std::string interface = output.substr(0, output.find(' '));
 	
 	// Run sudo ovs-ofctl and parse output for dpid
-	sysCommand = "sudo ovs-ofctl show " + interface + " | sed -n 's/.*dpid:\\([0-9a-fA-F]*\\).*/\\1/p'";
+												   //   | awk '/dpid:/ {gsub(".*dpid:|\\s", ""); print}' -- Normal command string
+	sysCommand = "sudo ovs-ofctl show " + interface + " | awk '/dpid:/ {gsub(\".*dpid:|\\\\s\", \"\"); print}'";
 	// Output format is just "dpid"
 	std::string dpid = exec(sysCommand.c_str(), "-1");
 
