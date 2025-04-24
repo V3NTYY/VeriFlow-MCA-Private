@@ -62,7 +62,7 @@ class Controller {
 		bool parsePacket(std::vector<uint8_t>& packet, bool xidCheck);
 		std::vector<uint8_t> recvControllerMessages();
 		void recvVeriFlowMessages();
-		void recvProcessCCPDNDigests(int socket);
+		void recvProcessCCPDN(int socket);
 		void parseFlow(Flow f);
 
 		// OpenFlow packet decode functions
@@ -107,9 +107,13 @@ class Controller {
 		void			   tryClearSharedFlows();
 		void               testVerificationTime(int numFlows);
 		void			   closeSockets();
+		void			   mapSocketToIndex(int* socket, int index);
+		int*			   getSocketFromIndex(int index);
 
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 
+		// Map each connection (socket) to the corresponding topology index
+		std::unordered_map<int, int*> socketTopologyMap;
 
 		std::string				  controllerPort;
 		std::string				  veriflowPort;
@@ -119,6 +123,7 @@ class Controller {
 		bool					  fhFlag;
 		int						  fhXID;
 		bool					  recvSharedFlag;
+		int						  basePort;
 
 	private:
 		int						  sockfd;

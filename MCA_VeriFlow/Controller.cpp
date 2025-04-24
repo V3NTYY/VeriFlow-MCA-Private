@@ -121,7 +121,7 @@ void Controller::CCPDNThread(bool *run)
 }
 
 // How do we handle received digests? (Call verification functions, topology updates or synchroncity)
-void Controller::recvProcessCCPDNDigests(int socket)
+void Controller::recvProcessCCPDN(int socket)
 {
 	// Clear packet and fix size before receival
 	int hostIndex = referenceTopology->hostIndex;
@@ -148,6 +148,20 @@ void Controller::recvProcessCCPDNDigests(int socket)
 
 	// Convert packet to string format for JSON parsing
 	std::string packet_str(packet.begin(), packet.end());
+
+	// Check if we have a port number in the packet string
+	if (packet_str.size() > 1 && packet_str[0] == 'P') {
+		int connectingIndex = -1;
+		try {
+			connectingIndex = std::stoi(packet_str.substr(1, packet_str.size() - 1));
+		} catch (std::exception& e) {
+			return;
+		}
+
+		mapSocketToIndex(&socket, connectingIndex);
+		loggy << "[CCPDN]: Established connection with CCPDN Instance #" << connectingIndex << std::endl;
+		return;
+	}
 
 	// Based on code returned, apply functionality
 	switch (Digest::readDigest(packet_str)) {
@@ -176,16 +190,64 @@ void Controller::recvProcessCCPDNDigests(int socket)
 /// This method should establish a connection to each CCPDN instance within the topology file
 bool Controller::initCCPDN()
 {
-	// For each topology instance, create a socket and connect to it
+	int hostIndex = referenceTopology->hostIndex;
+	bool successFlag = true;
+	// For each topology instance, send a message to expected ports of horizontal CCPDN instances
 	for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
-		if (i == referenceTopology->hostIndex) {
-			continue; // Skip our own instance
+
+		// Skip all instances until we are at the host index
+		if (i < hostIndex) {
+			continue;
 		}
 
+		// Skip any instances we've already connected to
+		if (socketTopologyMap.find(i) != socketTopologyMap.end()) {
+			continue;
+		}
 
+		// Initiate connections by sending connect() to each instance (CCPDN shares controller IP)
+		int expectedPort = basePort + i;
+		int expectedSock = -1;
+#ifdef __unix__
+		expectedSock = socket(AF_INET, SOCK_STREAM, 0);
+		if (expectedSock < 0) {
+			loggy << "[CCPDN-ERROR]: Could not create CCPDN socket." << std::endl;
+			pauseOutput = false;
+			successFlag = false;
+			continue;
+		}
+
+		// Setup the address to connect to
+		struct sockaddr_in server_address;
+		server_address.sin_family = AF_INET;
+		server_address.sin_port = htons(expectedPort);
+		inet_pton(AF_INET, controllerIP.c_str(), &server_address.sin_addr);
+
+		// Connect to the CCPDN instance
+		if (connect(expectedSock, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			loggy << "[CCPDN-ERROR]: Could not connect to CCPDN Instance." << std::endl;
+			close(expectedSock);
+			pauseOutput = false;
+			successFlag = false;
+			continue;
+		}
+
+		// Display successful connection with host sockaddr ip and port
+		struct sockaddr_in local_address;
+		socklen_t address_length = sizeof(local_address);
+		if (getsockname(expectedSock, (struct sockaddr*)&local_address, &address_length) == 0) {
+			loggy << "[CCPDN]: Successfully connected to CCPDN Instance #" << std::to_string(i) << " using port " << ntohs(local_address.sin_port) << std::endl;
+		}
+#endif
+		// Update our socket-topology mapping
+		mapSocketToIndex(&expectedSock, i);
+		acceptedCC.push_back(expectedSock);
+
+		// Update our new connection with our topology index
+		sendCCPDNMessage(expectedSock, "P" + std::to_string(hostIndex));
 	}
 
-    return false;
+    return successFlag;
 }
 
 #ifdef __unix__
@@ -296,10 +358,10 @@ bool Controller::stopCCPDNServer()
 {
 	// Close all connected CCPDN sockets
 	if (sockCC != -1) {
-		#ifdef __unix__
-			close(sockCC);
-		#endif
+	#ifdef __unix__
+		close(sockCC);
 		sockCC = -1;
+	#endif
 	}
 
 	for (int i = 0; i < acceptedCC.size(); i++) {
@@ -580,6 +642,7 @@ Controller::Controller()
 	noRst = false;
 	fhXID = -1;
 	recvSharedFlag = true;
+	basePort = -1;
 
 	acceptedCC.clear();
 	sharedFlows.clear();
@@ -606,6 +669,7 @@ Controller::Controller(Topology* t) {
 	noRst = false;
 	fhXID = -1;
 	recvSharedFlag = true;
+	basePort = -1;
 
 	acceptedCC.clear();
 	sharedPacket.clear();
@@ -1650,4 +1714,20 @@ void Controller::closeSockets()
         #endif
         sockfh = -1;
     }
+}
+
+void Controller::mapSocketToIndex(int* socket, int index)
+{
+	// Map the socket to the index in the socketMap
+	socketTopologyMap[index] = socket;
+}
+
+int* Controller::getSocketFromIndex(int index)
+{
+	// Check if the index exists in the socketMap
+	if ((socketTopologyMap.find(index) != socketTopologyMap.end()) && index != referenceTopology->hostIndex) {
+		return socketTopologyMap[index];
+	}
+
+	return nullptr;
 }

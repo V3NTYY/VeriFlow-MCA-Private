@@ -535,8 +535,9 @@ int main() {
                 // DEPRECATED COMMAND"   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
                 " - output-top [file-name]:" << std::endl <<
                 "   Outputs the configuration for this local topology's VeriFlow instance.\n" << std::endl <<
-                " - ccpdn-ports [veriflow-port]:" << std::endl <<
-                "   Displays the ports each CCPDN will use based on the intended VeriFlow port (keep these open!).\n" << std::endl <<
+                " - ccpdn-ports [base-port]:" << std::endl <<
+                "   Assign the base ports that all CCPDN instances will use (range: [Base Port] -> [Base Port + Amount of Topologies])." << std::endl <<
+                " - Please ensure that the value you enter is the same across all CCPDN instances. Use this command again if you need to reset it before running start.\n" << std::endl <<
                 " - link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app (default port = 6653).\n" << std::endl <<
                 " - reset-controller:" << std::endl <<
@@ -601,19 +602,29 @@ int main() {
             } else if (!mca_veriflow->topology_initialized) {
                 loggy << "Topology not initialized. Try reg-top [topology_file] first." << std::endl;
                 continue;
+            } else if (mca_veriflow->runService) {
+                loggy << "All services are running, please use stop first." << std::endl;
+                continue;
             } else {
-                int veriflowPort = 6657; // Default port
+                int BasePort = 6658; // Default port
                 try {
-                    veriflowPort = std::stoi(args.at(1));
+                    BasePort = std::stoi(args.at(1));
                 } catch (const std::invalid_argument& e) {
-                    loggy << "Invalid port number. Usage: ccpdn-ports [veriflow-port]" << std::endl;
+                    loggy << "Invalid port number. Usage: ccpdn-ports [base-port]" << std::endl;
                     continue;
                 }
-                if (veriflowPort < 0 || veriflowPort > 65535) {
-                    loggy << "Port number should range from 0-65535. Usage: ccpdn-ports [veriflow-port]" << std::endl;
+                int upperLimit = BasePort + mca_veriflow->topology.getTopologyCount() - 1;
+                if (BasePort < 0 || BasePort > 65535) {
+                    loggy << "Port number should range from 0-65535. Usage: ccpdn-ports [base-port]" << std::endl;
+                    continue;
+                } else if (upperLimit > 65535) {
+                    loggy << "Upper port limit for this base port value exceeds 65535. Usage: ccpdn-ports [base-port]" << std::endl;
                     continue;
                 }
-                mca_veriflow->printPorts(veriflowPort);
+
+                // Set the base port on the controller
+                mca_veriflow->controller.basePort = BasePort;
+                mca_veriflow->printPorts(BasePort);
             }
         }
 
@@ -866,6 +877,12 @@ int main() {
             } else if (args.size() < 3) {
                 loggy << "Not enough arguments. Usage: start [veriflow-ip-address] [veriflow-port]" << std::endl;
                 continue;
+            } else if (mca_veriflow->controller.basePort == -1) {
+                loggy << "CCPDN Base Port not set. Use ccpdn-ports [base-port] first." << std::endl;
+                continue;
+            } else if (mca_veriflow->runService) {
+                loggy << "CCPDN App is already running." << std::endl;
+                continue;
             } else {
                 mca_veriflow->controller.setVeriFlowIP(args.at(1), args.at(2));
                 Controller::pauseOutput = true;
@@ -960,6 +977,8 @@ int main() {
                     continue;
                 }
 
+                // Re-init CCPDN connections
+
                 // Send different CCPDN digests
                 Flow f("10.0.0.5", "192.168.1.1/24", "10.0.0.6", true);
                 Digest reqVer(0, 0, 1, 0, 0, ""); // asks for perform verification with flow
@@ -969,11 +988,19 @@ int main() {
                 std::string topologyString = mca_veriflow->topology.topology_toString(mca_veriflow->topology.hostIndex); // get topology at index n
                 Digest sendUp(0, 1, 0, 0, 0, topologyString); // makes the topology located at index n the most up-to-date
 
+                // Get topology
+                int* socket = mca_veriflow->controller.getSocketFromIndex(1);
+
+                if (socket == nullptr) {
+                    loggy << "[CCPDN-ERROR]: nullptr return for that socket." << std::endl;
+                    return;
+                }
+
                 // Send flow request to other CCPDN
-                mca_veriflow->controller.sendCCPDNMessage(1, reqVer.toJson());
+                mca_veriflow->controller.sendCCPDNMessage(*socket, reqVer.toJson());
 
                 // Send topology update to other CCPDN
-                mca_veriflow->controller.sendCCPDNMessage(1, sendUp.toJson());
+                mca_veriflow->controller.sendCCPDNMessage(*socket, sendUp.toJson());
             }
         }
 
