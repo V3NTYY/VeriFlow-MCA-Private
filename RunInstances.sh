@@ -17,23 +17,27 @@ poxPort=$((base_port))
 flowIntPort=$((base_port+1))
 vfPort=$((base_port+2))
 mnPort1=$((base_port+3))
-mnPort2=$((base_port+4))
 offset=$((base_port % 100))
 
-echo "Using ports: Pox: $poxPort and $flowIntPort, VeriFlow: $vfPort, Mininet1: $mnPort1 and $mnPort2"
+echo "PORTS:"
+echo "Pox: $poxPort"
+echo "FlowInterface $flowIntPort"
+echo "VeriFlow: $vfPort"
+echo "Mininet: Connects to $poxPort, additional controller hosted on $mnPort1"
+
 for ((i=0; i<TOPn; i++)); do
     # Calculate the port range each CCPDN instance will use
-    topoPort=$((base_port + 5 + i))
+    topoPort=$((base_port + 3 + i))
     echo "CCPDN Instance $i : $topoPort"
 
     if ((i == TOPn - 1)); then
         # Print total port range
-       echo "Total port range: $base_port-$topoPort"
+       echo "[PORT RANGE]: $base_port-$topoPort"
     fi
 done
 
 # Free calculated ports by killing processes using them
-ports=($poxPort $flowIntPort $vfPort $mnPort1 $mnPort2)
+ports=($poxPort $flowIntPort $vfPort $mnPort1)
 for ((i=0; i<TOPn; i++)); do
     topoPort=$((base_port + 5 + i))
     ports+=($topoPort)
@@ -45,8 +49,6 @@ for port in "${ports[@]}"; do
     if [[ -n $pid ]]; then
         echo "Killing process $pid using port $port"
         kill -9 $pid
-    else
-        echo "Port $port is free"
     fi
 done
 
@@ -58,5 +60,5 @@ xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
 xterm -e "./RunMCA.sh" &
 
 if [[ $launch_mn == "y" ]]; then
-    xterm -e "sudo python3 SingleTop.py $poxPort $mnPort2 $offset" &
+    xterm -e "sudo python3 SingleTop.py $poxPort $mnPort1 $offset" &
 fi
