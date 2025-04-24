@@ -55,5 +55,5 @@ xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
 xterm -e "./RunMCA.sh" &
 
 if [[ $launch_mn == "y" ]]; then
-    xterm -e "sudo python3 SingleTop.py $mnPort1 $mnPort2 $offset" &
+    xterm -e "sudo python3 SingleTop.py $poxPort $mnPort2 $offset" &
 fi
