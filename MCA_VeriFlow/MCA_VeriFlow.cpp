@@ -993,7 +993,7 @@ int main() {
 
                 if (socket == nullptr) {
                     loggy << "[CCPDN-ERROR]: nullptr return for that socket." << std::endl;
-                    return;
+                    continue;
                 }
 
                 // Send flow request to other CCPDN
