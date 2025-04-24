@@ -9,8 +9,13 @@ read -p "Enter the number of topologies: " TOPn
 TOPn=${TOPn:-2}
 read -p "Launch mininet? (y/n): " launch_mn
 launch_mn=${launch_mn:-y}
-read -p "Kill dupe veriflow processes? (y/n): " kill_vf
-kill_vf=${kill_vf:-y}
+read -p "Launch VeriFlow? (y/n): " launch_vf
+launch_vf=${launch_vf:-y}
+kill_vf="n"
+if [[ $launch_vf == "y" ]]; then
+    read -p "Kill dupe veriflow processes? (y/n): " kill_vf
+    kill_vf=${kill_vf:-y}
+fi
 
 address="127.0.0.1"
 
@@ -20,11 +25,13 @@ flowIntPort=$((base_port+1))
 vfPort=$((base_port+2))
 offset=$((base_port % 100))
 
+echo ""
 echo "PORTS:"
 echo "Pox: $poxPort"
 echo "FlowInterface $flowIntPort"
 echo "VeriFlow: $vfPort"
 echo "Mininet: Connects to $poxPort, additional controller hosted on $mnPort1"
+echo ""
 
 for ((i=0; i<TOPn; i++)); do
     # Calculate the port range each CCPDN instance will use
@@ -46,7 +53,6 @@ for ((i=0; i<TOPn; i++)); do
     ports+=($topoPort)
 done
 
-echo "Freeing ports: ${ports[@]}"
 for port in "${ports[@]}"; do
     pid=$(lsof -t -i:$port 2>/dev/null)
     if [[ -n $pid ]]; then
@@ -59,6 +65,9 @@ if [[ $kill_vf == "y" ]]; then
     echo "Killing existing Main.py processes..."
     ps aux | grep "Main.py" | grep -v "grep" | awk "$vfPort" | awk '{print $2}' | sudo xargs kill -9
 fi
+
+echo ""
+echo "Instances launching, for the CCPDN use CCPDN[0] as the base port for ccpdn-ports"
 
 xterm -e "./RunPox.sh $poxPort" &
 xterm -e "./RunVeriFlow.sh $TOP $vfPort" &

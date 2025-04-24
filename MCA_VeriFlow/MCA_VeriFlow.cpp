@@ -978,6 +978,7 @@ int main() {
                 }
 
                 // Re-init CCPDN connections
+                mca_veriflow->controller.initCCPDN();
 
                 // Send different CCPDN digests
                 Flow f("10.0.0.5", "192.168.1.1/24", "10.0.0.6", true);
