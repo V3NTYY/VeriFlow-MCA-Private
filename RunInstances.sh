@@ -9,6 +9,13 @@ read -p "Enter the number of topologies: " TOPn
 TOPn=${TOPn:-2}
 read -p "Launch mininet? (y/n): " launch_mn
 launch_mn=${launch_mn:-y}
+launch_topo="s"
+
+if [[ $launch_mn == "y" ]]; then
+    read -p "Launch MultiTop or SingleTop? (m/s): " launch_topo
+    launch_topo=${launch_topo:-m}
+fi
+
 read -p "Launch VeriFlow? (y/n): " launch_vf
 launch_vf=${launch_vf:-y}
 kill_vf="n"
@@ -25,14 +32,6 @@ flowIntPort=$((base_port+1))
 vfPort=$((base_port+2))
 offset=$((base_port % 100))
 
-echo ""
-echo "PORTS:"
-echo "Pox: $poxPort"
-echo "FlowInterface $flowIntPort"
-echo "VeriFlow: $vfPort"
-echo "Mininet: Connects to $poxPort, additional controller hosted on $mnPort1"
-echo ""
-
 for ((i=0; i<TOPn; i++)); do
     # Calculate the port range each CCPDN instance will use
     topoPort=$((base_port + 3 + i))
@@ -45,6 +44,14 @@ for ((i=0; i<TOPn; i++)); do
 done
 
 mnPort1=$((topoPort+1))
+
+echo ""
+echo "PORTS:"
+echo "Pox: $poxPort"
+echo "FlowInterface $flowIntPort"
+echo "VeriFlow: $vfPort"
+echo "Mininet: Connects to $poxPort, will connect to extra controller on $mnPort1"
+echo ""
 
 # Free calculated ports by killing processes using them
 ports=($poxPort $flowIntPort $vfPort $mnPort1)
@@ -74,5 +81,9 @@ xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
 xterm -e "./RunMCA.sh" &
 
 if [[ $launch_mn == "y" ]]; then
-    xterm -e "sudo python3 SingleTop.py $poxPort $mnPort1 $offset" &
+    if [[ $launch_topo == "m" ]]; then
+        xterm -e "sudo python3 MultiTop.py $poxPort $mnPort1 $offset" &
+    else
+        xterm -e "sudo python3 SingleTop.py $poxPort $mnPort1 $offset" &
+    fi
 fi
