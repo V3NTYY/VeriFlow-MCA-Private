@@ -9,6 +9,8 @@ read -p "Enter the number of topologies: " TOPn
 TOPn=${TOPn:-2}
 read -p "Launch mininet? (y/n): " launch_mn
 launch_mn=${launch_mn:-y}
+read -p "Kill dupe veriflow processes? (y/n): " kill_vf
+kill_vf=${kill_vf:-y}
 
 address="127.0.0.1"
 
@@ -53,8 +55,10 @@ for port in "${ports[@]}"; do
     fi
 done
 
-echo "Killing existing Main.py processes..."
-ps aux | grep "Main.py" | grep -v "grep" | awk "$vfPort" | awk '{print $2}' | sudo xargs kill -9
+if [[ $kill_vf == "y" ]]; then
+    echo "Killing existing Main.py processes..."
+    ps aux | grep "Main.py" | grep -v "grep" | awk "$vfPort" | awk '{print $2}' | sudo xargs kill -9
+fi
 
 xterm -e "./RunPox.sh $poxPort" &
 xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
