@@ -385,6 +385,15 @@ void MCA_VeriFlow::printPorts(int VeriFlowPort)
     }
 }
 
+void MCA_VeriFlow::printStatus()
+{
+    loggy << "CCPDN Status:" << std::endl;
+    loggy << " - Topology " << (topology_initialized ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
+    loggy << " - Controller " << (controller_linked ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
+    loggy << " - FlowHandler " << (flowhandler_linked ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
+    loggy << " - CCPDN Service " << (runService ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
+}
+
 #ifdef __unix__
     std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string& host, int port, int num_pings) {
         std::vector<double> rtts;
@@ -529,15 +538,21 @@ int main() {
                 "   Start the CCPDN Service by linking to VeriFlow (default port = 6657).\n" << std::endl <<
                 " - stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
+                " - status" << std::endl <<
+                "   Display the status of the CCPDN instance.\n" << std::endl <<
                 " - reg-top [topology_file]:" << std::endl <<
                 "   Registers a given topology file to this CCPDN instance and identifies domain nodes.\n" << std::endl <<
                 // DEPRECATED COMMAND" - refactor-top [file-name]:" << std::endl <<
                 // DEPRECATED COMMAND"   Partition and output the current topology into a format for VeriFlow. Does not change the programs view, this command only outputs to a file.\n" << std::endl <<
                 " - output-top [file-name]:" << std::endl <<
                 "   Outputs the configuration for this local topology's VeriFlow instance.\n" << std::endl <<
+                " - list-top [index]:" << std::endl <<
+                "   List the topology at a given index.\n" << std::endl <<
                 " - ccpdn-ports [base-port]:" << std::endl <<
                 "   Assigns the port range that all CCPDN instances will use (range: [Base Port] -> [Base Port + Amount of Topologies])." << std::endl <<
                 " - Please ensure that the value you enter is the same across all CCPDN instances. Use this command again if you need to reset it before running start.\n" << std::endl <<
+                " - retry-ccpdn" << std::endl <<
+                "   Retry the connection to all CCPDN instances.\n" << std::endl <<
                 " - link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app (default port = 6653).\n" << std::endl <<
                 " - reset-controller:" << std::endl <<
@@ -546,17 +561,21 @@ int main() {
                 "   Link this app to the flow handler, allowing for dynamic flow access (default port = 6655).\n" << std::endl <<
                 " - reset-fh" << std::endl <<
                 "   Free the flowhandler connection from this app.\n" << std::endl <<
-                " * list-flows [switch-ip-address]:" << std::endl <<
+                " - list-flows [switch-ip-address]:" << std::endl <<
                 "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
-                " * add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                " - add-flow [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " * del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
+                " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " * run-tcp-test" << std::endl <<
+                " - run-tcp-test" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
                 " * test-verification-time [num-flows]" << std::endl <<
                 "   Test verification time for a given number of flows.\n" <<
                 "";
+        }
+
+        else if (args.at(0) == "status") {
+            mca_veriflow->printStatus();
         }
 
         // link-flowhandler command
@@ -625,6 +644,15 @@ int main() {
                 // Set the base port on the controller
                 mca_veriflow->controller.basePort = BasePort;
                 mca_veriflow->printPorts(BasePort);
+            }
+        }
+
+        else if (args.at(0) == "retry-ccpdn") {
+            if (!mca_veriflow->runService) {
+                loggy << "Ensure CCPDN Service is started first." << std::endl;
+                continue;
+            }  else {
+                mca_veriflow->controller.initCCPDN();
             }
         }
 
@@ -812,6 +840,32 @@ int main() {
 		// 	}
         // }
 
+        else if (args.at(0) == "list-top") {
+            if (args.size() < 2) {
+                loggy << "Not enough arguments. Usage: list-top [index]" << std::endl;
+                continue;
+            } else if (!mca_veriflow->topology_initialized) {
+                loggy << "Topology not initialized. Try reg-top [topology_file] first" << std::endl;
+                continue;
+            } else {
+                int index = 0;
+                try {
+                    index = std::stoi(args.at(1));
+                } catch (std::exception& e) {
+                    loggy << "Invalid index. Usage: list-top [index]" << std::endl;
+                    continue;
+                }
+
+                if (index < 0 || index >= mca_veriflow->topology.getTopologyCount()) {
+                    loggy << "Invalid topology index. Please try again.\n" << std::endl;
+                    continue;
+                } else {
+                    loggy << "--- TOPOLOGY " << index << " ---" << std::endl;
+                    loggy << mca_veriflow->topology.printTopology(index);
+                }
+            }
+        }
+
         // reg-top command
         else if (args.at(0) == "reg-top") {
             if (args.size() < 2) {
@@ -990,7 +1044,7 @@ int main() {
                 Digest sendUp(0, 1, 0, 0, 0, topologyString); // makes the topology located at index n the most up-to-date
 
                 // Get topology
-                int* socket = mca_veriflow->controller.getSocketFromIndex(1);
+                int* socket = mca_veriflow->controller.getSocketFromIndex(testMethod);
 
                 if (socket == nullptr) {
                     loggy << "[CCPDN-ERROR]: nullptr return for that socket." << std::endl;

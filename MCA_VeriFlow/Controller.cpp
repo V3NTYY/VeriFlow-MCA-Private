@@ -195,8 +195,8 @@ bool Controller::initCCPDN()
 	// For each topology instance, send a message to expected ports of horizontal CCPDN instances
 	for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
 
-		// Skip all instances until we are at the host index
-		if (i < hostIndex) {
+		// Skip all instances until we are past the host index
+		if (i <= hostIndex) {
 			continue;
 		}
 

@@ -61,8 +61,8 @@ def myNetwork(port1, port2, offset):
                       port=port1)
 
     info( '*** Add switches\n')
-    s1 = net.addSwitch('s1', cls=OVSKernelSwitch, dpid='{}'.format(1*offset))
-    s2 = net.addSwitch('s2', cls=OVSKernelSwitch, dpid='{}'.format(5*offset))
+    s1 = net.addSwitch('s1', cls=OVSKernelSwitch, dpid='1')
+    s2 = net.addSwitch('s2', cls=OVSKernelSwitch, dpid='2')
 
     info( '*** Add hosts\n')
 
