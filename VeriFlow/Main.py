@@ -78,15 +78,18 @@ def main():
 	global client_socket
 	checkPythonVersion()
 	print("Enter network configuration file name (eg.: file.txt):")
-	filename = input("> ")
+	# filename = input("> ")
+	filename = sys.argv[1]
 	network = Network()
 	network.parseNetworkFromFile(filename)
 
 	## Setup VeriFlow server for CCPDN to pass messages to
 	print("Enter IP address to host VeriFlow on (i.e. 127.0.0.1)")
-	veriflow_ip = input("> ")
+	# veriflow_ip = input("> ")
+	veriflow_ip = sys.argv[2]
 	print("Enter port to host VeriFlow on (i.e. 6657)")
-	veriflow_port = int(input("> "))
+	# veriflow_port = int(input("> "))
+	veriflow_port = sys.argv[3]
 	start_veriflow_server(veriflow_ip, veriflow_port)
 
 	generatedECs = network.getECsFromTrie()
