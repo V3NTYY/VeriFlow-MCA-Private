@@ -77,8 +77,11 @@ echo ""
 echo "Instances launching, for the CCPDN use CCPDN[0] as the base port for ccpdn-ports"
 
 xterm -e "./RunPox.sh $poxPort" &
-xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
 xterm -e "./RunMCA.sh" &
+
+if [[ $launch_vf == "y" ]]; then
+    xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
+fi
 
 if [[ $launch_mn == "y" ]]; then
     if [[ $launch_topo == "m" ]]; then
