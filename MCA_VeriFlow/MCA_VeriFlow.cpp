@@ -391,6 +391,7 @@ void MCA_VeriFlow::printStatus()
     loggy << " - Topology " << (topology_initialized ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
     loggy << " - Controller " << (controller_linked ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
     loggy << " - FlowHandler " << (flowhandler_linked ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
+    loggy << " - CCPDN Base Port Set " << (controller.basePort != -1 ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
     loggy << " - CCPDN Service " << (runService ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
 }
 

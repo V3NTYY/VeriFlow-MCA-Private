@@ -863,6 +863,13 @@ bool Controller::addFlowToTable(Flow f)
     std::string output = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
 	f.setDPID(switchDP, output);
 
+	if (switchDP == "-1") {
+		loggyErr("[CCPDN-ERROR]: Could not find DPID for IP: " + f.getSwitchIP() + "\n");
+		pauseOutput = false;
+		recvSharedFlag = true;
+		return false;
+	}
+
 	// Update XID mapping, use to track the return flow
 	int genXID = generateXID(referenceTopology->hostIndex);
 	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
@@ -923,6 +930,15 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 		if (!sent) {
 			// Get the DPID associated with the given IP address
 			std::string dpid = std::to_string(getDPID(IP));
+
+			if (dpid == "-1") {
+				loggyErr("[CCPDN-ERROR]: Could not find DPID for IP: " + IP + "\n");
+				pause_rst = false;
+				if (pause) {
+					pauseOutput = false;
+				}
+				return flows;
+			}
 
 			// Update XID mapping, use to track the return flow
 			int genXID = generateXID(referenceTopology->hostIndex);

@@ -109,8 +109,8 @@ def myNetwork(port1, port2, offset):
     info( '*** Post configure switches and hosts\n')
     s1.cmd('ifconfig s1 10.0.0.5')
     s2.cmd('ifconfig s2 10.0.0.6')
-    s3.cmd('ifconfig s1 10.0.0.7')
-    s4.cmd('ifconfig s2 10.0.0.8')
+    s3.cmd('ifconfig s3 10.0.0.7')
+    s4.cmd('ifconfig s4 10.0.0.8')
 
     CLI(net)
     net.stop()
