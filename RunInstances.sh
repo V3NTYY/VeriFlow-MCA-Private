@@ -11,14 +11,14 @@ TOPn=${TOPn:-2}
 address="127.0.0.1"
 
 # Launch each instance
-poxPort=$(base_port)
-flowIntPort=$(base_port+1)
-vfPort=$(base_port+2)
-mnPort1=$(base_port+3)
-mnPort2=$(base_port+4)
+poxPort=$((base_port))
+flowIntPort=$((base_port+1))
+vfPort=$((base_port+2))
+mnPort1=$((base_port+3))
+mnPort2=$((base_port+4))
 offset=$((base_port % 100))
 
-print "Using ports: Pox: $poxPort and $flowIntPort, VeriFlow: $vfPort, Mininet1: $mnPort1 and $mnPort2"
+echo "Using ports: Pox: $poxPort and $flowIntPort, VeriFlow: $vfPort, Mininet1: $mnPort1 and $mnPort2"
 for ((i=0; i<TOPn; i++)); do
     # Calculate the port range each CCPDN instance will use
     topoPort=$((base_port + 5 + i))
@@ -26,12 +26,12 @@ for ((i=0; i<TOPn; i++)); do
 
     if ((i == TOPn - 1)); then
         # Print total port range
-       print("Total port range: $basePort-$topoPort")
+       echo "Total port range: $base_port-$topoPort"
     fi
 done
 
 
-xterm -hold -e "./RunPox.sh $port" &
-xterm -hold -e "./RunVeriFlow.sh $TOP $port " &
+xterm -hold -e "./RunPox.sh $poxPort" &
+xterm -hold -e "./RunVeriFlow.sh $TOP $vfPort " &
 xterm -hold -e "sudo python3 SingleTop.py $mnPort1 $mnPort2 $offset" &
 xterm -hold -e "./RunMCA.sh" &
