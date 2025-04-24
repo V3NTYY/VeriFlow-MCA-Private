@@ -2,7 +2,7 @@
 read -p "Enter the port number to use (default is 6634): " PORT
 PORT=${PORT:-6653}
 
-FLOW=$(PORT+1)
+FLOW=$((PORT+1))
 
 cp FlowInterface.py ~/pox/pox/
 cd ~/pox
