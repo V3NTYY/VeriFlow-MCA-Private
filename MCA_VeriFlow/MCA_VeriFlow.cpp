@@ -912,13 +912,13 @@ int main() {
                 // Set the host index in the topology
                 mca_veriflow->topology.hostIndex = HostIndex;
 
-                // Verify the nodes exist in the topology
-                loggy << "Performing ping test on all nodes for verification..." << std::endl;
-                if (!mca_veriflow->verifyTopology()) {
-                    loggy << "Topology verification failed. Are all switches reachable?" << std::endl;
-                } else {
-                    loggy << "Topology verification successful. All switches are reachable." << std::endl;
-                }
+                // // Verify the nodes exist in the topology -- DEPRECATED
+                // loggy << "Performing ping test on all nodes for verification..." << std::endl;
+                // if (!mca_veriflow->verifyTopology()) {
+                //     loggy << "Topology verification failed. Are all switches reachable?" << std::endl;
+                // } else {
+                //     loggy << "Topology verification successful. All switches are reachable." << std::endl;
+                // }
 
                 mca_veriflow->topology_initialized = true;
             }
