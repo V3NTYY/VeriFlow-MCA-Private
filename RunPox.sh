@@ -1,5 +1,5 @@
 #!/bin/bash
-read -p "Enter the port number to use (default is 6634): " PORT
+# read -p "Enter the port number to use (default is 6634): " PORT
 PORT=$1
 
 FLOW=$((PORT+1))
