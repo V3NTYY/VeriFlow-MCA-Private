@@ -7,6 +7,8 @@ read -p "Enter the topology file location: " TOP
 TOP=${TOP:-"../SingleTop.topo"}
 read -p "Enter the number of topologies: " TOPn
 TOPn=${TOPn:-2}
+read -p "Launch mininet? (y/n): " launch_mn
+launch_mn=${launch_mn:-y}
 
 address="127.0.0.1"
 
@@ -30,8 +32,28 @@ for ((i=0; i<TOPn; i++)); do
     fi
 done
 
+# Free calculated ports by killing processes using them
+ports=($poxPort $flowIntPort $vfPort $mnPort1 $mnPort2)
+for ((i=0; i<TOPn; i++)); do
+    topoPort=$((base_port + 5 + i))
+    ports+=($topoPort)
+done
+
+echo "Freeing ports: ${ports[@]}"
+for port in "${ports[@]}"; do
+    pid=$(lsof -t -i:$port 2>/dev/null)
+    if [[ -n $pid ]]; then
+        echo "Killing process $pid using port $port"
+        kill -9 $pid
+    else
+        echo "Port $port is free"
+    fi
+done
 
 xterm -e "./RunPox.sh $poxPort" &
 xterm -e "./RunVeriFlow.sh $TOP $vfPort" &
-xterm -e "sudo python3 SingleTop.py $mnPort1 $mnPort2 $offset" &
 xterm -e "./RunMCA.sh" &
+
+if [[ $launch_mn == "y" ]]; then
+    xterm -e "sudo python3 SingleTop.py $mnPort1 $mnPort2 $offset" &
+fi
