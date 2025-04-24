@@ -6,6 +6,9 @@ PORT=${PORT:-6636}
 read -p "Enter the location of the topology file (default is ../SingleTop.topo): " TOP
 TOP=${TOP:-"../SingleTop.topo"}
 
+sudo apt-get update
+sudo apt-get install expect
+
 cd VeriFlow
 
 expect <<EOF
