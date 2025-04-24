@@ -1266,7 +1266,7 @@ int Controller::getDPID(std::string IP)
 
 int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 {
-    // Ensure both IPs exist within current topology
+    // Ensure our hostIndex is valid
 	int hostIndex = referenceTopology->hostIndex;
 	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
 		return -1;
@@ -1275,12 +1275,20 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	bool srcIPExists = false;
 	bool dstIPExists = false;
 
+	// Check if both IPs are within same topology, or are linked together
 	for (Node n : referenceTopology->topologyList[hostIndex]) {
 		if (n.getIP() == srcIP) {
 			srcIPExists = true;
+			continue;
 		}
 		if (n.getIP() == dstIP) {
 			dstIPExists = true;
+			continue;
+		}
+		if (n.isLinkedTo(dstIP)) {
+			dstIPExists = true;
+			srcIPExists = true;
+			break;
 		}
 	}
 
@@ -1658,6 +1666,8 @@ void Controller::testVerificationTime(int numFlows) {
 
     // Create test flows using these switches
     std::vector<Flow> testFlows;
+	std::vector<Flow> inverseFlows;
+
 	for (int i = 0; i < numFlows; i++) {
 		bool willRemove = std::rand() % 2;
 		int randMask = std::rand() % 32 + 1;
@@ -1673,15 +1683,12 @@ void Controller::testVerificationTime(int numFlows) {
 
 		// Add flows to the vector
 		testFlows.push_back(add);
-		if (willRemove && (i == (numFlows - 1))) {
+		inverseFlows.push_back(remove);
+		if (willRemove && (i <= (numFlows - 1))) {
 			testFlows.push_back(remove);
+			inverseFlows.push_back(add);
 		}
 	}
-
-	// Order all adds to be first in the vector, then remove flows
-	std::sort(testFlows.begin(), testFlows.end(), [](Flow& a, Flow& b) {
-		return a.actionType() && !b.actionType();
-	});
 
     std::vector<double> verificationTimes;
 
@@ -1692,10 +1699,16 @@ void Controller::testVerificationTime(int numFlows) {
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         verificationTimes.push_back(duration.count());
-        
-        loggy << "Flow verification: " << flow.flowToStr(false) 
-              << " took " << duration.count() * 1000 << " ms" << std::endl;
     }
+
+	loggy << "\nVerification timing complete. Undoing test-flows...\n" << std::endl;
+
+	// Undo previous flows to veriflow
+	for (Flow f : inverseFlows) {
+		performVerification(false, f);
+	}
+
+	loggy << "\nTest-flows undone -- displaying times...\n" << std::endl;
 
     // Calculate statistics
     if (!verificationTimes.empty()) {

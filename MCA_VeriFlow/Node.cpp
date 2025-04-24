@@ -190,6 +190,19 @@ bool Node::connectsToTopology(int topologyIndex) {
     return false;
 }
 
+bool Node::isLinkedTo(std::string IP)
+{
+	bool success = false;
+	for (int i = 0; i < linkList.size(); i++) {
+		if (linkList.at(i) == IP) {
+			success = true;
+			break;
+		}
+	}
+
+    return success;
+}
+
 std::vector<std::string> Node::getLinks()
 {
 	return linkList;

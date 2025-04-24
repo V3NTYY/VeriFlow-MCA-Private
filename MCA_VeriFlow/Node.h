@@ -28,6 +28,7 @@ class Node {
 		void setControllerAdjacency(bool value);
 		void setPingResult(bool value);
 		bool connectsToTopology(int topologyIndex);
+		bool isLinkedTo(std::string IP);
 
 		int getTopologyID();
 		bool getPingResult();
