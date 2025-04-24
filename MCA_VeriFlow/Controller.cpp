@@ -565,6 +565,7 @@ std::string exec(const std::string& command, std::string match) {
 		}
 
 		while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+			loggy << "buffer: " << buffer.data() << std::endl;
 			// Return the first line that contains the match string, if match is -1 then return first line
 			if (strstr(buffer.data(), match.c_str()) != nullptr) {
 				result = buffer.data();
@@ -1261,6 +1262,8 @@ int Controller::getDPID(std::string IP)
 	loggy << "test command: " << sysCommand << std::endl;
 	// Output format is just "dpid"
 	std::string dpid = exec(sysCommand.c_str(), "-1");
+
+	loggy << "dpid: " << dpid << std::endl;
 
 	return std::stoi(dpid);
 }
