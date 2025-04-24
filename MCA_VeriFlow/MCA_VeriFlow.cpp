@@ -536,7 +536,7 @@ int main() {
                 " - output-top [file-name]:" << std::endl <<
                 "   Outputs the configuration for this local topology's VeriFlow instance.\n" << std::endl <<
                 " - ccpdn-ports [base-port]:" << std::endl <<
-                "   Assign the base ports that all CCPDN instances will use (range: [Base Port] -> [Base Port + Amount of Topologies])." << std::endl <<
+                "   Assigns the port range that all CCPDN instances will use (range: [Base Port] -> [Base Port + Amount of Topologies])." << std::endl <<
                 " - Please ensure that the value you enter is the same across all CCPDN instances. Use this command again if you need to reset it before running start.\n" << std::endl <<
                 " - link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app (default port = 6653).\n" << std::endl <<

@@ -16,7 +16,6 @@ address="127.0.0.1"
 poxPort=$((base_port))
 flowIntPort=$((base_port+1))
 vfPort=$((base_port+2))
-mnPort1=$((base_port+3))
 offset=$((base_port % 100))
 
 echo "PORTS:"
@@ -28,7 +27,7 @@ echo "Mininet: Connects to $poxPort, additional controller hosted on $mnPort1"
 for ((i=0; i<TOPn; i++)); do
     # Calculate the port range each CCPDN instance will use
     topoPort=$((base_port + 3 + i))
-    echo "CCPDN Instance $i : $topoPort"
+    echo "CCPDN Instance [$i] is on $topoPort"
 
     if ((i == TOPn - 1)); then
         # Print total port range
@@ -36,10 +35,12 @@ for ((i=0; i<TOPn; i++)); do
     fi
 done
 
+mnPort1=$((topoPort+1))
+
 # Free calculated ports by killing processes using them
 ports=($poxPort $flowIntPort $vfPort $mnPort1)
 for ((i=0; i<TOPn; i++)); do
-    topoPort=$((base_port + 5 + i))
+    topoPort=$((base_port + 3 + i))
     ports+=($topoPort)
 done
 
