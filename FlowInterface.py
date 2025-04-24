@@ -7,10 +7,10 @@ import json
 log = core.getLogger()
 
 class FlowInterface:
-    def __init__(self):
+    def __init__(self, flowport):
         core.openflow.addListeners(self)
         self.switches = {}
-        self.start_socket_server()
+        self.start_socket_server(flowport)
 
     def _handle_ConnectionUp(self, event):
         # This method stores the DPID and IP address of each switch for mappings w/ CCPDN
@@ -20,10 +20,10 @@ class FlowInterface:
         log.info("Switch %s connected from %s:%s", dpid, switch_ip, switch_port)
         self.switches[dpid] = connection
 
-    def start_socket_server(self):
+    def start_socket_server(self, flowport):
         # Start socket server to listen for ccpdn
         def socket_thread():
-            flowinterface_port = int(core.config.pox_port) + 1
+            flowinterface_port = flowport + 1
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.bind(("0.0.0.0", flowinterface_port))
             server_socket.listen(5)
@@ -172,5 +172,6 @@ class FlowInterface:
         
         log.info("Flow %s requested stats from switch %s", req.xid, dpid)
 
-def launch():
+def launch(flowport):
+    flowport = int(flowport)
     core.registerNew(FlowInterface)

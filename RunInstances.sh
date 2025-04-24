@@ -12,12 +12,13 @@ address="127.0.0.1"
 
 # Launch each instance
 poxPort=$(base_port)
-vfPort=$(base_port+2) #Pox uses 2 ports of space
+flowIntPort=$(base_port+1)
+vfPort=$(base_port+2)
 mnPort1=$(base_port+3)
 mnPort2=$(base_port+4)
 offset=$((base_port % 100))
 
-print "Using ports: Pox: $poxPort, VeriFlow: $vfPort, Mininet1: $mnPort1, Mininet2: $mnPort2"
+print "Using ports: Pox: $poxPort and $flowIntPort, VeriFlow: $vfPort, Mininet1: $mnPort1 and $mnPort2"
 for ((i=0; i<TOPn; i++)); do
     # Calculate the port range each CCPDN instance will use
     topoPort=$((base_port + 5 + i))
