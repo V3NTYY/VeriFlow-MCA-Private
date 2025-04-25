@@ -203,11 +203,13 @@ bool Controller::initCCPDN()
 
 		// Skip all instances until we are past the host index
 		if (i <= hostIndex) {
+			loggy << "Skipping instance #" << i << " (not past host index)" << std::endl;
 			continue;
 		}
 
 		// Skip any instances we've already connected to
 		if (socketTopologyMap.find(i) != socketTopologyMap.end()) {
+			loggy << "Already connected to instance #" << i << std::endl;
 			continue;
 		}
 
@@ -1699,6 +1701,11 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		std::string nextHop = getIPFromOutputPort(targetSwitch, output_port);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
+		// If we don't have a valid next hop (not mapped) but our target switch is a domain node, set the next hop as "xxx.xxx.xxx.xxx"
+		if (nextHop == "-1" && referenceTopology->getNodeByIP(targetSwitch).isDomainNode()) {
+			nextHop = "xxx.xxx.xxx.xxx";
+		}
+
 		// Add flow to shared flows
 		recvSharedFlag = false;
 		Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
@@ -1838,7 +1845,6 @@ void Controller::testVerificationTime(int numFlows) {
 	std::vector<Flow> inverseFlows;
 
 	for (int i = 0; i < numFlows; i++) {
-		bool willRemove = std::rand() % 2;
 		int randMask = std::rand() % 32 + 1;
 		int randIPs[4];
 		for (int j = 0; j < 4; j++) {
@@ -1853,10 +1859,6 @@ void Controller::testVerificationTime(int numFlows) {
 		// Add flows to the vector
 		testFlows.push_back(add);
 		inverseFlows.push_back(remove);
-		if (willRemove && (i <= (numFlows - 1))) {
-			testFlows.push_back(remove);
-			inverseFlows.push_back(add);
-		}
 	}
 
     std::vector<double> verificationTimes;
