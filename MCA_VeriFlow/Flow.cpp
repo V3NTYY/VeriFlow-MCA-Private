@@ -1,5 +1,20 @@
 #include "Flow.h"
 
+#include <vector>
+
+std::vector<std::string> splitFlowString(std::string flow) {
+    std::vector<std::string> parts;
+    std::stringstream ss(flow);
+    std::string part;
+
+    // Use getline to split the string by '-'
+    while (std::getline(ss, part, '-')) {
+        parts.push_back(part);
+    }
+
+    return parts;
+}
+
 std::string Flow::flowToStr(bool printDPID)
 {
 	// #switchIP-rulePrefix-nextHopIP
@@ -35,10 +50,16 @@ Flow* Flow::strToFlow(std::string payload)
 		f->action = false;
 	}
 
+	// Split flowstring
+	std::vector<std::string> parts = splitFlowString(payload);
+	if (parts.size() != 3) {
+		return nullptr;
+	}
+
 	// Parse the string
-	std::string swIP = payload.substr(1, payload.find('-') - 1);
-	std::string rulePFX = payload.substr(payload.find('-') + 1, payload.rfind('-') - payload.find('-') - 1);
-	std::string nextHIP = payload.substr(payload.rfind('-') + 1, payload.size() - payload.rfind('-') - 1);
+	std::string swIP = parts[0].substr(2, parts[0].size() - 2);
+	std::string rulePFX = parts[1];
+	std::string nextHIP = parts[2];
 
 	// Ensure we parsed something
 	if (swIP.empty() || rulePFX.empty() || nextHIP.empty()) {

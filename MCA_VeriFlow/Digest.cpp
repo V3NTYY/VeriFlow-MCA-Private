@@ -18,7 +18,7 @@ std::string Digest::toJson() {
     if (flowString == "R#--") {
         flowString = "";
     }
-    
+
     j["synch_bit"] = synch_bit ? 1 : 0;
     j["update_bit"] = update_bit ? 1 : 0;
     j["verification_bit"] = verification_bit ? 1 : 0;
@@ -35,6 +35,10 @@ void Digest::fromJson(const std::string& json_str) {
         loggy << "Parsing JSON: " << json_str << std::endl;
         nlohmann::json j = nlohmann::json::parse(json_str);
         std::string flow_data;
+        Flow* appendFlow = Flow::strToFlow(flow_data);
+        if (appendFlow == nullptr) {
+            appendFlow = new Flow("", "", "", false);
+        }
 
         synch_bit = j["synch_bit"].get<int>() == 1;
         update_bit = j["update_bit"].get<int>() == 1;
@@ -44,7 +48,7 @@ void Digest::fromJson(const std::string& json_str) {
         payload = j["payload"].get<std::string>();
         destination_ip = j["destination_ip"].get<std::string>();
         flow_data = j["flow_data"].get<std::string>();
-        appendedFlow = *Flow::strToFlow(flow_data);
+        appendedFlow = *appendFlow;
 
     } catch (const std::exception& e) {
         loggyErr("JSON parsing error: ");
