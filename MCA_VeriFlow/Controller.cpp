@@ -1410,6 +1410,7 @@ int Controller::getDPID(std::string IP)
 
 int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 {
+	loggy << "[CCPDN]: Getting output port for " << srcIP << " to " << dstIP << std::endl;
 	// Check if we can get it from mapping first, if not we go through long process of adding it
 	int port = getPortFromMap(srcIP, dstIP);
 	if (port != -1) {
@@ -1425,15 +1426,18 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	// Ensure both IPs exists within global topology -- leave local topology verification to addFlow, delFlow, listFlow functions
 	Node n = referenceTopology->getNodeByIP(srcIP);
 	if (n.isEmptyNode()) {
+		loggy << "[CCPDN-ERROR]: Could not find srcIP in topology." << std::endl;
 		return -1;
 	}
 	n = referenceTopology->getNodeByIP(dstIP);
 	if (n.isEmptyNode()) {
+		loggy << "[CCPDN-ERROR]: Could not find dstIP in topology." << std::endl;
 		return -1;
 	}
 
 	// Get amount of hosts/switches linked on each IP
 	int srcHostCount = getNumLinks(srcIP, false);
+	loggy << "[CCPDN]: srcHostCount: " << srcHostCount << std::endl;
 
 	// Get links associated with our srcIP
 	std::vector<std::string> srcLinks = n.getLinks();
@@ -1448,12 +1452,13 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	// Iterate through srcLinks and get the index matching our dstIP
 	int dstIndex = -1;
 	for (int i = 0; i < srcLinks.size(); i++) {
+		loggy << "Link: " << srcLinks[i] << std::endl;
 		if (srcLinks[i] == dstIP) {
 			dstIndex = i;
 			break;
 		}
 	}
-	if (dstIndex = -1) { // No link/interface exists if this is true
+	if (dstIndex == -1) { // No link/interface exists if this is true
 		return -1;
 	}
 
