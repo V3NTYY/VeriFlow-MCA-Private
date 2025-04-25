@@ -84,7 +84,7 @@ void MCA_VeriFlow::run()
 
     runService = true;
     // Create CCPDN server, bind to the correct port and listen for connections
-    int portCC = std::stoi(controller.veriflowPort) + topology.hostIndex + 1;
+    int portCC = controller.basePort + topology.hostIndex;
     
     // Start CCPDN server connection handler thread (for accepting new connections)
     std::thread ccpdnServerThread(&Controller::CCPDNServerThread, &controller, portCC, &runService);
@@ -101,6 +101,10 @@ void MCA_VeriFlow::run()
     TCPAnalyzer tcp;
     std::thread tcpDumpThread(&TCPAnalyzer::thread, &tcp, &runService, controller.controllerPort);
     tcpDumpThread.detach();
+
+    loggy << "[CCPDN]: CCPDN Service started" << std::endl;
+    loggy << "Please use 'retry-ccpdn' once all other CCPDN instances are started if connections are not established" << std::endl;
+    loggy << "Use 'status' to check the status of all expected connections" << std::endl;
 }
 
 void MCA_VeriFlow::stop() {
@@ -395,6 +399,16 @@ void MCA_VeriFlow::printStatus()
     loggy << " - FlowHandler " << (flowhandler_linked ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
     loggy << " - CCPDN Base Port Set " << (controller.basePort != -1 ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
     loggy << " - CCPDN Service " << (runService ? "[ACTIVE]" : "[INACTIVE]") << std::endl;
+
+    loggy << "CCPDN Connections:" << std::endl;
+    for (int i = 0; i < topology.getTopologyCount(); i++) {
+        bool isInstanceConnected = (controller.socketTopologyMap.find(i) != controller.socketTopologyMap.end());
+        if (i != topology.hostIndex) {
+            loggy << " - Topology " << i << ": [CONNECTION-]" << (isInstanceConnected ? "ACTIVE]" : "INACTIVE]") << std::endl;
+        } else {
+            loggy << " - Topology " << i << ": [SERVER-" << (runService ? "ACTIVE]" : "INACTIVE]") << std::endl;
+        }
+    }    
 }
 
 #ifdef __unix__
@@ -944,7 +958,6 @@ int main() {
                 mca_veriflow->controller.setVeriFlowIP(args.at(1), args.at(2));
                 Controller::pauseOutput = true;
                 mca_veriflow->run();
-                loggy << "[CCPDN]: App started." << std::endl;
                 continue;
             }
         }
