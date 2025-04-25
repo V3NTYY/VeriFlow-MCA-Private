@@ -304,7 +304,7 @@ Topology MCA_VeriFlow::partitionTopology()
     bool success = true;
 	Topology t;
     if (topology.getTopologyCount() <= 1) {
-		std::cerr << "Not enough topologies to partition." << std::endl;
+		loggyErr("Not enough topologies to partition.\n");
 		return t;
 	}
 
@@ -315,7 +315,7 @@ Topology MCA_VeriFlow::partitionTopology()
     for (int i = 0; i < t.getTopologyCount(); i++) {
         std::vector<Node> nodes = t.getTopology(i);
         for (int j = 0; j < nodes.size(); j++) {
-            // If the nodes contains links that are out of topology, ONLY remove those links
+            // If the nodes contains links that are out of topology, ONLY remove those links unless they are a domain node
             Node* n = t.getNodeReference(nodes.at(j));
             std::vector<std::string> currLinks = n->getLinks();
 
@@ -325,7 +325,8 @@ Topology MCA_VeriFlow::partitionTopology()
 
             for (std::string link : currLinks) {
 				Node m = t.getNodeByIP(link);
-                if (!n->isMatchingDomain(m) && !m.isEmptyNode()) {
+                if (!n->isMatchingDomain(m) && !m.isEmptyNode() && (!m.isDomainNode() || !n->isDomainNode())) {
+                    // If the node is not a domain node, remove the link
 					n->removeLink(link);
                 }
             }
