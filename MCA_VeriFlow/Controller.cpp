@@ -171,7 +171,8 @@ void Controller::recvProcessCCPDN(int socket)
 			return;
 		}
 
-		mapSocketToIndex(&socket, connectingIndex);
+		acceptedCC.push_back(socket);
+		mapSocketToIndex(&acceptedCC.back(), connectingIndex);
 		loggy << "[CCPDN]: Established connection with CCPDN Instance #" << connectingIndex << std::endl;
 		return;
 	}
