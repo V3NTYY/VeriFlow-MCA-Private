@@ -101,6 +101,8 @@ class Controller {
 		std::vector<std::string> getInterfaces(std::string IP);
 		void addPortToMap(std::string srcIP, std::string dstIP, int port);
 		int getPortFromMap(std::string srcIP, std::string dstIP);
+		void addIPToMap(std::string srcIP, int port, std::string dstIP);
+		std::string getIPFromMap(std::string srcIP, int port);
 
 		// Misc functions
 		bool 			   addDomainNode(Node* n);
@@ -123,6 +125,7 @@ class Controller {
 		std::unordered_map<int, int*> socketTopologyMap;
 		// Map each (srcSwitch, dstSwitch) -> outputPort pair
 		std::unordered_map<std::string, int> portMap;
+		std::unordered_map<std::string, std::string> portMapReverse;
 
 		std::string				  controllerPort;
 		std::string				  veriflowPort;

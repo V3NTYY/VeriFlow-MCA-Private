@@ -706,6 +706,24 @@ int Controller::getPortFromMap(std::string srcIP, std::string dstIP)
 	return -1;
 }
 
+void Controller::addIPToMap(std::string srcIP, int port, std::string dstIP)
+{
+	// Create our srcIP/port pair to use as key
+	std::string keyString = srcIP + ":" + std::to_string(port);
+	// Set the new mapping
+	portMapReverse[keyString] = dstIP;
+}
+
+std::string Controller::getIPFromMap(std::string srcIP, int port)
+{
+    // Use srcIP/port pair as key to find dstIP
+	std::string keyString = srcIP + ":" + std::to_string(port);
+	if (portMapReverse.find(keyString) != portMapReverse.end()) {
+		return portMapReverse[keyString];
+	}
+	return "-1";
+}
+
 Controller::Controller()
 {
 	controllerIP = "";
@@ -1435,47 +1453,49 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	}
 
 	// Add the port to our mapping for future use
-	int outputPort = srcHostCount + dstIndex;
+	int outputPort = srcHostCount + dstIndex + 1; // +1 to account for 1-based indexing for ports
 	addPortToMap(srcIP, dstIP, outputPort);
+	// Add the reverse mapping for the destination IP
+	addIPToMap(srcIP, outputPort, dstIP);
 
 	return outputPort;
 }
 
 std::string Controller::getIPFromOutputPort(std::string srcIP, int outputPort)
 {
-    // Ensure srcIP exists within topology
+	// Try to get reverse mapping if possible
+	std::string dstIP = getIPFromMap(srcIP, outputPort);
+	if (dstIP != "-1") {
+		return dstIP;
+	}
+
+    // Ensure host index is valid
 	int hostIndex = referenceTopology->hostIndex;
 	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
 		return "";
 	}
 
-	bool srcIPExists = false;
-	for (Node n : referenceTopology->topologyList[hostIndex]) {
-		if (n.getIP() == srcIP) {
-			srcIPExists = true;
-			break;
-		}
+	// Iterate through each srcLink, and complete the normal mapping process
+	std::vector<std::string> srcLinks = referenceTopology->getNodeByIP(srcIP).getLinks();
+	if (srcLinks.empty()) {
+		return "-1";
 	}
-
-	if (!srcIPExists) {
-		return "";
-	}
-
-	// Get the node associated with srcIP
-	Node srcNode = referenceTopology->getNodeByIP(srcIP);
-
-	// Get all links connected to srcNode, sort by their DPIDs
-	std::vector<std::string> srcLinks = srcNode.getLinks();
-	std::vector<int> dpidLinks;
 
 	for (std::string link : srcLinks) {
-		// Get the DPID associated with the link
-		int dpid = getDPID(link);
-		dpidLinks.push_back(dpid);
+		Node n = referenceTopology->getNodeByIP(link);
+		if (n.isEmptyNode()) {
+			continue;
+		}
+		// Function will auto-map the reverse for us
+		getOutputPort(srcIP, link);
+		getOutputPort(link, srcIP);
 	}
 
-	// Return the link based using the outputPort as an index
-	return srcLinks[outputPort];
+	// Check our mapping again, if it doesn't work we can't find the reverse mapping
+	dstIP = getIPFromMap(srcIP, outputPort);
+	if (dstIP != "-1") {
+		return dstIP;
+	}
 }
 
 void Controller::tryClearSharedFlows()
@@ -1527,7 +1547,7 @@ std::string Controller::getDstFromXID(uint32_t xid)
 {
     // Check if the XID exists in our map
 	if (xidFlowMap.find(xid) == xidFlowMap.end()) {
-		return "";
+		return "-1";
 	}
 
 	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
@@ -1630,6 +1650,10 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 		// Cast ptr to access flow_stats struct
 		ofp_flow_stats* flow_stats = reinterpret_cast<ofp_flow_stats*>(reply->body + offset);
+		if (flow_stats == nullptr) {
+			loggyErr("[CCPDN-ERROR]: Couldn't read flow stats message.\n");
+			return;
+		}
 
 		// Process length of current entry -- handle end of ptr
 		size_t flow_length = ntohs(flow_stats->length);
@@ -1639,6 +1663,10 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 
 		// Cast ptr to access ofp_action_header struct
 		ofp_action_header* action_header = reinterpret_cast<ofp_action_header*>(flow_stats->actions);
+		if (action_header == nullptr) {
+			loggyErr("[CCPDN-ERROR]: Couldn't read actions from stats reply.\n");
+			return;
+		}
 
 		// Flow processing
 		uint32_t rulePrefixIP = ntohl(flow_stats->match.nw_src);
@@ -1698,7 +1726,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
 	// Check if the flow rule is valid
-	if (targetSwitch == "0" || nextHop == "0") {
+	if (targetSwitch == "-1" || nextHop == "-1") {
 		loggyErr("[CCPDN-ERROR]: Parsed flow rule contains no flow information.\n");
 		return;
 	}
