@@ -1546,16 +1546,6 @@ bool Controller::updateXIDMapping(uint32_t xid, std::string srcIP, std::string d
 	return returnVal;
 }
 
-std::string Controller::getSrcFromXID(uint32_t xid)
-{
-	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
-	if (IPs.first.empty()) {
-		return "";
-	}
-
-	return IPs.first;
-}
-
 std::string Controller::getDstFromXID(uint32_t xid)
 {
     std::pair<std::string, std::string> IPs = xidFlowMap[xid];
@@ -1738,7 +1728,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	f.setMod(true);
 	
 	// If we are expecting this flow, set the flag to true
-	if (reply->header.xid == expFlowXID) {
+	if (mod->header.xid == expFlowXID) {
 		expFlowXID = -1;
 		gotFlowMod = true;
 	}
