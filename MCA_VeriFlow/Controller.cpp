@@ -124,7 +124,6 @@ void Controller::CCPDNThread(bool *run)
 		// If we are at this point, theres data on a socket. Find it and do recv() and parse it
 		for (int currentSock : acceptedCC) {
 			if (FD_ISSET(currentSock, &read_sockets)) {
-				loggy << "[CCPDN]: Data received on socket " << std::to_string(currentSock) << std::endl;
 				recvProcessCCPDN(currentSock);
 			}
 		}
@@ -157,7 +156,6 @@ void Controller::recvProcessCCPDN(int socket)
 
 	// Skip empty packets
 	if (packet.empty()) {
-		loggy << "[CCPDN-ERROR]: Empty packet received from CCPDN instance\n";
 		return;
 	}
 
@@ -259,11 +257,9 @@ bool Controller::initCCPDN()
 		}
 #endif
 		// Update our socket-topology mapping
-		mapSocketToIndex(&expectedSock, i);
 		acceptedCC.push_back(expectedSock);
+		mapSocketToIndex(&acceptedCC.back(), i);
 		
-		loggy << "Mapped socket " << std::to_string(expectedSock) << " to topology index " << std::to_string(i) << std::endl;
-
 		// Update our new connection with our topology index
 		sendCCPDNMessage(expectedSock, "P" + std::to_string(hostIndex));
 	}
