@@ -321,11 +321,12 @@ Topology MCA_VeriFlow::partitionTopology()
 
             if (currLinks.size() == 0) {
 				continue;
-			}
+            }
 
+            // Remove inter-topology links only if they are not through a domain node
             for (std::string link : currLinks) {
 				Node m = t.getNodeByIP(link);
-                if (!n->isMatchingDomain(m) && !m.isEmptyNode() && (!m.isDomainNode() || !n->isDomainNode())) {
+                if (!n->isMatchingDomain(m) && !m.isEmptyNode() && (!m.isDomainNode() && !n->isDomainNode())) {
                     // If the node is not a domain node, remove the link
 					n->removeLink(link);
                 }
