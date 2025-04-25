@@ -1679,6 +1679,8 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		std::string nextHop = getIPFromOutputPort(targetSwitch, output_port);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
 
+		loggy << "[CCPDN]: Flow rule: " << rulePrefix << " on switch: " << targetSwitch << " with next hop: " << nextHop << std::endl;
+
 		// Add flow to shared flows
 		recvSharedFlag = false;
 		Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
