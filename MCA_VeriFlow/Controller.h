@@ -123,6 +123,8 @@ class Controller {
 		std::vector<uint8_t>	  sharedPacket;
 		bool					  fhFlag;
 		int						  fhXID;
+		int						  expFlowXID;
+		bool					  gotFlowMod;
 		bool					  recvSharedFlag;
 		int						  basePort;
 

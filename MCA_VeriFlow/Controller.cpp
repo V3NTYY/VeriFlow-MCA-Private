@@ -640,8 +640,10 @@ Controller::Controller()
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
+	expFlowXID = -1;
 	recvSharedFlag = true;
 	basePort = -1;
+	gotFlowMod = false;
 
 	acceptedCC.clear();
 	sharedFlows.clear();
@@ -667,8 +669,10 @@ Controller::Controller(Topology* t) {
 	pause_rst = false;
 	noRst = false;
 	fhXID = -1;
+	expFlowXID = -1;
 	recvSharedFlag = true;
 	basePort = -1;
+	gotFlowMod = false;
 
 	acceptedCC.clear();
 	sharedPacket.clear();
@@ -884,11 +888,41 @@ bool Controller::addFlowToTable(Flow f)
 
 	// Update XID mapping, use to track the return flow
 	int genXID = generateXID(referenceTopology->hostIndex);
+	expFlowXID = genXID;
 	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
 
 	loggy << "DPIDS: " << switchDP << " " << output << std::endl;
+
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
-	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID)); // true for add action
+	bool sent = false;
+	int localCount = 0;
+	gotFlowMod = false;
+	while (!gotFlowMod) {
+		// TIMEOUT for flow mod
+		if (localCount > 14) {
+			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow mod from controller\n");
+			pause_rst = false;
+			pauseOutput = false;
+			return false;
+		}
+
+		if (!sent) {
+			// Send the FlowHandler message and wait for response
+			if (!sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID))) {
+				loggyErr("[CCPDN-ERROR]: Failed to add flow\n");
+				pause_rst = false;
+				pauseOutput = false;
+				return false;
+			}
+			else {
+				sent = true;
+			}
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		localCount++;
+	}
+
+	return true;
 }
 
 bool Controller::removeFlowFromTable(Flow f)
@@ -941,7 +975,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 	fhFlag = false;
 	while (!fhFlag) {
 		// Timeout
-		if (localCount > 15) {
+		if (localCount > 14) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
 			if (pause) {
@@ -1597,6 +1631,13 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	recvSharedFlag = false;
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, command);
 	f.setMod(true);
+	
+	// If we are expecting this flow, set the flag to true
+	if (reply->header.xid == expFlowXID) {
+		expFlowXID = -1;
+		gotFlowMod = true;
+	}
+
 	sharedFlows.push_back(f);
 #endif
 }
