@@ -985,7 +985,7 @@ bool Controller::addFlowToTable(Flow f)
 
 	// Ensure the flow we are adding is either within our domain, or inter-domain at the least
 	if (!validateFlow(f)) {
-		loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this topology\n");
+		loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this request\n");
 		pauseOutput = false;
 		recvSharedFlag = true;
 		return false;
@@ -1011,6 +1011,15 @@ bool Controller::removeFlowFromTable(Flow f)
 {
 	// Craft an OpenFlow message with our given flow rule, ask for removal and send
     std::string switchIP = f.getSwitchIP();
+
+	// First validate our proposed flow
+	if (!validateFlow(f)) {
+		loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this request\n");
+		pauseOutput = false;
+		recvSharedFlag = true;
+		return false;
+	}
+
     std::vector<Flow> flows = retrieveFlows(switchIP, false);
     
     // Search for matching flow
@@ -1060,6 +1069,14 @@ bool Controller::removeFlowFromTable(Flow f)
 std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 {
 	std::vector<Flow> flows;
+
+	// Validate the source IP address (must be in local topology, or is a domain node)
+	if (!referenceTopology->isLocal(IP, false) && !referenceTopology->getNodeByIP(IP).isDomainNode()) {
+		loggyErr("[CCPDN-ERROR]: IP address is not valid for request\n");
+		pauseOutput = false;
+		recvSharedFlag = true;
+		return flows;
+	}
 
 	// Wait for ofFlag to be set to true, indicating we have received the flow list
 	bool sent = false;
@@ -1112,7 +1129,6 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 	}
 
 	for (Flow f : sharedFlows) {
-		loggy << "[CCPDN]: Flow: " << f.flowToStr(false) << std::endl;
 		if (f.getSwitchIP() == IP && !f.isMod()) {
 			flows.push_back(f);
 		}
@@ -1926,20 +1942,22 @@ bool Controller::validateFlow(Flow f)
 		return false;
 	}
 
-	// Make sure at least one of our IPs fall within the host index (local topology)
-	if (referenceTopology->getNodeByIP(f.getSwitchIP()).isEmptyNode() && referenceTopology->getNodeByIP(f.getNextHopIP()).isEmptyNode()) {
+	bool isSwitchLocal = referenceTopology->isLocal(f.getSwitchIP(), false);
+	bool isNextHopLocal = referenceTopology->isLocal(f.getNextHopIP(), false);
+
+	if (isSwitchLocal && isNextHopLocal) {
+		return true;
+	} else if (!isSwitchLocal && !isNextHopLocal) {
 		return false;
 	}
 
 	// Get links for SrcIP -- only need to check one nodes links
 	std::vector<std::string> srcLinks = referenceTopology->getNodeByIP(f.getSwitchIP()).getLinks();
-	if (srcLinks.empty()) {
-		return false;
-	}
+	if (srcLinks.empty()) { return false; }
 
-	// Check if the next hop IP is linked to the source IP
+	// Only allow domain nodes to be added as next hops with inter-domain links
 	for (std::string link : srcLinks) {
-		if (link == f.getNextHopIP()) {
+		if (link == f.getNextHopIP() && referenceTopology->getNodeByIP(link).isDomainNode()) {
 			return true;
 		}
 	}
