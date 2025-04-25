@@ -418,31 +418,31 @@ void Controller::parseFlow(Flow f)
 	// Case 1:
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
-	if (f.isMod() && !isBothLocal) {
-        // Find the domain node
-        Node* domainNode = nullptr;
-        for (Node* dn : domainNodes) {
-            if (dn->connectsToTopology(referenceTopology->getTopologyIndex(f.getNextHopIP()))) {
-                domainNode = dn;
-                break;
-            }
-        }
+	// if (f.isMod() && !isBothLocal) {
+    //     // Find the domain node
+    //     Node* domainNode = nullptr;
+    //     for (Node* dn : domainNodes) {
+    //         if (dn->connectsToTopology(referenceTopology->getTopologyIndex(f.getNextHopIP()))) {
+    //             domainNode = dn;
+    //             break;
+    //         }
+    //     }
 
-        if (domainNode) {
-            // Create adjusted flow that routes through domain node
-            Flow adjustedFlow(f.getSwitchIP(), f.getRulePrefix(), domainNode->getIP(), true);
-            recvSharedFlag = true;
-            performVerification(false, adjustedFlow);
+    //     if (domainNode) {
+    //         // Create adjusted flow that routes through domain node
+    //         Flow adjustedFlow(f.getSwitchIP(), f.getRulePrefix(), domainNode->getIP(), true);
+    //         recvSharedFlag = true;
+    //         performVerification(false, adjustedFlow);
             
-            // Forward verification request to next topology
-            int destTopology = referenceTopology->getTopologyIndex(f.getNextHopIP());
-            if (destTopology != -1) {
-                requestVerification(destTopology, f);
-            }
-        }
-        pauseOutput = false;
-        return;
-    }
+    //         // Forward verification request to next topology
+    //         int destTopology = referenceTopology->getTopologyIndex(f.getNextHopIP());
+    //         if (destTopology != -1) {
+    //             requestVerification(destTopology, f);
+    //         }
+    //     }
+    //     pauseOutput = false;
+    //     return;
+    // }
 }
 
 bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
@@ -971,8 +971,6 @@ bool Controller::addFlowToTable(Flow f)
 	expFlowXID = genXID;
 	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
 
-	loggy << "DPIDS: " << switchDP << " " << output << std::endl;
-
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
 	bool sent = false;
 	int localCount = 0;
@@ -1044,7 +1042,6 @@ bool Controller::removeFlowFromTable(Flow f)
 			updateXIDMapping(genXID, existingFlow.getSwitchIP(), existingFlow.getNextHopIP());
             
 			// Send the removal message to the controller
-			loggy << "DPIDS: " << switchDP << " " << output << std::endl;
 			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true) + "-" + std::to_string(genXID));
         }
     }
@@ -1092,8 +1089,6 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 			int genXID = generateXID(referenceTopology->hostIndex);
 			fhXID = genXID;
 			updateXIDMapping(genXID, IP, "");
-
-			loggy << "DPIDS: " << dpid << std::endl;
 
 			// Send the FlowHandler message and wait for response
 			if (!sendFlowHandlerMessage("listflows-" + dpid + "-" + std::to_string(genXID))) {
