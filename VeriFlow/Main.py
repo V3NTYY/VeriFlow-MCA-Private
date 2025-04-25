@@ -3,6 +3,7 @@ from VeriFlow.Network import Network
 import socket
 import sys
 import threading
+import time
 
 ROUTE_VIEW = 1
 BIT_BUCKET = 2
@@ -49,18 +50,32 @@ def start_veriflow_server(host, port):
 		global msg
 		# FORMAT: [CCPDN] FLOW A#192.168.0.0-0.0.0.0/0-192.168.0.1
 		# If the message contains [CCPDN], then we can acknowledge it
-		if "[CCPDN]" in message:
-			## Send hello back if we receive hello
-			if "Hello" in message:
-				print("\nReceived hello message from CCPDN!")
-				client_socket.send("[VERIFLOW] Hello".encode('utf-8'))
-			## Handle logic for a flow rule added
-			elif "FLOW" in message:
-				## Only parse characters after the text "[CCPDN] FLOW "
-				print("\nReceived FLOW Mod from CCPDN!")
-				message = message[13:].strip().rstrip('\x00')
-				msg = message
-				pingFlag.set()
+
+		# Split message using null char as delimiter
+		packets = message.split('\x00')
+
+		# Iterate through each packet and process it
+		for packet in packets:
+
+			# Make sure we don't modify msg until it is none, sleep for 100ms
+			while msg is not None:
+				time.sleep(0.1)
+
+			packet = packet.strip()
+			if not packet:
+				continue
+			if "[CCPDN]" in packet:
+				## Send hello back if we receive hello
+				if "Hello" in packet:
+					print("\nReceived hello message from CCPDN!")
+					client_socket.send("[VERIFLOW] Hello".encode('utf-8'))
+				## Handle logic for a flow rule added
+				elif "FLOW" in packet:
+					## Only parse characters after the text "[CCPDN] FLOW "
+					print("\nReceived FLOW Mod from CCPDN!")
+					packet = packet[13:].strip().rstrip('\x00')
+					msg = packet
+					pingFlag.set()
 
 	# Create thread for server so we don't stall everything
 	server_thread_instance = threading.Thread(target=server_thread)

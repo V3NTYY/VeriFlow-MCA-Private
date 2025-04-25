@@ -159,51 +159,54 @@ void Controller::recvProcessCCPDN(int socket)
 		return;
 	}
 
-	// Convert packet to string format for JSON parsing
-	std::string packet_str(packet.begin(), packet.end());
+	// Ensure we are only looking at single packets, and begin JSON parsing
+	std::string rawData(packet.begin(), packet.end());
+	std::vector<std::string> packets = splitPcktInput(rawData);
 
-	// Check if we have a port number in the packet string
-	if (packet_str.size() > 1 && packet_str[0] == 'P') {
-		int connectingIndex = -1;
-		try {
-			connectingIndex = std::stoi(packet_str.substr(1, packet_str.size() - 1));
-		} catch (std::exception& e) {
+	for (std::string packet_str : packets) {
+		// Check if we have a port number in the packet string
+		if (packet_str.size() > 1 && packet_str[0] == 'P') {
+			int connectingIndex = -1;
+			try {
+				connectingIndex = std::stoi(packet_str.substr(1, packet_str.size() - 1));
+			} catch (std::exception& e) {
+				return;
+			}
+
+			acceptedCC.push_back(socket);
+			mapSocketToIndex(&acceptedCC.back(), connectingIndex);
+			loggy << "[CCPDN]: Established connection with CCPDN Instance #" << connectingIndex << std::endl;
 			return;
 		}
 
-		acceptedCC.push_back(socket);
-		mapSocketToIndex(&acceptedCC.back(), connectingIndex);
-		loggy << "[CCPDN]: Established connection with CCPDN Instance #" << connectingIndex << std::endl;
-		return;
-	}
+		loggy << "[CCPDN]: Received packet:\n" << packet_str << std::endl;
 
-	loggy << "[CCPDN]: Received packet:\n" << packet_str << std::endl;
+		Digest packetDigest;
+		packetDigest.fromJson(packet_str);
 
-	Digest packetDigest;
-	packetDigest.fromJson(packet_str);
-
-	// Based on code returned, apply functionality
-	switch (Digest::readDigest(packet_str)) {
-		case 0:
-			loggy << "[CCPDN]: Calling sendUpdate..." << std::endl;
-			break;
-		case 1:
-			loggy << "[CCPDN]: Calling synchTopology..." << std::endl;
-			synchTopology(packetDigest);
-			break;
-		case 2:
-			loggy << "[CCPDN]: Calling performVerification..." << std::endl;
-			loggy << "Flow data: " << packetDigest.getFlow().flowToStr(false) << std::endl;
-			break;
-		case 3:
-			loggy << "[CCPDN]: Sending verification results... (TRUE)" << std::endl;
-			break;
-		case 4:
-			loggy << "[CCPDN]: Sending verification results... (FALSE)" << std::endl;
-			break;
-		default: // Not recognized digest
-			loggy << "[CCPDN]: Digest not recognized!" << std::endl;
-			break;
+		// Based on code returned, apply functionality
+		switch (Digest::readDigest(packet_str)) {
+			case 0:
+				loggy << "[CCPDN]: Calling sendUpdate..." << std::endl;
+				break;
+			case 1:
+				loggy << "[CCPDN]: Calling synchTopology..." << std::endl;
+				synchTopology(packetDigest);
+				break;
+			case 2:
+				loggy << "[CCPDN]: Calling performVerification..." << std::endl;
+				loggy << "Flow data: " << packetDigest.getFlow().flowToStr(false) << std::endl;
+				break;
+			case 3:
+				loggy << "[CCPDN]: Sending verification results... (TRUE)" << std::endl;
+				break;
+			case 4:
+				loggy << "[CCPDN]: Sending verification results... (FALSE)" << std::endl;
+				break;
+			default: // Not recognized digest
+				loggy << "[CCPDN]: Digest not recognized!" << std::endl;
+				break;
+		}
 	}
 }
 
@@ -1301,6 +1304,8 @@ bool Controller::sendCCPDNMessage(int socket, std::string message)
 {
     // Convert message to sendable format, add null-terminating char
 	std::vector<char> Msg(message.begin(), message.end());
+	// Append null-terminating char as delimiter
+	Msg.push_back('\0');
 
 #ifdef __unix__
 	// Recast message as char array and send it
@@ -1979,4 +1984,31 @@ bool Controller::validateFlow(Flow f)
 	
 	// Nothing found -- not valid
     return false;
+}
+
+// Use \0 as delimiter and split a concatenated packet into smaller packets
+std::vector<std::string> splitPcktInput(const std::string& input) {
+    std::vector<std::string> words;
+    std::string word;
+
+    // Iterate through the input string
+    for (size_t i = 0; i < input.length(); i++) {
+        if (input[i] == '\0') {
+            // If we encounter the delimiter, add the current word to the vector
+            if (!word.empty()) {
+                words.push_back(word);
+                word.clear();
+            }
+        } else {
+            // Otherwise, add the character to the current word
+            word += input[i];
+        }
+    }
+
+    // Add the last word if it's not empty
+    if (!word.empty()) {
+        words.push_back(word);
+    }
+
+    return words;
 }
