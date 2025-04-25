@@ -397,6 +397,7 @@ void Controller::parseFlow(Flow f)
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
 	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP(), f.isMod());
 	if (f.isMod() && isLocal) {
+		loggy << "LOG Verifying flow rule: " << f.flowToStr(false) << std::endl;
 		// Run verification on the flow rule
 		recvSharedFlag = true;
 		performVerification(false, f);
@@ -863,8 +864,13 @@ bool Controller::addFlowToTable(Flow f)
     std::string output = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
 	f.setDPID(switchDP, output);
 
-	if (switchDP == "-1" || output == "-1") {
-		loggyErr("[CCPDN-ERROR]: Could not resolve DPID regarding flow for " + f.getSwitchIP() + "\n");
+	if (switchDP == "-1") {
+		loggyErr("[CCPDN-ERROR]: Could not resolve DPID for " + f.getSwitchIP() + "\n");
+		pauseOutput = false;
+		recvSharedFlag = true;
+		return false;
+	} else if (output == "-1") {
+		loggyErr("[CCPDN-ERROR]: Could not resolve output port for " + f.getNextHopIP() + "\n");
 		pauseOutput = false;
 		recvSharedFlag = true;
 		return false;
@@ -1285,12 +1291,22 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 			dstIPExists = true;
 			continue;
 		}
-		if (n.isLinkedTo(dstIP)) {
-			dstIPExists = true;
-			srcIPExists = true;
-			break;
+	}
+
+	// If one of the IPs are found but not both, check if they are linked together
+	if (srcIPExists || dstIPExists) {
+		if (!srcIPExists) {
+			if (referenceTopology->getNodeByIP(dstIP).isLinkedTo(srcIP)) {
+				srcIPExists = true;
+			}
+		} else if (!dstIPExists) {
+			if (referenceTopology->getNodeByIP(srcIP).isLinkedTo(dstIP)) {
+				dstIPExists = true;
+			}
 		}
 	}
+
+	loggy << "LOG: srcIPExists: " << std::to_string(srcIPExists) << ", dstIPExists: " << std::to_string(dstIPExists) << std::endl;
 
 	// If either IP doesn't exist, return a fail
 	if (!srcIPExists || !dstIPExists) {
@@ -1309,11 +1325,13 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	for (std::string link : srcLinks) {
 		// Get the DPID associated with the link
 		int dpid = getDPID(link);
+		loggy << "LOG: link for " << srcIP << " (" << std::to_string(dpid) << "): " << link << std::endl;
 		dpidLinks.push_back(dpid);
 	}
 
 	// Select the DPID matching the dstNode IP, and return the index of the link
 	for (int i = 0; i < dpidLinks.size(); ++i) {
+		loggy << "LOG: dpidLinks[" << std::to_string(i) << "]: " << std::to_string(dpidLinks[i]) << std::endl;
 		if (dpidLinks[i] == dstDPID) {
 			return i; // Return the index of the link
 		}
