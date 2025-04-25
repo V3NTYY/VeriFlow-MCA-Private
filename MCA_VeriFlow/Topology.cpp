@@ -266,6 +266,8 @@ bool Topology::outputToFile(std::string filename)
 		// Print the switches
 		outputFile << "S#\n";
 		for (int j = 0; j < switches.size(); j++) {
+			loggy << "[CCPDN]: Writing switch " << switches[j].getIP() << " to file:" << std::endl;
+			loggy << "Links: " << switches[j].getLinks() << std::endl;
 			outputFile << switches[j].filePrint() << "\n";
 		}
 
@@ -282,39 +284,23 @@ bool Topology::outputToFile(std::string filename)
 	return true;
 }
 
-bool Topology::isLocal(std::string firstIP, std::string secondIP, bool print)
+bool Topology::isLocal(std::string IP, bool print)
 {
 	if (print) {
-		loggy << "[CCPDN]: Checking if " << firstIP << " and " << secondIP << " are local." << std::endl;
+		loggy << "[CCPDN]: Checking if " << IP << " is local" << std::endl;
 	}
 	// Ensure firstIP exists within current topology
 	if (hostIndex < 0 || hostIndex >= topologyList.size()) {
 		return false;
 	}
 
-	bool firstIPExists = false;
 	for (Node n : topologyList[hostIndex]) {
-		if (n.getIP() == firstIP) {
-			firstIPExists = true;
-			break;
+		if (n.getIP() == IP) {
+			return true;
 		}
 	}
 
-	// If firstIP doesn't exist, return a fail
-	if (!firstIPExists) {
-		return false;
-	}
-
-	// Ensure secondIP exists within current topology
-	bool secondIPExists = false;
-	for (Node n : topologyList[hostIndex]) {
-		if (n.getIP() == secondIP) {
-			secondIPExists = true;
-			break;
-		}
-	}
-
-	return secondIPExists;
+	return false;
 }
 
 std::string Topology::printTopology(int index)

@@ -394,9 +394,20 @@ void Controller::parseFlow(Flow f)
 		return;
 	}
 
+	// Ensure we have a valid flow by checking if at least one of them are within the local topology
+	bool isSrcLocal = referenceTopology->isLocal(f.getSwitchIP(), f.isMod());
+	bool isHopLocal = referenceTopology->isLocal(f.getNextHopIP(), f.isMod());
+	bool isValid = (isSrcLocal || isHopLocal) && referenceTopology->getNodeByIP(f.getSwitchIP()).isLinkedTo(f.getNextHopIP());
+	bool isBothLocal = isSrcLocal && isHopLocal;
+
+	// Invalid flow verification
+	if (!isValid) {
+		pauseOutput = false;
+		return;
+	}
+
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
-	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP(), f.isMod());
-	if (f.isMod() && isLocal) {
+	if (f.isMod() && isBothLocal) {
 		// Run verification on the flow rule
 		recvSharedFlag = true;
 		performVerification(false, f);
@@ -407,7 +418,7 @@ void Controller::parseFlow(Flow f)
 	// Case 1:
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
-	if (f.isMod() && !isLocal) {
+	if (f.isMod() && !isBothLocal) {
         // Find the domain node
         Node* domainNode = nullptr;
         for (Node* dn : domainNodes) {
@@ -432,18 +443,6 @@ void Controller::parseFlow(Flow f)
         pauseOutput = false;
         return;
     }
-
-	// Case 2:
-	// For whatever reason, flow rule belongs to separate topology
-	// Action: cross-reference global topology -- if it doesn't exist at all, its a black hole and deny
-	if (referenceTopology->getTopologyIndex(f.getSwitchIP()) == -1 ||
-        referenceTopology->getTopologyIndex(f.getNextHopIP()) == -1) {
-        loggy << "[CCPDN-WARNING]: Black hole detected for flow: " << f.flowToStr(false) << std::endl;
-        pauseOutput = false;
-        return;
-    }
-
-	pauseOutput = false;
 }
 
 bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
