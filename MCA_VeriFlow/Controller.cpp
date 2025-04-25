@@ -991,6 +991,7 @@ bool Controller::addFlowToTable(Flow f)
 	// Update XID mapping, use to track the return flow
 	int genXID = generateXID(referenceTopology->hostIndex);
 	expFlowXID = genXID;
+	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
 
 	// Send the FlowHandler message and wait for response
 	if (!sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID))) {
