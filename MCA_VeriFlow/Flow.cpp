@@ -24,7 +24,7 @@ Flow* Flow::strToFlow(std::string payload)
 	} else if (payload[1] != '#') {
 		return nullptr;
 	}
-	else if (payload[0] != 'A' || payload[0] == 'B') {
+	else if (payload[0] != 'A' && payload[0] != 'R') {
 		return nullptr;
 	}
 

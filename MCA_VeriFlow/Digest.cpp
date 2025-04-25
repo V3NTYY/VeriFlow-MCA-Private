@@ -14,6 +14,11 @@ Digest::~Digest()
 
 std::string Digest::toJson() {
     nlohmann::json j;
+    std::string flowString = appendedFlow.flowToStr(false);
+    if (flowString == "R#--") {
+        flowString = "";
+    }
+    
     j["synch_bit"] = synch_bit ? 1 : 0;
     j["update_bit"] = update_bit ? 1 : 0;
     j["verification_bit"] = verification_bit ? 1 : 0;
@@ -21,7 +26,7 @@ std::string Digest::toJson() {
     j["destinationIndex"] = destinationIndex;
     j["payload"] = payload;
     j["destination_ip"] = destination_ip;
-    j["flow_data"] = appendedFlow.flowToStr(false);
+    j["flow_data"] = flowString;
     return j.dump();
 }
 
