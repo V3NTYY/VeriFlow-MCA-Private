@@ -177,6 +177,8 @@ void Controller::recvProcessCCPDN(int socket)
 		return;
 	}
 
+	loggy << "[CCPDN]: Received packet:\n" << packet_str << std::endl;
+
 	Digest packetDigest;
 	packetDigest.fromJson(packet_str);
 

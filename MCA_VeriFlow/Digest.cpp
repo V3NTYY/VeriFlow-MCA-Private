@@ -27,6 +27,7 @@ std::string Digest::toJson() {
 
 void Digest::fromJson(const std::string& json_str) {
     try {
+        loggy << "Parsing JSON: " << json_str << std::endl;
         nlohmann::json j = nlohmann::json::parse(json_str);
         std::string flow_data;
 
