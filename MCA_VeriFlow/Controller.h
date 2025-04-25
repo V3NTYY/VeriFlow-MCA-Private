@@ -109,6 +109,7 @@ class Controller {
 		void			   closeSockets();
 		void			   mapSocketToIndex(int* socket, int index);
 		int*			   getSocketFromIndex(int index);
+		bool			   validateFlow(Flow f);
 
 		// Map every XID to a flow, specifically the source and destination IPs
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 

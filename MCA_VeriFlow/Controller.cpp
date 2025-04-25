@@ -397,7 +397,6 @@ void Controller::parseFlow(Flow f)
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
 	bool isLocal = referenceTopology->isLocal(f.getSwitchIP(), f.getNextHopIP(), f.isMod());
 	if (f.isMod() && isLocal) {
-		loggy << "LOG Verifying flow rule: " << f.flowToStr(false) << std::endl;
 		// Run verification on the flow rule
 		recvSharedFlag = true;
 		performVerification(false, f);
@@ -876,6 +875,14 @@ bool Controller::addFlowToTable(Flow f)
 		return false;
 	}
 
+	// Ensure the flow we are adding is either within our domain, or inter-domain at the least
+	if (!validateFlow(f)) {
+		loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this topology\n");
+		pauseOutput = false;
+		recvSharedFlag = true;
+		return false;
+	}
+
 	// Update XID mapping, use to track the return flow
 	int genXID = generateXID(referenceTopology->hostIndex);
 	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
@@ -897,6 +904,14 @@ bool Controller::removeFlowFromTable(Flow f)
 			std::string switchDP = std::to_string(getDPID(existingFlow.getSwitchIP()));
 			std::string output = std::to_string(getOutputPort(existingFlow.getSwitchIP(), existingFlow.getNextHopIP()));
 			existingFlow.setDPID(switchDP, output);
+
+			// Ensure the flow we are adding is either within our domain, or inter-domain at the least
+			if (!validateFlow(f)) {
+				loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this topology\n");
+				pauseOutput = false;
+				recvSharedFlag = true;
+				return false;
+			}
 
 			// Update XID mapping, use to track the return flow
 			int genXID = generateXID(referenceTopology->hostIndex);
@@ -1223,21 +1238,15 @@ void Controller::rstVeriFlowFlag()
 
 int Controller::getDPID(std::string IP)
 {
-    // Ensure IP exists within current topology
+    // Ensure valid host index
 	int hostIndex = referenceTopology->hostIndex;
 	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
 		return -1;
 	}
-	bool IPExists = false;
-	for (Node n : referenceTopology->topologyList[hostIndex]) {
-		if (n.getIP() == IP) {
-			IPExists = true;
-			break;
-		}
-	}
 
-	// If IP doesn't exist, return a fail
-	if (!IPExists) {
+	// Ensure IP exists within global topology -- leave local topology verification to addFlow, delFlow, listFlow functions
+	Node n = referenceTopology->getNodeByIP(IP);
+	if (n.isEmptyNode()) {
 		return -1;
 	}
 
@@ -1278,38 +1287,13 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 		return -1;
 	}
 
-	bool srcIPExists = false;
-	bool dstIPExists = false;
-
-	// Check if both IPs are within same topology, or are linked together
-	for (Node n : referenceTopology->topologyList[hostIndex]) {
-		if (n.getIP() == srcIP) {
-			srcIPExists = true;
-			continue;
-		}
-		if (n.getIP() == dstIP) {
-			dstIPExists = true;
-			continue;
-		}
+	// Ensure both IPs exists within global topology -- leave local topology verification to addFlow, delFlow, listFlow functions
+	Node n = referenceTopology->getNodeByIP(srcIP);
+	if (n.isEmptyNode()) {
+		return -1;
 	}
-
-	// If one of the IPs are found but not both, check if they are linked together
-	if (srcIPExists || dstIPExists) {
-		if (!srcIPExists) {
-			if (referenceTopology->getNodeByIP(dstIP).isLinkedTo(srcIP)) {
-				srcIPExists = true;
-			}
-		} else if (!dstIPExists) {
-			if (referenceTopology->getNodeByIP(srcIP).isLinkedTo(dstIP)) {
-				dstIPExists = true;
-			}
-		}
-	}
-
-	loggy << "LOG: srcIPExists: " << std::to_string(srcIPExists) << ", dstIPExists: " << std::to_string(dstIPExists) << std::endl;
-
-	// If either IP doesn't exist, return a fail
-	if (!srcIPExists || !dstIPExists) {
+	n = referenceTopology->getNodeByIP(dstIP);
+	if (n.isEmptyNode()) {
 		return -1;
 	}
 
@@ -1325,13 +1309,11 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	for (std::string link : srcLinks) {
 		// Get the DPID associated with the link
 		int dpid = getDPID(link);
-		loggy << "LOG: link for " << srcIP << " (" << std::to_string(dpid) << "): " << link << std::endl;
 		dpidLinks.push_back(dpid);
 	}
 
 	// Select the DPID matching the dstNode IP, and return the index of the link
 	for (int i = 0; i < dpidLinks.size(); ++i) {
-		loggy << "LOG: dpidLinks[" << std::to_string(i) << "]: " << std::to_string(dpidLinks[i]) << std::endl;
 		if (dpidLinks[i] == dstDPID) {
 			return i; // Return the index of the link
 		}
@@ -1782,4 +1764,33 @@ int* Controller::getSocketFromIndex(int index)
 	}
 
 	return nullptr;
+}
+
+bool Controller::validateFlow(Flow f)
+{
+	// Don't allow duplicates
+	if (f.getSwitchIP() == f.getNextHopIP()) {
+		return false;
+	}
+
+	// Make sure at least one of our IPs fall within the host index (local topology)
+	if (referenceTopology->getNodeByIP(f.getSwitchIP()).isEmptyNode() && referenceTopology->getNodeByIP(f.getNextHopIP()).isEmptyNode()) {
+		return false;
+	}
+
+	// Get links for SrcIP -- only need to check one nodes links
+	std::vector<std::string> srcLinks = referenceTopology->getNodeByIP(f.getSwitchIP()).getLinks();
+	if (srcLinks.empty()) {
+		return false;
+	}
+
+	// Check if the next hop IP is linked to the source IP
+	for (std::string link : srcLinks) {
+		if (link == f.getNextHopIP()) {
+			return true;
+		}
+	}
+	
+	// Nothing found -- not valid
+    return false;
 }
