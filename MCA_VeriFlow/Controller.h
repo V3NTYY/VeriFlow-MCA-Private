@@ -122,7 +122,7 @@ class Controller {
 		// Map each connection (socket) to the corresponding topology index
 		std::unordered_map<int, int*> socketTopologyMap;
 		// Map each (srcSwitch, dstSwitch) -> outputPort pair
-		std::unordered_map<std::pair<std::string, std::string>, int> portMap;
+		std::unordered_map<std::string, int> portMap;
 
 		std::string				  controllerPort;
 		std::string				  veriflowPort;

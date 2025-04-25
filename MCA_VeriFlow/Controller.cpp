@@ -687,23 +687,17 @@ std::string Controller::getSrcFromXID(uint32_t xid)
 void Controller::addPortToMap(std::string srcIP, std::string dstIP, int outputPort)
 {
 	// Create our srcIP/dstIP pair to use as key
-	std::pair<std::string, std::string> IPs = std::make_pair(srcIP, dstIP);
-	// Check if we already have a port for this srcIP/dstIP pair
-	if (portMap.find(IPs) != portMap.end()) {
-		// Port already exists, do nothing
-		return;
-	}
-
-	// Port does not exist, add it to the map
-	portMap[IPs] = outputPort;
+	std::string keyString = srcIP + ":" + dstIP;
+	// Set the new mapping
+	portMap[keyString] = outputPort;
 }
 
 int Controller::getPortFromMap(std::string srcIP, std::string dstIP)
 {
-	// Use srcIP/dstIP pair to find the port
-	std::pair<std::string, std::string> IPs = std::make_pair(srcIP, dstIP);
-	if (portMap.find(IPs) != portMap.end()) {
-		return portMap[IPs];
+	// Use srcIP/dstIP pair as key to find port
+	std::string keyString = srcIP + ":" + dstIP;
+	if (portMap.find(keyString) != portMap.end()) {
+		return portMap[keyString];
 	}
 	return -1;
 }
