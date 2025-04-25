@@ -90,9 +90,9 @@ def myNetwork(port1, port2, offset):
     net.addLink(h2, s1)
     net.addLink(h3, s2)
     net.addLink(h4, s4)
+    net.addLink(s1, s2)
     net.addLink(s1, s3)
     net.addLink(s2, s4)
-    net.addLink(s1, s2)
 
 
     info( '*** Starting network\n')

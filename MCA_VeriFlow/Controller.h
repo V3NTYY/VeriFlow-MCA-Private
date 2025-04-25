@@ -96,6 +96,12 @@ class Controller {
 		bool requestVerification(int destinationIndex, Flow f);
 		bool performVerification(bool externalRequest, Flow f);
 
+		// Get link/interface funcs
+		int getNumLinks(std::string IP, bool Switch);
+		std::vector<std::string> getInterfaces(std::string IP);
+		void addPortToMap(std::string srcIP, std::string dstIP, int port);
+		int getPortFromMap(std::string srcIP, std::string dstIP);
+
 		// Misc functions
 		bool 			   addDomainNode(Node* n);
 		std::vector<Node*> getDomainNodes();
@@ -115,6 +121,8 @@ class Controller {
 		std::unordered_map<uint32_t, std::pair<std::string, std::string>> xidFlowMap; 
 		// Map each connection (socket) to the corresponding topology index
 		std::unordered_map<int, int*> socketTopologyMap;
+		// Map each (srcSwitch, dstSwitch) -> outputPort pair
+		std::unordered_map<std::pair<std::string, std::string>, int> portMap;
 
 		std::string				  controllerPort;
 		std::string				  veriflowPort;

@@ -622,6 +622,92 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	return false;
 }
 
+int Controller::getNumLinks(std::string IP, bool Switch)
+{
+	Node n = referenceTopology->getNodeByIP(IP);
+	std::vector<std::string> IPList = n.getLinks();
+	
+	int count = 0;
+
+	for (std::string ip : IPList) {
+		Node m = referenceTopology->getNodeByIP(ip);
+		if (m.isSwitch() && Switch) {
+			count++;
+		} else if (!Switch) {
+			count++;
+		}
+	}
+
+    return count;
+}
+
+std::vector<std::string> Controller::getInterfaces(std::string IP)
+{
+	std::vector<std::string> returnList;
+
+	// Run ifconfig to display interface and inet address, filter everything else out
+	std::string sysCmd = "ifconfig | grep -E '^[a-zA-Z0-9]|inet ' | awk '/^[a-zA-Z0-9]/ {iface=$1} /inet / {print iface, $2}' | sed 's/addr://'";
+	// Output format "interface ip-address"
+
+	// Match the interface name to the given parameter IP, use the interface name to get the DPID
+    std::string output = exec(sysCmd.c_str(), IP);
+	// Use ' ' as delimiter, only take everything before the delimiter
+	if (output.empty()) {
+		return std::vector<std::string>();
+	}
+	if (output.find(' ') == std::string::npos) {
+		return std::vector<std::string>();
+	}
+	std::string interface = output.substr(0, output.find(' '));
+
+	// Use exec command to get total list of interfaces (each interface will be separated by a newline)
+	std::string sysCommand = "sudo ovs-ofctl show " + interface + " | awk -F'[()]' '/addr:/ {print $2}'";
+	std::string returnStr = exec(sysCommand.c_str(), "-1");
+
+	// Split the return string by newlines and add to our return list
+	std::istringstream iss(returnStr);
+	std::string line;
+	while (std::getline(iss, line)) {
+		returnList.push_back(line);
+	}
+
+    return returnList;
+}
+
+std::string Controller::getSrcFromXID(uint32_t xid)
+{
+	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
+	if (IPs.first.empty()) {
+		return "";
+	}
+
+	return IPs.first;
+}
+
+void Controller::addPortToMap(std::string srcIP, std::string dstIP, int outputPort)
+{
+	// Create our srcIP/dstIP pair to use as key
+	std::pair<std::string, std::string> IPs = std::make_pair(srcIP, dstIP);
+	// Check if we already have a port for this srcIP/dstIP pair
+	if (portMap.find(IPs) != portMap.end()) {
+		// Port already exists, do nothing
+		return;
+	}
+
+	// Port does not exist, add it to the map
+	portMap[IPs] = outputPort;
+}
+
+int Controller::getPortFromMap(std::string srcIP, std::string dstIP)
+{
+	// Use srcIP/dstIP pair to find the port
+	std::pair<std::string, std::string> IPs = std::make_pair(srcIP, dstIP);
+	if (portMap.find(IPs) != portMap.end()) {
+		return portMap[IPs];
+	}
+	return -1;
+}
+
 Controller::Controller()
 {
 	controllerIP = "";
@@ -938,6 +1024,18 @@ bool Controller::removeFlowFromTable(Flow f)
 			std::string switchDP = std::to_string(getDPID(existingFlow.getSwitchIP()));
 			std::string output = std::to_string(getOutputPort(existingFlow.getSwitchIP(), existingFlow.getNextHopIP()));
 			existingFlow.setDPID(switchDP, output);
+
+			if (switchDP == "-1") {
+				loggyErr("[CCPDN-ERROR]: Could not resolve DPID for " + existingFlow.getSwitchIP() + "\n");
+				pauseOutput = false;
+				recvSharedFlag = true;
+				return false;
+			} else if (output == "-1") {
+				loggyErr("[CCPDN-ERROR]: Could not resolve output port for " + existingFlow.getNextHopIP() + "\n");
+				pauseOutput = false;
+				recvSharedFlag = true;
+				return false;
+			}
 
 			// Ensure the flow we are adding is either within our domain, or inter-domain at the least
 			if (!validateFlow(f)) {
@@ -1318,6 +1416,12 @@ int Controller::getDPID(std::string IP)
 
 int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 {
+	// Check if we can get it from mapping first, if not we go through long process of adding it
+	int port = getPortFromMap(srcIP, dstIP);
+	if (port != -1) {
+		return port;
+	}
+
     // Ensure our hostIndex is valid
 	int hostIndex = referenceTopology->hostIndex;
 	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
@@ -1334,29 +1438,36 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 		return -1;
 	}
 
-	// Get nodes associated with srcIP and dstIP, and analyze their links
-	Node srcNode = referenceTopology->getNodeByIP(srcIP);
-	Node dstNode = referenceTopology->getNodeByIP(dstIP);
+	// Get amount of hosts/switches linked on each IP
+	int srcHostCount = getNumLinks(srcIP, false);
 
-	// Get all links connected to srcNode, sort by their DPIDs
-	std::vector<std::string> srcLinks = srcNode.getLinks();
-	std::vector<int> dpidLinks;
-	int dstDPID = getDPID(dstIP);
+	// Get links associated with our srcIP
+	std::vector<std::string> srcLinks = n.getLinks();
 
-	for (std::string link : srcLinks) {
-		// Get the DPID associated with the link
-		int dpid = getDPID(link);
-		dpidLinks.push_back(dpid);
-	}
+	// // Get total list of interfaces associated with srcIP and dstIP
+	// std::vector<std::string> srcInterfaces = getInterfaces(srcIP);
+	// if (srcInterfaces.empty() || dstInterfaces.empty()) {
+	// 	return -1;
+	// }
+	// This was actually not necessary. Oh well.
 
-	// Select the DPID matching the dstNode IP, and return the index of the link
-	for (int i = 0; i < dpidLinks.size(); ++i) {
-		if (dpidLinks[i] == dstDPID) {
-			return i; // Return the index of the link
+	// Iterate through srcLinks and get the index matching our dstIP
+	int dstIndex = -1;
+	for (int i = 0; i < srcLinks.size(); i++) {
+		if (srcLinks[i] == dstIP) {
+			dstIndex = i;
+			break;
 		}
 	}
+	if (dstIndex = -1) { // No link/interface exists if this is true
+		return -1;
+	}
 
-	return -1; // No matching link found
+	// Add the port to our mapping for future use
+	int outputPort = srcHostCount + dstIndex;
+	addPortToMap(srcIP, dstIP, outputPort);
+
+	return outputPort;
 }
 
 std::string Controller::getIPFromOutputPort(std::string srcIP, int outputPort)
