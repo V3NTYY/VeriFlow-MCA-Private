@@ -404,7 +404,7 @@ void MCA_VeriFlow::printStatus()
     for (int i = 0; i < topology.getTopologyCount(); i++) {
         bool isInstanceConnected = (controller.socketTopologyMap.find(i) != controller.socketTopologyMap.end());
         if (i != topology.hostIndex) {
-            loggy << " - Topology " << i << ": [CONNECTION-]" << (isInstanceConnected ? "ACTIVE]" : "INACTIVE]") << std::endl;
+            loggy << " - Topology " << i << ": [CONNECTION-" << (isInstanceConnected ? "ACTIVE]" : "INACTIVE]") << std::endl;
         } else {
             loggy << " - Topology " << i << ": [SERVER-" << (runService ? "ACTIVE]" : "INACTIVE]") << std::endl;
         }
@@ -1050,14 +1050,17 @@ int main() {
                 // Re-init CCPDN connections
                 mca_veriflow->controller.initCCPDN();
 
+                int destIndex = testMethod;
+                int localIndex = mca_veriflow->topology.hostIndex;
+
                 // Send different CCPDN digests
                 Flow f("10.0.0.5", "192.168.1.1/24", "10.0.0.6", true);
-                Digest reqVer(0, 0, 1, 0, 0, ""); // asks for perform verification with flow
+                Digest reqVer(0, 0, 1, localIndex, destIndex, ""); // asks for perform verification with flow
                 reqVer.appendFlow(f);
 
                 // Get topology in string format
                 std::string topologyString = mca_veriflow->topology.topology_toString(mca_veriflow->topology.hostIndex); // get topology at index n
-                Digest sendUp(0, 1, 0, 0, 0, topologyString); // makes the topology located at index n the most up-to-date
+                Digest sendUp(0, 1, 0, localIndex, destIndex, topologyString); // makes the topology located at index n the most up-to-date
 
                 // Get topology
                 int* socket = mca_veriflow->controller.getSocketFromIndex(testMethod);

@@ -103,6 +103,7 @@ void Controller::CCPDNThread(bool *run)
 			if (currentSock > max_read) {
 				max_read = currentSock;
 			}
+			loggy << "[CCPDN]: Monitoring " << currentSock << " with read set" << std::endl;
 		}
 
 		// Monitor all sockets
@@ -110,14 +111,17 @@ void Controller::CCPDNThread(bool *run)
 
 		// Select() had an error -- add to error count
 		if (activity < 0) {
+			loggy << "[CCPDN-ERROR]: Select error, " << std::to_string(max_read+1) << std::endl;
 			continue;
 		} else if (activity == 0) { // No activity on sockets
+			loggy << "[CCPDN]: No activity on sockets" << std::endl;
 			continue;
 		}
 
 		// If we are at this point, theres data on a socket. Find it and do recv() and parse it
 		for (int currentSock : acceptedCC) {
 			if (FD_ISSET(currentSock, &read_sockets)) {
+				loggy << "[CCPDN]: Data on socket " << currentSock << std::endl;
 				recvProcessCCPDN(currentSock);
 			}
 		}
@@ -203,13 +207,11 @@ bool Controller::initCCPDN()
 
 		// Skip all instances until we are past the host index
 		if (i <= hostIndex) {
-			loggy << "Skipping instance #" << i << " (not past host index)" << std::endl;
 			continue;
 		}
 
 		// Skip any instances we've already connected to
 		if (socketTopologyMap.find(i) != socketTopologyMap.end()) {
-			loggy << "Already connected to instance #" << i << std::endl;
 			continue;
 		}
 
