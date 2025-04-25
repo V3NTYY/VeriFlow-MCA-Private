@@ -76,7 +76,10 @@ void Controller::flowHandlerThread(bool *run)
 			parseFlow(f);
 		}
 
-		recvSharedFlag = true;
+		// Reset flags
+		if (!fhFlag) {
+			recvSharedFlag = true;
+		}
 		pauseOutput = false;
 	}
 }
@@ -1108,20 +1111,21 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 		localCount++;
 	}
 
-	// Reset fHFlag since the statsreply packet has been received
-	fhFlag = false;
-	if (pause) {
-		pauseOutput = false;
-	}
-
 	for (Flow f : sharedFlows) {
+		loggy << "[CCPDN]: Flow: " << f.flowToStr(false) << std::endl;
 		if (f.getSwitchIP() == IP && !f.isMod()) {
 			flows.push_back(f);
 		}
 	}
 
+	// Reset flags since the statsreply packet has been received
+	fhFlag = false;
 	pause_rst = false;
 	recvSharedFlag = true;
+	if (pause) {
+		pauseOutput = false;
+	}
+
 	return flows;
 }
 
@@ -1678,8 +1682,6 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		std::string targetSwitch = getSrcFromXID(reply->header.xid);
 		std::string nextHop = getIPFromOutputPort(targetSwitch, output_port);
 		std::string rulePrefix = OpenFlowMessage::getRulePrefix(wildcards, rulePrefixIP);
-
-		loggy << "[CCPDN]: Flow rule: " << rulePrefix << " on switch: " << targetSwitch << " with next hop: " << nextHop << std::endl;
 
 		// Add flow to shared flows
 		recvSharedFlag = false;
