@@ -6,6 +6,33 @@ std::vector<TimestampPacket> TCPAnalyzer::currentPackets;
 std::mutex TCPAnalyzer::currentPacketsMutex;
 bool Controller::pauseOutput = false;
 
+// Use \0 as delimiter and split a concatenated packet into smaller packets
+std::vector<std::string> splitPcktInput(const std::string& input) {
+    std::vector<std::string> words;
+    std::string word;
+
+    // Iterate through the input string
+    for (size_t i = 0; i < input.length(); i++) {
+        if (input[i] == '\0') {
+            // If we encounter the delimiter, add the current word to the vector
+            if (!word.empty()) {
+                words.push_back(word);
+                word.clear();
+            }
+        } else {
+            // Otherwise, add the character to the current word
+            word += input[i];
+        }
+    }
+
+    // Add the last word if it's not empty
+    if (!word.empty()) {
+        words.push_back(word);
+    }
+
+    return words;
+}
+
 // MAIN THREADS
 void Controller::controllerThread(bool* run)
 {
@@ -1984,31 +2011,4 @@ bool Controller::validateFlow(Flow f)
 	
 	// Nothing found -- not valid
     return false;
-}
-
-// Use \0 as delimiter and split a concatenated packet into smaller packets
-std::vector<std::string> splitPcktInput(const std::string& input) {
-    std::vector<std::string> words;
-    std::string word;
-
-    // Iterate through the input string
-    for (size_t i = 0; i < input.length(); i++) {
-        if (input[i] == '\0') {
-            // If we encounter the delimiter, add the current word to the vector
-            if (!word.empty()) {
-                words.push_back(word);
-                word.clear();
-            }
-        } else {
-            // Otherwise, add the character to the current word
-            word += input[i];
-        }
-    }
-
-    // Add the last word if it's not empty
-    if (!word.empty()) {
-        words.push_back(word);
-    }
-
-    return words;
 }
