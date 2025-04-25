@@ -267,7 +267,10 @@ bool Topology::outputToFile(std::string filename)
 		outputFile << "S#\n";
 		for (int j = 0; j < switches.size(); j++) {
 			loggy << "[CCPDN]: Writing switch " << switches[j].getIP() << " to file:" << std::endl;
-			loggy << "Links: " << switches[j].getLinks() << std::endl;
+			std::vector<std::string> links = switches[j].getLinks();
+			for (int k = 0; k < links.size(); k++) {
+				loggy << "Link " << k << ": " << links[k] << std::endl;
+			}
 			outputFile << switches[j].filePrint() << "\n";
 		}
 
