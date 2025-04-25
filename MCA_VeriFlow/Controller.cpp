@@ -75,6 +75,8 @@ void Controller::flowHandlerThread(bool *run)
 		for (Flow f : operatingFlows) {
 			parseFlow(f);
 		}
+
+		recvSharedFlag = true;
 	}
 }
 
@@ -390,7 +392,6 @@ void Controller::parseFlow(Flow f)
 {
 	// Error checking:
 	if (f.getSwitchIP() == "" || f.getNextHopIP() == "") {
-		recvSharedFlag = true;
 		return;
 	}
 
@@ -676,10 +677,12 @@ std::vector<std::string> Controller::getInterfaces(std::string IP)
 
 std::string Controller::getSrcFromXID(uint32_t xid)
 {
-	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
-	if (IPs.first.empty()) {
+	// Check if the XID exists in our map
+	if (xidFlowMap.find(xid) == xidFlowMap.end()) {
 		return "";
 	}
+
+	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
 
 	return IPs.first;
 }
@@ -969,7 +972,6 @@ bool Controller::addFlowToTable(Flow f)
 	// Update XID mapping, use to track the return flow
 	int genXID = generateXID(referenceTopology->hostIndex);
 	expFlowXID = genXID;
-	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
 
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
 	bool sent = false;
@@ -1443,7 +1445,6 @@ int Controller::getOutputPort(std::string srcIP, std::string dstIP)
 	// Iterate through srcLinks and get the index matching our dstIP
 	int dstIndex = -1;
 	for (int i = 0; i < srcLinks.size(); i++) {
-		loggy << "Link: " << srcLinks[i] << std::endl;
 		if (srcLinks[i] == dstIP) {
 			dstIndex = i;
 			break;
@@ -1544,16 +1545,20 @@ bool Controller::updateXIDMapping(uint32_t xid, std::string srcIP, std::string d
 
 std::string Controller::getDstFromXID(uint32_t xid)
 {
-    std::pair<std::string, std::string> IPs = xidFlowMap[xid];
-	if (IPs.second.empty()) {
+    // Check if the XID exists in our map
+	if (xidFlowMap.find(xid) == xidFlowMap.end()) {
 		return "";
 	}
+
+	std::pair<std::string, std::string> IPs = xidFlowMap[xid];
 
 	return IPs.second;
 }
 
 int Controller::generateXID(int topologyIndex)
 {
+	// Seed random
+	srand(time(0));
 	// Each topology will have a range of 1000 values, so topology 0 has 0-999, topology 1 has 1000-1999, etc.
 	int baseXID = topologyIndex * 1000;
 	int randomXID = rand() % 1000; // Random number between 0 and 999
