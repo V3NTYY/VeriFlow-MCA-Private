@@ -77,6 +77,7 @@ void Controller::flowHandlerThread(bool *run)
 		}
 
 		recvSharedFlag = true;
+		pauseOutput = false;
 	}
 }
 
@@ -973,33 +974,12 @@ bool Controller::addFlowToTable(Flow f)
 	int genXID = generateXID(referenceTopology->hostIndex);
 	expFlowXID = genXID;
 
-    // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
-	bool sent = false;
-	int localCount = 0;
-	gotFlowMod = false;
-	while (!gotFlowMod) {
-		// TIMEOUT for flow mod
-		if (localCount > 14) {
-			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow mod from controller\n");
-			pause_rst = false;
-			pauseOutput = false;
-			return false;
-		}
-
-		if (!sent) {
-			// Send the FlowHandler message and wait for response
-			if (!sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID))) {
-				loggyErr("[CCPDN-ERROR]: Failed to add flow\n");
-				pause_rst = false;
-				pauseOutput = false;
-				return false;
-			}
-			else {
-				sent = true;
-			}
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		localCount++;
+	// Send the FlowHandler message and wait for response
+	if (!sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID))) {
+		loggyErr("[CCPDN-ERROR]: Failed to add flow\n");
+		pause_rst = false;
+		pauseOutput = false;
+		return false;
 	}
 
 	return true;
