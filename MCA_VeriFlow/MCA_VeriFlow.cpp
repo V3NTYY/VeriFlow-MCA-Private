@@ -1060,7 +1060,7 @@ int main() {
 
                 // Get topology in string format
                 std::string topologyString = mca_veriflow->topology.topology_toString(mca_veriflow->topology.hostIndex); // get topology at index n
-                Digest sendUp(0, 1, 0, localIndex, destIndex, topologyString); // makes the topology located at index n the most up-to-date
+                Digest sendUp(0, 1, 0, localIndex, destIndex, topologyString); // makes the topology located at index n the most up-to-date)
 
                 // Get topology
                 int* socket = mca_veriflow->controller.getSocketFromIndex(testMethod);

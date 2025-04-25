@@ -155,6 +155,7 @@ void Controller::recvProcessCCPDN(int socket)
 
 	// Skip empty packets
 	if (packet.empty()) {
+		loggy << "[CCPDN-ERROR]: Empty packet received from CCPDN instance\n";
 		return;
 	}
 
@@ -175,6 +176,9 @@ void Controller::recvProcessCCPDN(int socket)
 		return;
 	}
 
+	Digest packetDigest;
+	packetDigest.fromJson(packet_str);
+
 	// Based on code returned, apply functionality
 	switch (Digest::readDigest(packet_str)) {
 		case 0:
@@ -182,10 +186,11 @@ void Controller::recvProcessCCPDN(int socket)
 			break;
 		case 1:
 			loggy << "[CCPDN]: Calling synchTopology..." << std::endl;
+			synchTopology(packetDigest);
 			break;
 		case 2:
 			loggy << "[CCPDN]: Calling performVerification..." << std::endl;
-			loggy << "Flow data: " << Digest::getFlow(packet_str).flowToStr(false) << std::endl;
+			loggy << "Flow data: " << packetDigest.getFlow().flowToStr(false) << std::endl;
 			break;
 		case 3:
 			loggy << "[CCPDN]: Sending verification results... (TRUE)" << std::endl;

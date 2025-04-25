@@ -37,6 +37,9 @@ public:
     void appendFlow(Flow f);
     Flow getFlow();
 
+    // Topology methods
+    std::vector<Node> getTopology(std::string message);
+    
     // Misc/getters
     bool getSynchBit();
     bool getUpdateBit();

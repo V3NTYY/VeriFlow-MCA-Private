@@ -110,8 +110,22 @@ Flow Digest::getFlow() {
 	return appendedFlow;
 }
 
-bool Digest::getSynchBit() {
-    return synch_bit; 
+std::vector<Node> Digest::getTopology(std::string message)
+{
+    // Parse payload string from msg
+    nlohmann::json j = nlohmann::json::parse(message);
+    std::string parsedTop = j["payload"].get<std::string>();
+
+    if (parsedTop.empty()) {
+        return std::vector<Node>();
+    }
+
+    return Topology::string_toTopology(parsedTop);
+}
+
+bool Digest::getSynchBit()
+{
+    return synch_bit;
 }
 
 bool Digest::getUpdateBit() { 
