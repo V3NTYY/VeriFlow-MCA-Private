@@ -887,6 +887,7 @@ bool Controller::addFlowToTable(Flow f)
 	int genXID = generateXID(referenceTopology->hostIndex);
 	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
 
+	loggy << "DPIDS: " << switchDP << " " << output << std::endl;
     // Send the OpenFlow message to the flowhandler, flow already should have DPIDs
 	return sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID)); // true for add action
 }
@@ -918,6 +919,7 @@ bool Controller::removeFlowFromTable(Flow f)
 			updateXIDMapping(genXID, existingFlow.getSwitchIP(), existingFlow.getNextHopIP());
             
 			// Send the removal message to the controller
+			loggy << "DPIDS: " << switchDP << " " << output << std::endl;
 			return sendFlowHandlerMessage("removeflow-" + existingFlow.flowToStr(true) + "-" + std::to_string(genXID));
         }
     }
@@ -965,6 +967,8 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 			int genXID = generateXID(referenceTopology->hostIndex);
 			fhXID = genXID;
 			updateXIDMapping(genXID, IP, "");
+
+			loggy << "DPIDS: " << dpid << std::endl;
 
 			// Send the FlowHandler message and wait for response
 			if (!sendFlowHandlerMessage("listflows-" + dpid + "-" + std::to_string(genXID))) {
