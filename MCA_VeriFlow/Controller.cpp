@@ -1957,7 +1957,8 @@ bool Controller::validateFlow(Flow f)
 
 	// Only allow domain nodes to be added as next hops with inter-domain links
 	for (std::string link : srcLinks) {
-		if (link == f.getNextHopIP() && referenceTopology->getNodeByIP(link).isDomainNode()) {
+		if ((link == f.getNextHopIP() && referenceTopology->getNodeByIP(link).isDomainNode())
+		|| (link == f.getNextHopIP() && referenceTopology->getNodeByIP(f.getSwitchIP()).isDomainNode())) {
 			return true;
 		}
 	}
