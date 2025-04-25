@@ -104,7 +104,8 @@ def myNetwork(port1, port2, offset):
     info( '*** Starting switches\n')
     net.get('s1').start([c0])
     net.get('s2').start([c0])
-    net.get('s3').start([c1])
+    net.get('s3').start([c0]) # Domain node
+    net.get('s3').start([c1]) # Domain node
     net.get('s4').start([c1])
 
     info( '*** Post configure switches and hosts\n')
