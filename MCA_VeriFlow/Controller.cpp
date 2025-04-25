@@ -88,7 +88,7 @@ void Controller::flowHandlerThread(bool *run)
 void Controller::CCPDNThread(bool *run)
 {
 	// Handles receiving packets from currently connected sockCC connections (CCPDN connections)
-	loggy << "[CCPDN]: Starting CCPDN thread...\n";
+	loggy << "[CCPDN]: Starting CCPDN message listener thread...\n";
 	
 	while (*run) {
 		// Check if we have any connections to read from by using select()
@@ -103,25 +103,27 @@ void Controller::CCPDNThread(bool *run)
 			if (currentSock > max_read) {
 				max_read = currentSock;
 			}
-			loggy << "[CCPDN]: Monitoring " << currentSock << " with read set" << std::endl;
 		}
 
-		// Monitor all sockets
-		int activity = select(max_read + 1, &read_sockets, nullptr, nullptr, nullptr);
+		// Create a 1 second timeout incase we have a new connection on acceptedCC
+		struct timeval timeout;
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+
+		// Monitor all sockets with a timeout of 1 second
+		int activity = select(max_read + 1, &read_sockets, nullptr, nullptr, &timeout);
 
 		// Select() had an error -- add to error count
 		if (activity < 0) {
 			loggy << "[CCPDN-ERROR]: Select error, " << std::to_string(max_read+1) << std::endl;
 			continue;
 		} else if (activity == 0) { // No activity on sockets
-			loggy << "[CCPDN]: No activity on sockets" << std::endl;
 			continue;
 		}
 
 		// If we are at this point, theres data on a socket. Find it and do recv() and parse it
 		for (int currentSock : acceptedCC) {
 			if (FD_ISSET(currentSock, &read_sockets)) {
-				loggy << "[CCPDN]: Data on socket " << currentSock << std::endl;
 				recvProcessCCPDN(currentSock);
 			}
 		}
