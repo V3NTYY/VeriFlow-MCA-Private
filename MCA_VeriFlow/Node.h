@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 class Node {
 	static int nodeCount;
