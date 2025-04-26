@@ -107,6 +107,12 @@ bool Flow::actionType()
 	return action;
 }
 
+Flow Flow::inverseFlow()
+{
+	Flow inverseFlow = Flow(switchIP, rulePrefix, nextHopIP, !action);
+    return inverseFlow;
+}
+
 bool Flow::isMod()
 {
     return isFlowMod;

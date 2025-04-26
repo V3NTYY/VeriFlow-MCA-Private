@@ -1070,8 +1070,6 @@ int main() {
                     continue;
                 }
 
-                loggy << "Sending to socket " << std::to_string(*socket) << " from index " << std::to_string(testMethod) << std::endl;
-
                 // Send flow request to other CCPDN
                 mca_veriflow->controller.sendCCPDNMessage(*socket, reqVer.toJson());
 

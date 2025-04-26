@@ -30,6 +30,7 @@ class Flow {
 		std::string getRulePrefix();
 		std::string getNextHopIP();
 		bool actionType();
+		Flow inverseFlow();
 
 		bool isMod();
 		void setMod(bool mod);

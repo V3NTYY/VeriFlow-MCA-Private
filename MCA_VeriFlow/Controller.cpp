@@ -142,7 +142,6 @@ void Controller::CCPDNThread(bool *run)
 
 		// Select() had an error -- add to error count
 		if (activity < 0) {
-			loggy << "[CCPDN-ERROR]: Select error, " << std::to_string(max_read+1) << std::endl;
 			continue;
 		} else if (activity == 0) { // No activity on sockets
 			continue;
@@ -211,27 +210,73 @@ void Controller::recvProcessCCPDN(int socket)
 		Digest packetDigest;
 		packetDigest.fromJson(packet_str);
 
+#define TOPOLOGY_UPDATE_MASTER 0
+#define TOPOLOGY_UPDATE_SYNC 1
+#define PERFORM_VERIFICATION_REQ 2
+#define VERIFICATION_SUCCESS 3
+#define VERIFICATION_FAIL 4
+
+		// Make sure we aren't working with an empty flow
+		if (packetDigest.getFlow() == Flow("", "", "", false)) {
+			break;
+		}
+
+		Flow packetFlow = packetDigest.getFlow();
+		Flow inverseFlow = packetFlow.inverseFlow();
+		int returnIndex = packetDigest.getHostIndex();
+		int returnSocket = *getSocketFromIndex(returnIndex);
+
 		// Based on code returned, apply functionality
 		switch (Digest::readDigest(packet_str)) {
-			case 0:
-				loggy << "[CCPDN]: Calling sendUpdate..." << std::endl;
+
+			case TOPOLOGY_UPDATE_MASTER:
+				loggy << "[CCPDN]: Sending update to topology " << returnIndex << std::endl;
+				sendUpdate(false, returnIndex);
 				break;
-			case 1:
-				loggy << "[CCPDN]: Calling synchTopology..." << std::endl;
+
+
+			case TOPOLOGY_UPDATE_SYNC:
+				loggy << "[CCPDN]: Updating current topology to synchronize with topology " << returnIndex << std::endl;
 				synchTopology(packetDigest);
 				break;
-			case 2:
-				loggy << "[CCPDN]: Calling performVerification..." << std::endl;
-				loggy << "Flow data: " << packetDigest.getFlow().flowToStr(false) << std::endl;
+
+
+			case PERFORM_VERIFICATION_REQ:
+				loggy << "[CCPDN]: Performing verification request for topology " << returnIndex << std::endl;
+				bool result = performVerification(true, packetFlow);
+				if (result) {
+					// Send the success message back to the CCPDN instance
+					Digest success = Digest(false, true, true, hostIndex, returnIndex, "");
+					success.appendFlow(packetFlow);
+					sendCCPDNMessage(returnSocket, success.toJson());
+				} else {
+					Digest fail = Digest(true, true, true, hostIndex, returnIndex, "");
+					fail.appendFlow(packetFlow);
+					sendCCPDNMessage(returnSocket, fail.toJson());			
+				}
+				// Invert the flow to undo the effect on the local topology
+				performVerification(false, inverseFlow);
 				break;
-			case 3:
-				loggy << "[CCPDN]: Sending verification results... (TRUE)" << std::endl;
+
+
+			case VERIFICATION_SUCCESS:
+				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
+				loggy << "Flow: " << packetFlow.flowToStr(false) << " [SUCCESS]" << std::endl;
+
+				// No changes will be needed, we can keep the flow in the table
 				break;
-			case 4:
-				loggy << "[CCPDN]: Sending verification results... (FALSE)" << std::endl;
+
+
+			case VERIFICATION_FAIL:
+				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
+				loggy << "Flow: " << packetDigest.getFlow().flowToStr(false) << " [FAIL]" << std::endl;
+
+				// Undo anything with flow
 				break;
+
+
 			default: // Not recognized digest
-				loggy << "[CCPDN]: Digest not recognized!" << std::endl;
+				loggy << "[CCPDN-ERROR]: Received an incorrectly formatted digest" << std::endl;
 				break;
 		}
 	}
@@ -467,31 +512,31 @@ void Controller::parseFlow(Flow f)
 	// Case 1:
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
-	// if (f.isMod() && !isBothLocal) {
-    //     // Find the domain node
-    //     Node* domainNode = nullptr;
-    //     for (Node* dn : domainNodes) {
-    //         if (dn->connectsToTopology(referenceTopology->getTopologyIndex(f.getNextHopIP()))) {
-    //             domainNode = dn;
-    //             break;
-    //         }
-    //     }
+	if (f.isMod() && !isBothLocal) {
+        // Find the domain node
+        Node* domainNode = nullptr;
+        for (Node* dn : domainNodes) {
+            if (dn->connectsToTopology(referenceTopology->getTopologyIndex(f.getNextHopIP()))) {
+                domainNode = dn;
+                break;
+            }
+        }
 
-    //     if (domainNode) {
-    //         // Create adjusted flow that routes through domain node
-    //         Flow adjustedFlow(f.getSwitchIP(), f.getRulePrefix(), domainNode->getIP(), true);
-    //         recvSharedFlag = true;
-    //         performVerification(false, adjustedFlow);
+        if (domainNode) {
+            // Create adjusted flow that routes through domain node
+            Flow adjustedFlow(f.getSwitchIP(), f.getRulePrefix(), domainNode->getIP(), true);
+            recvSharedFlag = true;
+            performVerification(false, adjustedFlow);
             
-    //         // Forward verification request to next topology
-    //         int destTopology = referenceTopology->getTopologyIndex(f.getNextHopIP());
-    //         if (destTopology != -1) {
-    //             requestVerification(destTopology, f);
-    //         }
-    //     }
-    //     pauseOutput = false;
-    //     return;
-    // }
+            // Forward verification request to next topology
+            int destTopology = referenceTopology->getTopologyIndex(f.getNextHopIP());
+            if (destTopology != -1) {
+                requestVerification(destTopology, f);
+            }
+        }
+        pauseOutput = false;
+        return;
+    }
 }
 
 bool Controller::parsePacket(std::vector<uint8_t>& packet, bool xidCheck) {
@@ -1399,8 +1444,8 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 		for (int i = 0; i < referenceTopology->getTopologyCount(); i++) {
 			if (i != hostIndex) {
 				Digest message(false, true, false, hostIndex, i, topOutput);
-				// Send the digest (use sendDigest from controller)
-				if (false) {
+				// Send the digest
+				if (!sendCCPDNMessage(*getSocketFromIndex(i), message.toJson())) {
 					success = false;
 				}
 			}
@@ -1408,8 +1453,8 @@ bool Controller::sendUpdate(bool global, int destinationIndex)
 		return success;
 	}
 
-	// Send the digest (use sendDigest from controller)
-	return true;
+	// Send the digest
+	return sendCCPDNMessage(*getSocketFromIndex(destinationIndex), singleMessage.toJson());
 }
 
 std::vector<Node*> Controller::getDomainNodes()
