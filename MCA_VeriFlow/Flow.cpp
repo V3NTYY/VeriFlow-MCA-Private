@@ -1,7 +1,5 @@
 #include "Flow.h"
 
-#include <vector>
-
 std::vector<std::string> Flow::splitFlowString(std::string flow) {
     std::vector<std::string> parts;
     std::stringstream ss(flow);

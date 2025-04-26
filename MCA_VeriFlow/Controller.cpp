@@ -238,19 +238,19 @@ void Controller::recvProcessCCPDN(int socket)
 		// Based on code returned, apply functionality
 		switch (Digest::readDigest(packet_str)) {
 
-			case TOPOLOGY_UPDATE_MASTER:
+			case TOPOLOGY_UPDATE_MASTER: {
 				loggy << "[CCPDN]: Sending update to topology " << returnIndex << std::endl;
 				sendUpdate(false, returnIndex);
 				break;
+			}
 
-
-			case TOPOLOGY_UPDATE_SYNC:
+			case TOPOLOGY_UPDATE_SYNC: {
 				loggy << "[CCPDN]: Updating current topology to synchronize with topology " << returnIndex << std::endl;
 				synchTopology(packetDigest);
 				break;
+			}
 
-
-			case PERFORM_VERIFICATION_REQ:
+			case PERFORM_VERIFICATION_REQ: {
 				loggy << "[CCPDN]: Performing verification request for topology " << returnIndex << std::endl;
 				bool result = performVerification(true, packetFlow);
 				if (result) {
@@ -266,24 +266,26 @@ void Controller::recvProcessCCPDN(int socket)
 				// Invert the flow to undo the effect on the local topology
 				performVerification(false, inverseFlow);
 				break;
+			}
 
 
-			case VERIFICATION_SUCCESS:
+			case VERIFICATION_SUCCESS: {
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
 				loggy << "Flow: " << packetFlow.flowToStr(false) << " [SUCCESS]" << std::endl;
 
 				// No changes will be needed, we can keep the flow in the table
 				break;
+			}
 
-
-			case VERIFICATION_FAIL:
+			case VERIFICATION_FAIL: {
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
 				loggy << "Flow: " << packetDigest.getFlow().flowToStr(false) << " [FAIL]" << std::endl;
 
 				// Undo anything with flow
 				break;
+			}
 
-			case FLOW_LIST_REQUEST:
+			case FLOW_LIST_REQUEST: {
 				requestedFlows = retrieveFlows(requestPayload, false); // Should contain IP
 				flowListResponse = "";
 
@@ -295,8 +297,9 @@ void Controller::recvProcessCCPDN(int socket)
 				flowListMsg = Digest(true, true, false, hostIndex, returnIndex, flowListResponse);
 				sendCCPDNMessage(returnSocket, flowListMsg.toJson());
 				break;
+			}
 
-			case FLOW_LIST_RESPONSE:
+			case FLOW_LIST_RESPONSE: {
 
 				// If CCPDN_FLOW_RESPONSE isn't empty, wait until it is cleared
 				// If we get stuck infinitely/not parsing CCPDN messages then its because of this
@@ -321,6 +324,7 @@ void Controller::recvProcessCCPDN(int socket)
 				}
 
 				break;
+			}
 
 			default: // Not recognized digest
 				loggy << "[CCPDN-ERROR]: Received an incorrectly formatted digest" << std::endl;
