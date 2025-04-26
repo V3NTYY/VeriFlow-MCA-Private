@@ -705,21 +705,43 @@ std::string exec(const std::string& command, std::string match) {
 
 bool Controller::requestVerification(int destinationIndex, Flow f)
 {
-	/// WARNING: Only call this function for cross-domain verification
-
-	// Modify flow rule as necessary for our verification
-	Flow verifyFlow = adjustCrossTopFlow(f);
+	/// WARNING: This method should not be ran concurrently with itself, only one instance of this method should be running at a time
 
 	// Verify destination index exists within current topology
 	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
 		return false;
 	}
 
+	// Create digest message, send for verification
 	Digest verificationMessage(false, false, true, referenceTopology->hostIndex, destinationIndex, "");
-	verificationMessage.appendFlow(verifyFlow);
+	verificationMessage.appendFlow(f);
 
-	// Send digest method here
-	return true;
+	sendCCPDNMessage(*getSocketFromIndex(destinationIndex), verificationMessage.toJson());
+
+	// Wait for response from destination topology, or timeout of 3 seconds
+	auto start = std::chrono::steady_clock::now();
+	while (CCPDN_FLOW_SUCCESS.size() == 0 || CCPDN_FLOW_FAIL.size() == 0) {
+		auto now = std::chrono::steady_clock::now();
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 3000) {
+			break;
+		}
+	}
+
+	// Based on the responding vector, determine if we have a success or failure
+	if (CCPDN_FLOW_SUCCESS.size() > 0) {
+		Flow returnFlow = CCPDN_FLOW_SUCCESS.front();
+		loggy << "[CCPDN]: Verification successful for external flow: " << returnFlow.flowToStr(false) << std::endl;
+		CCPDN_FLOW_SUCCESS.clear();
+		return true;
+	} else if (CCPDN_FLOW_FAIL.size() > 0) {
+		Flow returnFlow = CCPDN_FLOW_FAIL.front();
+		loggy << "[CCPDN]: Verification failed for external flow: " << returnFlow.flowToStr(false) << std::endl;
+		CCPDN_FLOW_FAIL.clear();
+		return false;
+	}
+
+	// Timeout occurred
+	return false;
 }
 
 bool Controller::performVerification(bool externalRequest, Flow f)
@@ -747,9 +769,9 @@ bool Controller::undoVerification(Flow f)
 {
 	// Only undoes verification for flows that are already verified, and only for veriflow
 	Flow undoFlow = f.inverseFlow();
-	performVerification(false, undoFlow);
+	bool result = performVerification(false, undoFlow);
 	
-    return false;
+    return result;
 }
 
 bool Controller::resubmitVerify(Flow newFlow)
@@ -975,6 +997,9 @@ Controller::Controller()
 	basePort = -1;
 	gotFlowMod = false;
 
+	CCPDN_FLOW_RESPONSE.clear();
+	CCPDN_FLOW_SUCCESS.clear();
+	CCPDN_FLOW_FAIL.clear();
 	acceptedCC.clear();
 	sharedFlows.clear();
 	sharedPacket.clear();
@@ -1004,6 +1029,9 @@ Controller::Controller(Topology* t) {
 	basePort = -1;
 	gotFlowMod = false;
 
+	CCPDN_FLOW_RESPONSE.clear();
+	CCPDN_FLOW_SUCCESS.clear();
+	CCPDN_FLOW_FAIL.clear();
 	acceptedCC.clear();
 	sharedPacket.clear();
 	sharedFlows.clear();

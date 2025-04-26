@@ -147,6 +147,8 @@ class Controller {
 		bool					  recvSharedFlag;
 		int						  basePort;
 		std::vector<Flow>		  CCPDN_FLOW_RESPONSE;
+		std::vector<Flow>		  CCPDN_FLOW_FAIL;
+		std::vector<Flow>		  CCPDN_FLOW_SUCCESS;
 
 	private:
 		int						  sockfd;

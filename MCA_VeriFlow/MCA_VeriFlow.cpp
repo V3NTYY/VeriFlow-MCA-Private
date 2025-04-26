@@ -1047,34 +1047,52 @@ int main() {
                     continue;
                 }
 
-                // Re-init CCPDN connections
-                mca_veriflow->controller.initCCPDN();
-
                 int destIndex = testMethod;
                 int localIndex = mca_veriflow->topology.hostIndex;
 
-                // Send different CCPDN digests
-                Flow f("10.0.0.5", "192.168.1.1/24", "10.0.0.6", true);
-                Digest reqVer(0, 0, 1, localIndex, destIndex, ""); // asks for perform verification with flow
-                reqVer.appendFlow(f);
+                // Test requestVerification
+                Flow f("10.0.0.8", "192.168.1.1/24", "10.0.0.6", true);
+                loggy << "Requesting flow verification for flow: " << f.flowToStr(false) << std::endl;
+                bool result = mca_veriflow->controller.requestVerification(1, f);
+                loggy << "Verification result: " << (result ? "Success" : "Failure") << std::endl;
 
-                // Get topology in string format
-                std::string topologyString = mca_veriflow->topology.topology_toString(mca_veriflow->topology.hostIndex); // get topology at index n
-                Digest sendUp(0, 1, 0, localIndex, destIndex, topologyString); // makes the topology located at index n the most up-to-date)
-
-                // Get topology
-                int* socket = mca_veriflow->controller.getSocketFromIndex(testMethod);
-
-                if (socket == nullptr) {
-                    loggy << "[CCPDN-ERROR]: nullptr return for that socket." << std::endl;
-                    continue;
+                // Test getRelatedFlows
+                loggy << "Testing relatedFlows for 10.0.0.6" << std::endl;
+                std::vector<Flow> relatedFlows = mca_veriflow->controller.getRelatedFlows("10.0.0.6");
+                loggy << "Related flows:" << std::endl;
+                for (Flow flow : relatedFlows) {
+                    loggy << flow.flowToStr(false) << std::endl;
                 }
 
-                // Send flow request to other CCPDN
-                mca_veriflow->controller.sendCCPDNMessage(*socket, reqVer.toJson());
+                // Test filter flows
+                loggy << "Testing filter flows for previous flows above" << std::endl;
+                std::vector<Flow> localFlows = mca_veriflow->controller.filterFlows(relatedFlows,"10.0.0.7",0);
+                loggy << "Local flows:" << std::endl;
+                for (Flow flow : localFlows) {
+                    loggy << flow.flowToStr(false) << std::endl;
+                }
+                std::vector<Flow> remoteFlows = mca_veriflow->controller.filterFlows(relatedFlows,"10.0.0.7",1);
+                loggy << "Remote flows:" << std::endl;
+                for (Flow flow : remoteFlows) {
+                    loggy << flow.flowToStr(false) << std::endl;
+                }
 
-                // Send topology update to other CCPDN
-                mca_veriflow->controller.sendCCPDNMessage(*socket, sendUp.toJson());
+                // Test translate flows
+                loggy << "Testing translate flows for local flows" << std::endl;
+                std::vector<Flow> translatedLocalFlows = mca_veriflow->controller.translateFlows(localFlows, "10.0.0.6", "10.0.0.7");
+                loggy << "Translated local flows:" << std::endl;
+                for (Flow flow : translatedLocalFlows) {
+                    loggy << flow.flowToStr(false) << std::endl;
+                }
+
+                // Test undo verification
+                loggy << "Testing undo verification for flow: " << f.flowToStr(false) << std::endl;
+                bool undoResult = mca_veriflow->controller.undoVerification(f);
+
+                // Get DN test
+                loggy << "Testing getDN method (0:1): " << std::endl;
+                Node dn = mca_veriflow->controller.getBestDomainNode(0, 1);
+                loggy << "Best Domain Node: " << dn.getIP() << std::endl;
             }
         }
 
