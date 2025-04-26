@@ -166,23 +166,17 @@ bool Node::connectsToTopology(int topologyIndex) {
     }
 
     // Parse the linkingTopologies string
-    std::vector<std::string> connectedTopologies;
-    std::string current;
-    for (char c : linkingTopologies) {
-        if (c == ':') {
-            if (!current.empty()) {
-                connectedTopologies.push_back(current);
-                current.clear();
-            }
-        } else {
-            current += c;
-        }
-    }
-    if (!current.empty()) {
-        connectedTopologies.push_back(current);
-    }
+	std::vector<std::string> connectedTopologies;
+	std::stringstream ss(linkingTopologies);
+	std::string current;
 
-    // Check if topology is in  list
+	while (std::getline(ss, current, ':')) {
+		if (!current.empty()) {
+			connectedTopologies.push_back(current);
+		}
+	}
+
+    // Check if topology is in list
     for (const std::string& topo : connectedTopologies) {
         if (std::stoi(topo) == topologyIndex) return true;
     }

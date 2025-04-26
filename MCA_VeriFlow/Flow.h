@@ -21,6 +21,7 @@ class Flow {
 		// Marshalling methods
 		std::string flowToStr(bool printDPID);
 		static Flow* strToFlow(std::string payload);
+		static std::vector<std::string> splitFlowString(std::string flow);
 
 		// Misc methods
 		void print();

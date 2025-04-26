@@ -95,6 +95,14 @@ class Controller {
 		// Verification functions
 		bool requestVerification(int destinationIndex, Flow f);
 		bool performVerification(bool externalRequest, Flow f);
+		bool undoVerification(Flow f);
+
+		// All funcs related to external verification
+		bool resubmitVerify(Flow newFlow);
+		std::vector<Flow> getRelatedFlows(std::string IP);
+		std::vector<Flow> filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex);
+		std::vector<Flow> translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP);
+		Node getBestDomainNode(int firstIndex, int secondIndex);
 
 		// Get link/interface funcs
 		int getNumLinks(std::string IP, bool Switch);
@@ -138,6 +146,7 @@ class Controller {
 		bool					  gotFlowMod;
 		bool					  recvSharedFlag;
 		int						  basePort;
+		std::vector<Flow>		  CCPDN_FLOW_RESPONSE;
 
 	private:
 		int						  sockfd;

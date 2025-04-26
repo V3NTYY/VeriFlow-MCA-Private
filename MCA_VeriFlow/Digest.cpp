@@ -70,20 +70,26 @@ int Digest::readDigest(const std::string& data) {
         bool update = j["update_bit"].get<int>() == 1;
         bool verification = j["verification_bit"].get<int>() == 1;
 
-        if (synch && !update && !verification) {
+        if (synch && !update && !verification) { // 100
             return 0;
         } 
-        else if (update && !synch && !verification) {
+        else if (!synch && update && !verification) { // 010
             return 1;
         }
-        else if (verification && !synch && !update) {
+        else if (!synch  && !update && verification) { // 001
             return 2;
         }
-        else if (verification && update && !synch) {
+        else if (!synch && update && verification) { // 011
             return 3;
         }
-        else if (synch && verification && update) {
+        else if (synch && update && verification) { // 111
             return 4;
+        }
+        else if (!synch && !update && !verification) { // 000 -- requesting flow list from payload
+            return 5;
+        }
+        else if (synch && update && !verification) { // 110 -- flow list attached to payload
+            return 6;
         }
         else {
             return -1;

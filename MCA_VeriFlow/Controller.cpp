@@ -215,6 +215,8 @@ void Controller::recvProcessCCPDN(int socket)
 #define PERFORM_VERIFICATION_REQ 2
 #define VERIFICATION_SUCCESS 3
 #define VERIFICATION_FAIL 4
+#define FLOW_LIST_REQUEST 5
+#define FLOW_LIST_RESPONSE 6
 
 		// Make sure we aren't working with an empty flow
 		if (packetDigest.getFlow() == Flow("", "", "", false)) {
@@ -225,6 +227,13 @@ void Controller::recvProcessCCPDN(int socket)
 		Flow inverseFlow = packetFlow.inverseFlow();
 		int returnIndex = packetDigest.getHostIndex();
 		int returnSocket = *getSocketFromIndex(returnIndex);
+
+		// Define other vars outside switch statement
+		std::vector<Flow> requestedFlows;
+		std::string requestPayload = packetDigest.getPayload();
+		std::string flowListResponse = "";
+		Digest flowListMsg;
+		std::vector<std::string> partsList;
 
 		// Based on code returned, apply functionality
 		switch (Digest::readDigest(packet_str)) {
@@ -274,6 +283,44 @@ void Controller::recvProcessCCPDN(int socket)
 				// Undo anything with flow
 				break;
 
+			case FLOW_LIST_REQUEST:
+				requestedFlows = retrieveFlows(requestPayload, false); // Should contain IP
+				flowListResponse = "";
+
+				// If the "-" causes parsing issues, get rid of the delimiter being added at the end
+				for (Flow f : requestedFlows) {
+					flowListResponse += f.flowToStr(false) + "-";
+				}
+
+				flowListMsg = Digest(true, true, false, hostIndex, returnIndex, flowListResponse);
+				sendCCPDNMessage(returnSocket, flowListMsg.toJson());
+				break;
+
+			case FLOW_LIST_RESPONSE:
+
+				// If CCPDN_FLOW_RESPONSE isn't empty, wait until it is cleared
+				// If we get stuck infinitely/not parsing CCPDN messages then its because of this
+				// Whatever utilizes CCPDN_FLOW_RESPONSE, should clear ASAP after use
+				while  (CCPDN_FLOW_RESPONSE.size() > 0) {
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
+
+				requestPayload = packetDigest.getPayload(); // Contains flowlist
+				partsList = Flow::splitFlowString(requestPayload);
+
+				// Every 3 'parts' is a flow, combine them, form a flow then add it to CCPDN_FLOW_RESPONSE
+				for (int i = 0; i < partsList.size(); i += 3) {
+					if (i + 2 >= partsList.size()) {
+						break; // Avoid out-of-bounds access
+					}
+					std::string switchIP = partsList[i].substr(2, partsList[i].size() - 2);
+					std::string rulePrefix = partsList[i + 1];
+					std::string nextHopIP = partsList[i + 2];
+					Flow f(switchIP, rulePrefix, nextHopIP, true);
+					CCPDN_FLOW_RESPONSE.push_back(f);
+				}
+
+				break;
 
 			default: // Not recognized digest
 				loggy << "[CCPDN-ERROR]: Received an incorrectly formatted digest" << std::endl;
@@ -513,27 +560,7 @@ void Controller::parseFlow(Flow f)
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
 	if (f.isMod() && !isBothLocal) {
-        // Find the domain node
-        Node* domainNode = nullptr;
-        for (Node* dn : domainNodes) {
-            if (dn->connectsToTopology(referenceTopology->getTopologyIndex(f.getNextHopIP()))) {
-                domainNode = dn;
-                break;
-            }
-        }
-
-        if (domainNode) {
-            // Create adjusted flow that routes through domain node
-            Flow adjustedFlow(f.getSwitchIP(), f.getRulePrefix(), domainNode->getIP(), true);
-            recvSharedFlag = true;
-            performVerification(false, adjustedFlow);
-            
-            // Forward verification request to next topology
-            int destTopology = referenceTopology->getTopologyIndex(f.getNextHopIP());
-            if (destTopology != -1) {
-                requestVerification(destTopology, f);
-            }
-        }
+        resubmitVerify(f);
         pauseOutput = false;
         return;
     }
@@ -714,6 +741,115 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	}
 
 	return false;
+}
+
+bool Controller::undoVerification(Flow f)
+{
+	// Only undoes verification for flows that are already verified, and only for veriflow
+	Flow undoFlow = f.inverseFlow();
+	performVerification(false, undoFlow);
+	
+    return false;
+}
+
+bool Controller::resubmitVerify(Flow newFlow)
+{
+    return false;
+}
+
+std::vector<Flow> Controller::getRelatedFlows(std::string IP)
+{
+	std::vector<Flow> flows = retrieveFlows(IP, false);
+	std::vector<Flow> returnList;
+
+	Node n = referenceTopology->getNodeByIP(IP);
+	std::vector<std::string> IPList = n.getLinks();
+
+	for (std::string ip : IPList) {
+		Node m = referenceTopology->getNodeByIP(ip);
+		if (m.isSwitch() && m.isMatchingDomain(n)) {
+			std::vector<Flow> flows = retrieveFlows(ip, false);
+			for (Flow f : flows) {
+				if (f.getNextHopIP() == IP) {
+					returnList.push_back(f);
+				}
+			}
+		} else if (m.isSwitch()) {
+			// Send a digest to the target topology requesting this info
+			Digest request(false, false, false, referenceTopology->hostIndex, m.getTopologyID(), m.getIP());
+			sendCCPDNMessage(*getSocketFromIndex(m.getTopologyID()), request.toJson());
+
+			// Wait until CCPDN_FLOW_RESPONSE is no longer empty, or if a timeout of 500ms has passed
+			auto start = std::chrono::steady_clock::now();
+			while (CCPDN_FLOW_RESPONSE.size() == 0) {
+				auto now = std::chrono::steady_clock::now();
+				if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 500) {
+					break;
+				}
+			}
+
+			// Check if any of the flows in this list contain a nextHopIP leading to the target switch
+			for (Flow f : CCPDN_FLOW_RESPONSE) {
+				if (f.getNextHopIP() == IP) {
+					returnList.push_back(f);
+				}
+			}
+
+			// Clear CCPDN_FLOW_RESPONSE
+			CCPDN_FLOW_RESPONSE.clear();
+		}
+	}
+
+	loggy << "[CCPDN]: Found related flows for " << IP << std::endl;
+	for (Flow f : returnList) {
+		loggy << "Flow: " << f.flowToStr(false) << std::endl;
+	}
+
+    return returnList;
+}
+
+std::vector<Flow> Controller::filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex)
+{
+	std::vector<Flow> returnList;
+	for (Flow f : flows) {
+		Node src = referenceTopology->getNodeByIP(f.getSwitchIP());
+		Node dst = referenceTopology->getNodeByIP(f.getNextHopIP());
+
+		// Filter flows where only both match the specified topology index
+		if (src.getTopologyID() == topologyIndex && dst.getTopologyID() == topologyIndex) {
+			returnList.push_back(f);
+		} else if ((src.getIP() == domainNodeIP && dst.getTopologyID() == topologyIndex) // Domain node is not counted against the filter
+			|| (dst.getIP() == domainNodeIP && src.getTopologyID() == topologyIndex)) {
+			returnList.push_back(f);
+		}
+	}
+
+    return returnList;
+}
+
+std::vector<Flow> Controller::translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP)
+{
+	std::vector<Flow> translatedFlows;
+	for (Flow f : flows) {
+		if (f.getSwitchIP() == originalIP) {
+			Flow newFlow = Flow(newIP, f.getRulePrefix(), f.getNextHopIP(), f.isMod());
+			translatedFlows.push_back(newFlow);
+		} else if (f.getNextHopIP() == originalIP) {
+			Flow newFlow = Flow(f.getSwitchIP(), f.getRulePrefix(), newIP, f.isMod());
+			translatedFlows.push_back(newFlow);
+		}
+	}
+    return translatedFlows;
+}
+
+Node Controller::getBestDomainNode(int firstIndex, int secondIndex)
+{
+	for (Node* n : domainNodes) {
+		if (n->connectsToTopology(firstIndex) && n->connectsToTopology(secondIndex)) {
+			return *n;
+		}
+	}
+    return Node();
 }
 
 int Controller::getNumLinks(std::string IP, bool Switch)
