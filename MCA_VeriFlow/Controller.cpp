@@ -218,11 +218,6 @@ void Controller::recvProcessCCPDN(int socket)
 #define FLOW_LIST_REQUEST 5
 #define FLOW_LIST_RESPONSE 6
 
-		// Make sure we aren't working with an empty flow
-		if (packetDigest.getFlow() == Flow("", "", "", false)) {
-			break;
-		}
-
 		Flow packetFlow = packetDigest.getFlow();
 		Flow inverseFlow = packetFlow.inverseFlow();
 		int returnIndex = packetDigest.getHostIndex();
@@ -251,6 +246,11 @@ void Controller::recvProcessCCPDN(int socket)
 			}
 
 			case PERFORM_VERIFICATION_REQ: {
+				// Make sure we aren't working with an empty flow
+				if (packetDigest.getFlow() == Flow("", "", "", false)) {
+					break;
+				}
+
 				loggy << "[CCPDN]: Performing verification request for topology " << returnIndex << std::endl;
 				bool result = performVerification(true, packetFlow);
 				if (result) {
@@ -270,6 +270,10 @@ void Controller::recvProcessCCPDN(int socket)
 
 
 			case VERIFICATION_SUCCESS: {
+				// Make sure we aren't working with an empty flow
+				if (packetDigest.getFlow() == Flow("", "", "", false)) {
+					break;
+				}
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
 				loggy << "Flow: " << packetFlow.flowToStr(false) << " [SUCCESS]" << std::endl;
 
@@ -278,6 +282,10 @@ void Controller::recvProcessCCPDN(int socket)
 			}
 
 			case VERIFICATION_FAIL: {
+				// Make sure we aren't working with an empty flow
+				if (packetDigest.getFlow() == Flow("", "", "", false)) {
+					break;
+				}
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
 				loggy << "Flow: " << packetDigest.getFlow().flowToStr(false) << " [FAIL]" << std::endl;
 
