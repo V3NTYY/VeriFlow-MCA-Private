@@ -793,8 +793,7 @@ bool Controller::resubmitVerify(Flow newFlow)
 
 std::vector<Flow> Controller::getRelatedFlows(std::string IP)
 {
-	std::vector<Flow> flows = retrieveFlows(IP, false);
-	std::vector<Flow> returnList;
+	std::vector<Flow> returnList = retrieveFlows(IP, false);
 
 	Node n = referenceTopology->getNodeByIP(IP);
 	std::vector<std::string> IPList = n.getLinks();
@@ -1350,7 +1349,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 	fhFlag = false;
 	while (!fhFlag) {
 		// Timeout
-		if (localCount > 14) {
+		if (localCount > 25) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
 			if (pause) {
@@ -1389,7 +1388,7 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 				sent = true;
 			}
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		localCount++;
 	}
 
