@@ -1056,6 +1056,8 @@ int main() {
                 bool result = mca_veriflow->controller.requestVerification(1, f);
                 loggy << "Verification result: " << (result ? "Success" : "Failure") << std::endl;
 
+                loggy << std::endl << std::endl;
+
                 // Test getRelatedFlows
                 loggy << "Testing relatedFlows for 10.0.0.6" << std::endl;
                 std::vector<Flow> relatedFlows = mca_veriflow->controller.getRelatedFlows("10.0.0.6");
@@ -1064,35 +1066,47 @@ int main() {
                     loggy << flow.flowToStr(false) << std::endl;
                 }
 
+                loggy << std::endl << std::endl;
+
+                Flow f1("10.0.0.5", "10.10.10.10/12", "10.0.0.6", true);
+                Flow f2("10.0.0.6", "10.10.10.10/12", "10.0.0.5", true);
+                Flow f3("10.0.0.5", "10.10.10.10/12", "10.0.0.7", true);
+                Flow f4("10.0.0.7", "10.10.10.10/12", "10.0.0.5", true);
+                Flow f5("10.0.0.7", "10.10.10.10/12", "10.0.0.5", true);
+                Flow f6("10.0.0.8", "10.10.10.10/12", "10.0.0.6", true);
+                Flow f7("10.0.0.6", "10.10.10.10/12", "10.0.0.8", true);
+
+                std::vector<Flow> flows = { f1, f2, f3, f4, f5, f6, f7 };
+
                 // Test filter flows
-                loggy << "Testing filter flows for previous flows above" << std::endl;
-                std::vector<Flow> localFlows = mca_veriflow->controller.filterFlows(relatedFlows,"10.0.0.7",0);
+                std::vector<Flow> localFlows = mca_veriflow->controller.filterFlows(flows,"10.0.0.7",0);
                 loggy << "Local flows:" << std::endl;
                 for (Flow flow : localFlows) {
                     loggy << flow.flowToStr(false) << std::endl;
                 }
-                std::vector<Flow> remoteFlows = mca_veriflow->controller.filterFlows(relatedFlows,"10.0.0.7",1);
+                loggy << std::endl << std::endl;
+                std::vector<Flow> remoteFlows = mca_veriflow->controller.filterFlows(flows,"10.0.0.7",1);
                 loggy << "Remote flows:" << std::endl;
                 for (Flow flow : remoteFlows) {
                     loggy << flow.flowToStr(false) << std::endl;
                 }
 
                 // Test translate flows
-                loggy << "Testing translate flows for local flows" << std::endl;
-                std::vector<Flow> translatedLocalFlows = mca_veriflow->controller.translateFlows(localFlows, "10.0.0.6", "10.0.0.7");
+                loggy << "Testing translate_flows..." << std::endl << std::endl;
+                std::vector<Flow> translatedLocalFlows = mca_veriflow->controller.translateFlows(localFlows, "10.0.0.5", "10.0.0.7");
                 loggy << "Translated local flows:" << std::endl;
                 for (Flow flow : translatedLocalFlows) {
                     loggy << flow.flowToStr(false) << std::endl;
                 }
+                std::vector<Flow> translatedRemoteFlows = mca_veriflow->controller.translateFlows(remoteFlows, "10.0.0.6", "10.0.0.7");
+                loggy << "Translated remote flows:" << std::endl << std::endl;
+                for (Flow flow : translatedRemoteFlows) {
+                    loggy << flow.flowToStr(false) << std::endl;
+                }
 
                 // Test undo verification
-                loggy << "Testing undo verification for flow: " << f.flowToStr(false) << std::endl;
+                loggy << "Testing undo verification..." << std::endl << std::endl;
                 bool undoResult = mca_veriflow->controller.undoVerification(f);
-
-                // Get DN test
-                loggy << "Testing getDN method (0:1): " << std::endl;
-                Node dn = mca_veriflow->controller.getBestDomainNode(0, 1);
-                loggy << "Best Domain Node: " << dn.getIP() << std::endl;
             }
         }
 
