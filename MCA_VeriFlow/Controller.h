@@ -30,6 +30,7 @@
 class Controller {
 	public:
 		static bool pauseOutput;
+		static std::mutex sharedFlowsMutex;
 
 		// Constructors and destructors
 		Controller();

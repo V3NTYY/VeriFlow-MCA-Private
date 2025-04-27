@@ -5,6 +5,7 @@ bool TCPAnalyzer::pingFlag = false;
 std::vector<TimestampPacket> TCPAnalyzer::currentPackets;
 std::mutex TCPAnalyzer::currentPacketsMutex;
 bool Controller::pauseOutput = false;
+std::mutex Controller::sharedFlowsMutex;
 
 // Use \0 as delimiter and split a concatenated packet into smaller packets
 std::vector<std::string> splitPcktInput(const std::string& input) {
@@ -1456,6 +1457,9 @@ bool Controller::addFlowToTable(Flow f)
 	if (!validateFlow(f)) {
 		// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
+
+		// Lock the sharedFlows mutex to prevent early clearing of the vector
+		std::lock_guard<std::mutex> lock(sharedFlowsMutex);
 		recvSharedFlag = false;
 		f.setMod(true);
 		sharedFlows.push_back(f);
@@ -1486,6 +1490,9 @@ bool Controller::removeFlowFromTable(Flow f)
 	// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 	if (!validateFlow(f)) {
 		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
+
+		// Lock the sharedFlows mutex to prevent early clearing of the vector
+		std::lock_guard<std::mutex> lock(sharedFlowsMutex);
 		recvSharedFlag = false;
 		f.setMod(true);
 		sharedFlows.push_back(f);
@@ -1993,6 +2000,8 @@ std::string Controller::getIPFromOutputPort(std::string srcIP, int outputPort)
 
 void Controller::tryClearSharedFlows()
 {
+	std::lock_guard<std::mutex> lock(sharedFlowsMutex);
+	// Don't clear if recvShared is false
 	if (!recvSharedFlag) {
 		return;
 	}
@@ -2177,6 +2186,7 @@ void Controller::handleStatsReply(ofp_stats_reply* reply)
 		}
 
 		// Add flow to shared flows
+		std::lock_guard<std::mutex> lock(sharedFlowsMutex);
 		recvSharedFlag = false;
 		Flow f = Flow(targetSwitch, rulePrefix, nextHop, true);
 		f.setMod(false);
@@ -2230,6 +2240,7 @@ void Controller::handleFlowMod(ofp_flow_mod *mod)
 	}
 	
 	// Add flow to shared flows -- since it is added, do true
+	std::lock_guard<std::mutex> lock(sharedFlowsMutex);
 	recvSharedFlag = false;
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, command);
 	f.setMod(true);
@@ -2278,6 +2289,7 @@ void Controller::handleFlowRemoved(ofp_flow_removed *removed)
 
 	// Add flow to shared flows -- since it is added, do true
 	// recvSharedFlag = false;
+	std::lock_guard<std::mutex> lock(sharedFlowsMutex);
 	Flow f = Flow(targetSwitch, rulePrefix, nextHop, false);
 	f.setMod(true);
 	sharedFlows.push_back(f);
