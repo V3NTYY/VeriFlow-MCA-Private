@@ -277,7 +277,10 @@ void Controller::recvProcessCCPDN(int socket)
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
 				loggy << "Flow: " << packetFlow.flowToStr(false) << " [SUCCESS]" << std::endl;
 
-				// No changes will be needed, we can keep the flow in the table
+				// Push back to success vector if we are receiving
+				if (ALLOW_CCPDN_RECV) {
+					CCPDN_FLOW_SUCCESS.push_back(packetFlow);
+				}
 				break;
 			}
 
@@ -289,7 +292,10 @@ void Controller::recvProcessCCPDN(int socket)
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
 				loggy << "Flow: " << packetDigest.getFlow().flowToStr(false) << " [FAIL]" << std::endl;
 
-				// Undo anything with flow
+				// Push back to failure vector if we are receiving
+				if (ALLOW_CCPDN_RECV) {
+					CCPDN_FLOW_FAIL.push_back(packetFlow);
+				}
 				break;
 			}
 
@@ -724,17 +730,20 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 		return false;
 	}
 
+	// Don't allow recvProcessCCPDN() to clear the CCPND_FLOW_SUCCESS and CCPDN_FLOW_FAIL vectors
+	ALLOW_CCPDN_RECV = true;
+
 	// Create digest message, send for verification
 	Digest verificationMessage(false, false, true, referenceTopology->hostIndex, destinationIndex, "");
 	verificationMessage.appendFlow(f);
 
 	sendCCPDNMessage(*getSocketFromIndex(destinationIndex), verificationMessage.toJson());
 
-	// Wait for response from destination topology, or timeout of 3 seconds
+	// Wait for response from destination topology, or timeout of 1.5 seconds
 	auto start = std::chrono::steady_clock::now();
 	while (CCPDN_FLOW_SUCCESS.size() == 0 || CCPDN_FLOW_FAIL.size() == 0) {
 		auto now = std::chrono::steady_clock::now();
-		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 3000) {
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 1500) {
 			break;
 		}
 	}
@@ -753,6 +762,7 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 	}
 
 	// Timeout occurred
+	ALLOW_CCPDN_RECV = false;
 	return false;
 }
 
@@ -777,11 +787,22 @@ bool Controller::performVerification(bool externalRequest, Flow f)
 	return false;
 }
 
-bool Controller::undoVerification(Flow f)
+bool Controller::undoVerification(Flow f, int topologyIndex)
 {
-	// Only undoes verification for flows that are already verified, and only for veriflow
+	// Verify topology index is within the topology range, or is -1
+	if (topologyIndex < -1 || topologyIndex >= referenceTopology->getTopologyCount()) {
+		return false;
+	}
+
 	Flow undoFlow = f.inverseFlow();
-	bool result = performVerification(false, undoFlow);
+	bool result = false;
+
+	// Only undoes verification for flows that are already verified, and only for veriflow
+	if (topologyIndex == -1) {
+		result = performVerification(false, undoFlow);
+	} else {
+		result = requestVerification(topologyIndex, undoFlow);
+	}
 	
     return result;
 }
@@ -810,6 +831,10 @@ std::vector<Flow> Controller::getRelatedFlows(std::string IP)
 		} else if (m.isSwitch()) {
 			// Send a digest to the target topology requesting this info
 			Digest request(false, false, false, referenceTopology->hostIndex, m.getTopologyID(), m.getIP());
+
+			// Clear any previous hanging responses
+			CCPDN_FLOW_RESPONSE.clear();
+
 			sendCCPDNMessage(*getSocketFromIndex(m.getTopologyID()), request.toJson());
 
 			// Wait until CCPDN_FLOW_RESPONSE is no longer empty, or if a timeout of 500ms has passed
@@ -833,10 +858,9 @@ std::vector<Flow> Controller::getRelatedFlows(std::string IP)
 		}
 	}
 
-	loggy << "[CCPDN]: Found related flows for " << IP << std::endl;
-	for (Flow f : returnList) {
-		loggy << "Flow: " << f.flowToStr(false) << std::endl;
-	}
+	// Remove any duplicates before returning the list
+	auto end = std::unique(returnList.begin(), returnList.end());
+	returnList.erase(end, returnList.end());
 
     return returnList;
 }
@@ -848,14 +872,17 @@ std::vector<Flow> Controller::filterFlows(std::vector<Flow> flows, std::string d
 		Node src = referenceTopology->getNodeByIP(f.getSwitchIP());
 		Node dst = referenceTopology->getNodeByIP(f.getNextHopIP());
 
-		// Filter flows where only both match the specified topology index
-		if (src.getTopologyID() == topologyIndex && dst.getTopologyID() == topologyIndex) {
+		// Filter flows based on the topology index of the nextHop
+		if (dst.getTopologyID() == topologyIndex) {
 			returnList.push_back(f);
-		} else if ((src.getIP() == domainNodeIP && dst.getTopologyID() == topologyIndex) // Domain node is not counted against the filter
-			|| (dst.getIP() == domainNodeIP && src.getTopologyID() == topologyIndex)) {
+		} else if (dst.getIP() == domainNodeIP) {
 			returnList.push_back(f);
 		}
 	}
+
+	// Remove any duplicates before returning the list
+	auto end = std::unique(returnList.begin(), returnList.end());
+	returnList.erase(end, returnList.end());
 
     return returnList;
 }
@@ -872,6 +899,11 @@ std::vector<Flow> Controller::translateFlows(std::vector<Flow> flows, std::strin
 			translatedFlows.push_back(newFlow);
 		}
 	}
+
+	// Remove any duplicates before returning the list
+	auto end = std::unique(translatedFlows.begin(), translatedFlows.end());
+	translatedFlows.erase(end, translatedFlows.end());
+
     return translatedFlows;
 }
 
@@ -1007,6 +1039,7 @@ Controller::Controller()
 	recvSharedFlag = true;
 	basePort = -1;
 	gotFlowMod = false;
+	ALLOW_CCPDN_RECV = false;
 
 	CCPDN_FLOW_RESPONSE.clear();
 	CCPDN_FLOW_SUCCESS.clear();
@@ -1039,6 +1072,7 @@ Controller::Controller(Topology* t) {
 	recvSharedFlag = true;
 	basePort = -1;
 	gotFlowMod = false;
+	ALLOW_CCPDN_RECV = false;
 
 	CCPDN_FLOW_RESPONSE.clear();
 	CCPDN_FLOW_SUCCESS.clear();
@@ -1348,8 +1382,8 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 	pause_rst = true;
 	fhFlag = false;
 	while (!fhFlag) {
-		// Timeout
-		if (localCount > 25) {
+		// Timeout for 450ms
+		if (localCount > 90) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
 			if (pause) {

@@ -95,7 +95,7 @@ class Controller {
 		// Verification functions
 		bool requestVerification(int destinationIndex, Flow f);
 		bool performVerification(bool externalRequest, Flow f);
-		bool undoVerification(Flow f);
+		bool undoVerification(Flow f, int topologyIndex);
 
 		// All funcs related to external verification
 		bool resubmitVerify(Flow newFlow);
@@ -149,6 +149,7 @@ class Controller {
 		std::vector<Flow>		  CCPDN_FLOW_RESPONSE;
 		std::vector<Flow>		  CCPDN_FLOW_FAIL;
 		std::vector<Flow>		  CCPDN_FLOW_SUCCESS;
+		bool					  ALLOW_CCPDN_RECV;
 
 	private:
 		int						  sockfd;

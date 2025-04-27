@@ -1105,8 +1105,8 @@ int main() {
                 }
 
                 // Test undo verification
-                loggy << "Testing undo verification..." << std::endl << std::endl;
-                bool undoResult = mca_veriflow->controller.undoVerification(f);
+                loggy << "Testing undo verification on remote topoology..." << std::endl << std::endl;
+                bool undoResult = mca_veriflow->controller.undoVerification(f, 1);
             }
         }
 
