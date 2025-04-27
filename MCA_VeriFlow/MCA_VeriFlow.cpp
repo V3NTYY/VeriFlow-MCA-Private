@@ -1051,19 +1051,25 @@ int main() {
             if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
                 loggy << "Ensure topology is initialized and controller is linked first." << std::endl;
                 continue;
-            } else if (args.size() < 2) {
-                loggy << "Not enough arguments. Usage: test-verification-time [num-flows]" << std::endl;
+            } else if (args.size() < 3) {
+                loggy << "Not enough arguments. Usage: test-verification-time [num-flows] [is-intertopology (y/n)]" << std::endl;
                 continue;
             } else {
                 int numFlows = 0;
                 try {
                     numFlows = std::stoi(args.at(1));
                 } catch (const std::exception& e) {
-                    loggy << "Invalid number of flows. Usage: test-verification-time [num-flows]" << std::endl;
+                    loggy << "Invalid integer input. Usage: test-verification-time [num-flows] [is-intertopology (y/n)]" << std::endl;
                     continue;
                 }
 
-                mca_veriflow->controller.testVerificationTime(numFlows);
+                std::string isInterTopology = args.at(2);
+                bool interTopology = false;
+                if (isInterTopology == "y") {
+                    interTopology = true;
+                }
+
+                mca_veriflow->controller.testVerificationTime(numFlows, interTopology);
             }
         }
 

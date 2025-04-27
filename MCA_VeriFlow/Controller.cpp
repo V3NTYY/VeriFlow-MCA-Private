@@ -88,49 +88,16 @@ void Controller::flowHandlerThread(bool *run)
 			}
 		}
 
-		if (!sharedFlows.empty()) {
-			loggy << "PRE-PARSED SHARED FLOWS:" << std::endl;
-		}
-		for (Flow f : sharedFlows) {
-			loggy << f.flowToStr(false) << std::endl;
-		}
-
 		// Parse packet with scrutiny to XID
 		parsePacket(currPacket, true);
 
-		if (!sharedFlows.empty()) {
-			loggy << "PAST-PARSED SHARED FLOWS:" << std::endl;
-		}
-		for (Flow f : sharedFlows) {
-			loggy << f.flowToStr(false) << std::endl;
-		}
-
 		// Create optimal vector of flows to parse -- remove duplicates
 		std::vector<Flow> operatingFlows = sharedFlows;
-		if (!operatingFlows.empty()) {
-			loggy << "[CCPDN]: PT0 - OPERATING FLOWS:\n";
-		}
-		for (Flow f : operatingFlows) {
-			loggy << f.flowToStr(false) << std::endl;
-		}
 		auto end = std::unique(operatingFlows.begin(), operatingFlows.end());
 		operatingFlows.erase(end, operatingFlows.end());
-		if (!operatingFlows.empty()) {
-			loggy << "[CCPDN]: PT1 - OPERATING FLOWS:\n";
-		}
-		for (Flow f : operatingFlows) {
-			loggy << f.flowToStr(false) << std::endl;
-		}
 		// Erase all "empty" flows
 		Flow empty("", "", "", false);
 		operatingFlows.erase(std::remove(operatingFlows.begin(), operatingFlows.end(), empty), operatingFlows.end());
-
-		if (!operatingFlows.empty()) {
-			loggy << "[CCPDN]: PT2 - OPERATING FLOWS:\n";
-		}
-		for (Flow f : operatingFlows) {
-			loggy << f.flowToStr(false) << std::endl;
-		}
 		
 		// Handle all received flows
 		for (Flow f : operatingFlows) {
@@ -583,8 +550,6 @@ void Controller::closeAcceptedSocket(int socket)
 
 void Controller::parseFlow(Flow f)
 {
-	loggy << "[CCPDN]: Parsing flow rule: " << f.flowToStr(false) << std::endl;
-	loggy << "[CCPDN]: Flow rule is " << (f.isMod() ? "MOD" : "LIST") << std::endl;
 	// Error checking:
 	if (f.getSwitchIP() == "" || f.getNextHopIP() == "") {
 		return;
@@ -592,7 +557,6 @@ void Controller::parseFlow(Flow f)
 
 	// Make sure our flow isn't in the ignoreFlow list -- if it is, remove it and leave this method
 	if (std::find(ignoreFlows.begin(), ignoreFlows.end(), f) != ignoreFlows.end()) {
-		loggy << "[CCPDN]: Flow rule is dupe, ignoring verification." << std::endl;
 		ignoreFlows.erase(std::remove(ignoreFlows.begin(), ignoreFlows.end(), f), ignoreFlows.end());
 		return;
 	}
@@ -868,6 +832,7 @@ bool Controller::modifyFlowTableWithoutVerification(Flow f, bool success)
 	std::string outputPort = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
 
 	if (dpid == "-1" || outputPort == "-1") {
+		loggy << "[CCPDN-ERROR]: Attempted to add flow but couldn't resolve DPIDS: " << f.flowToStr(false) << std::endl;
 		return false;
 	}
 	f.setDPID(dpid, outputPort);
@@ -923,6 +888,17 @@ bool Controller::remapVerify(Flow newFlow)
 	local.setAction(newFlow.actionType());
 	remote.setAction(newFlow.actionType());
 
+	// Make sure the local flow can link to the given domainNodeIP
+	if (!referenceTopology->getNodeByIP(local.getSwitchIP()).isLinkedTo(domainNodeIP)) {
+		// If our current flow cannot remap to domain node, first find a path to a node connected to the domain node
+		// For the final project, we won't do this -- leave this problem for future work
+		// Ideally we could use BFS or something similar to find the best path -- make sure we mention this in presentation
+		loggy << "[CCPDN-ERROR]: Local flow has no link to domain node, verification unsuccessful: " << local.flowToStr(false) << std::endl;
+		return false;
+	}
+
+	// Make sure we aren't linking local->remote when we already have remote->local, or vice versa
+
 	// Handle duplicates in flow remapping -- meaning this flow involves the domain node itself
 	bool localDuplicate = (local.getSwitchIP() == local.getNextHopIP());
 	bool remoteDuplicate = (remote.getSwitchIP() == remote.getNextHopIP());
@@ -955,7 +931,7 @@ bool Controller::remapVerify(Flow newFlow)
 	}
 
 	// Verification successful at this point -- add/remove both from the flow table
-	loggy << "[CCPDN]: Inter-topology verification successful " << local.flowToStr(false) << std::endl;
+	loggy << "[CCPDN]: Inter-topology verification successful for flow remapping!" << std::endl;
 	if (!localDuplicate) {
 		modifyFlowTableWithoutVerification(local, true);
 	}
@@ -964,6 +940,37 @@ bool Controller::remapVerify(Flow newFlow)
 	}
 
     return true;
+}
+
+std::vector<std::string> Controller::getLinkPathToNode(std::string srcIP, std::string dstIP)
+{
+	std::vector<std::string> path;
+
+	// Get all links associated with source node
+	std::vector<std::string> srcLinks = referenceTopology->getNodeByIP(srcIP).getLinks();
+	std::vector<std::string> dstLinks = referenceTopology->getNodeByIP(dstIP).getLinks();
+
+	// Get the node copies of given links
+	std::vector<Node> srcNodes;
+	std::vector<Node> dstNodes;
+	for (std::string link : srcLinks) {
+		Node n = referenceTopology->getNodeByIP(link);
+		if (n.isSwitch()) {
+			srcNodes.push_back(n);
+		}
+	}
+	for (std::string link : dstLinks) {
+		Node n = referenceTopology->getNodeByIP(link);
+		if (n.isSwitch()) {
+			dstNodes.push_back(n);
+		}
+	}
+
+	// Iterate through our srcNode links, see if any of them are connected
+
+	// Check if we can 
+
+    return path;
 }
 
 std::vector<Flow> Controller::getRelatedFlows(std::string IP)
@@ -1865,12 +1872,14 @@ int Controller::getDPID(std::string IP)
     // Ensure valid host index
 	int hostIndex = referenceTopology->hostIndex;
 	if (hostIndex < 0 || hostIndex >= referenceTopology->getTopologyCount()) {
+		loggy << "[CCPDN-ERROR]: Couldn't resolve DPID, host index is invalid!\n";
 		return -1;
 	}
 
 	// Ensure IP exists within global topology -- leave local topology verification to addFlow, delFlow, listFlow functions
 	Node n = referenceTopology->getNodeByIP(IP);
 	if (n.isEmptyNode()) {
+		loggy << "[CCPDN-ERROR]: Couldn't resolve DPID, IP doesn't exist!\n";
 		return -1;
 	}
 
@@ -2309,13 +2318,22 @@ std::string Controller::readBuffer(char* buf)
 	return output;
 }
 
-void Controller::testVerificationTime(int numFlows) {
+void Controller::testVerificationTime(int numFlows, bool interTopology) {
     std::vector<std::string> switchIPs;
     for (Node n : referenceTopology->getTopology(referenceTopology->hostIndex)) {
         if (n.isSwitch() && switchIPs.size() < 5) {
             switchIPs.push_back(n.getIP());
         }
     }
+
+	std::vector<std::string> separateTopologyIPs;
+	if (interTopology) {
+		for (Node n : referenceTopology->getTopology(referenceTopology->hostIndex + 1)) {
+			if (n.isSwitch() && separateTopologyIPs.size() < 5) {
+				separateTopologyIPs.push_back(n.getIP());
+			}
+		}
+	}
 
     if (switchIPs.size() < 2) {
         loggy << "Not enough switches in topology (need at least 2)" << std::endl;
@@ -2338,6 +2356,19 @@ void Controller::testVerificationTime(int numFlows) {
 		Flow add = Flow(switchIPs[0], randPrefix, switchIPs[1], true);
 		Flow remove = Flow(switchIPs[0], randPrefix, switchIPs[1], false);
 
+		if (interTopology) {
+			std::string sepTopologySwitch = "";
+			for (int j = 0; j < separateTopologyIPs.size(); j++) {
+				Node n = referenceTopology->getNodeByIP(separateTopologyIPs[j]);
+				if (!n.isDomainNode()) {
+					sepTopologySwitch = separateTopologyIPs[j];
+					break;
+				}
+			}
+			add = Flow(switchIPs[0], randPrefix, sepTopologySwitch, true);
+			remove = Flow(switchIPs[0], randPrefix, sepTopologySwitch, false);
+		}
+
 		// Add flows to the vector
 		testFlows.push_back(add);
 		inverseFlows.push_back(remove);
@@ -2346,19 +2377,35 @@ void Controller::testVerificationTime(int numFlows) {
     std::vector<double> verificationTimes;
 
     // Test each flow and record verification time
-    for (Flow& flow : testFlows) {
-        auto start = std::chrono::high_resolution_clock::now();
-        performVerification(false, flow);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> duration = end - start;
-        verificationTimes.push_back(duration.count());
-    }
+	if (!interTopology) {
+		for (Flow& flow : testFlows) {
+			auto start = std::chrono::high_resolution_clock::now();
+			performVerification(false, flow);
+			auto end = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> duration = end - start;
+			verificationTimes.push_back(duration.count());
+		}
+	} else {
+		for (Flow& flow : testFlows) {
+			auto start = std::chrono::high_resolution_clock::now();
+			remapVerify(flow);
+			auto end = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> duration = end - start;
+			verificationTimes.push_back(duration.count());
+		}
+	}
 
 	loggy << "\nVerification timing complete. Undoing test-flows...\n" << std::endl;
 
 	// Undo previous flows to veriflow
 	for (Flow f : inverseFlows) {
-		performVerification(false, f);
+		if (!interTopology) {
+			// Remove the flow from the topology
+			performVerification(false, f);
+		} else {
+			// Remove the flow from the topology
+			remapVerify(f);
+		}
 	}
 
 	loggy << "\nTest-flows undone -- displaying times...\n" << std::endl;

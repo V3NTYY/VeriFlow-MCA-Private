@@ -101,6 +101,7 @@ class Controller {
 
 		// All funcs related to external verification
 		bool remapVerify(Flow newFlow);
+		std::vector<std::string> getLinkPathToNode(std::string srcIP, std::string dstIP);
 		std::vector<Flow> getRelatedFlows(std::string IP); //Unused
 		std::vector<Flow> filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex); //Unused
 		std::vector<std::vector<Flow>> translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP);
@@ -123,7 +124,7 @@ class Controller {
 		int  			   getOutputPort(std::string srcIP, std::string dstIP);
 		std::string		   getIPFromOutputPort(std::string srcIP, int outputPort);
 		void			   tryClearSharedFlows();
-		void               testVerificationTime(int numFlows);
+		void               testVerificationTime(int numFlows, bool interTopology);
 		void			   closeSockets();
 		void			   mapSocketToIndex(int* socket, int index);
 		int*			   getSocketFromIndex(int index);
