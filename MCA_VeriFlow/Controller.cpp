@@ -574,6 +574,7 @@ void Controller::parseFlow(Flow f)
 
 	// Case 0: Verification request, reason: Target IP and forward hops are all within host topology
 	if (f.isMod() && isBothLocal) {
+		loggy << "[CCPDN]: Running verification on flow rule: " << f.flowToStr(false) << std::endl;
 		// Run verification on the flow rule
 		recvSharedFlag = true;
 		if (!performVerification(false, f)) {
@@ -588,6 +589,7 @@ void Controller::parseFlow(Flow f)
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
 	if (f.isMod() && !isBothLocal) {
+		loggy << "[CCPDN]: Running verification on flow rule: " << f.flowToStr(false) << std::endl;
         if (!remapVerify(f)) {
 			// Verification unsuccessful -- remove from openflow table
 			modifyFlowTableWithoutVerification(f);
@@ -764,12 +766,10 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 	// Based on the responding vector, determine if we have a success or failure
 	if (CCPDN_FLOW_SUCCESS.size() > 0) {
 		Flow returnFlow = CCPDN_FLOW_SUCCESS.front();
-		loggy << "[CCPDN]: Verification successful for external flow: " << returnFlow.flowToStr(false) << std::endl;
 		CCPDN_FLOW_SUCCESS.clear();
 		return true;
 	} else if (CCPDN_FLOW_FAIL.size() > 0) {
 		Flow returnFlow = CCPDN_FLOW_FAIL.front();
-		loggy << "[CCPDN]: Verification failed for external flow: " << returnFlow.flowToStr(false) << std::endl;
 		CCPDN_FLOW_FAIL.clear();
 		return false;
 	}
@@ -879,7 +879,9 @@ bool Controller::remapVerify(Flow newFlow)
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
 	if (!remoteDuplicate) {
 		if (!requestVerification(remoteIndex, remote)) {
-			undoVerification(local, -1);
+			if (!localDuplicate) {
+				undoVerification(local, -1);
+			}
 			return false;
 		}
 	}

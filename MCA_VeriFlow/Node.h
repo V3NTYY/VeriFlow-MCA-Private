@@ -30,6 +30,7 @@ class Node {
 		void setPingResult(bool value);
 		bool connectsToTopology(int topologyIndex);
 		bool isLinkedTo(std::string IP);
+		void clearLinks() { linkList.clear(); }
 
 		int getTopologyID();
 		bool getPingResult();
@@ -40,6 +41,7 @@ class Node {
 		std::string filePrint();
 
 		void setTopologyID(int id) { topologyIndex = id; }
+		std::string getConnectingTopologies() { return linkingTopologies; }
 
 	private:
 		int							topologyIndex;	// Which topology this node belongs to

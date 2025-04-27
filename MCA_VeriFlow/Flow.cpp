@@ -30,8 +30,6 @@ Flow Flow::strToFlow(std::string payload)
 {
 	// #switchIP-rulePrefix-nextHopIP
 	Flow f = Flow("", "", "", false);
-
-	loggy << "Running strToFlow with payload: " << payload << std::endl;
 	
 	// Ensure correct size and format
 	if (payload.size() < 3) {
@@ -52,10 +50,6 @@ Flow Flow::strToFlow(std::string payload)
 
 	// Split flowstring
 	std::vector<std::string> parts = splitFlowString(payload);
-	for (int i = 0; i < parts.size(); i++) {
-		loggy << "Part " << std::to_string(i) << std::endl;
-		loggy << parts[i] << std::endl;
-	}
 	if (parts.size() != 3) {
 		return f;
 	}

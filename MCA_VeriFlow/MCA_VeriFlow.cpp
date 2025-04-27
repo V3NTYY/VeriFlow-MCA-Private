@@ -338,6 +338,34 @@ Topology MCA_VeriFlow::partitionTopology()
         }
     }
 
+    // Go through all topologies, ensure that if a domain node shares two topologies, that it is present in both
+    for (int i = 0; i < t.getTopologyCount(); i++) {
+        std::vector<Node*> domainNodes = controller.getDomainNodes();
+        for (Node* n : domainNodes) {
+            // Get all topologies that the domain node is connected to
+            std::string connectedTopologies = n->getConnectingTopologies();
+            std::vector<std::string> topologyIDs = splitInput(connectedTopologies, { ":" });
+
+            // Iterate through all topology IDs, and check if the domain node IP exists as a node within the topology
+            for (std::string topologyID : topologyIDs) {
+                int index = std::stoi(topologyID);
+                if (index < 0 || index >= t.getTopologyCount()) {
+                    continue;
+                }
+
+                // Add the domain node to every topology it is connected to, unless it already exists
+                Node m = t.getNodeByIP(n->getIP(), index);
+                if (m.isEmptyNode()) {
+                    // If the node does not exist, add it to the topology
+                    Node newNode = *n;
+                    newNode.clearLinks();
+                    newNode.setTopologyID(index);
+                    t.addNode(newNode);
+                }
+            }
+        }
+    }
+
     return t;
 }
 
