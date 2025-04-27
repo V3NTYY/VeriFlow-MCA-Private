@@ -566,7 +566,7 @@ void Controller::parseFlow(Flow f)
 	bool isValid = (isSrcLocal || isHopLocal) && referenceTopology->getNodeByIP(f.getSwitchIP()).isLinkedTo(f.getNextHopIP());
 	bool isBothLocal = isSrcLocal && isHopLocal;
 
-	// Invalid flow verification
+	// Invalid flow verification -- we don't handle other topologies verification, only inter-topology
 	if (!isValid) {
 		pauseOutput = false;
 		return;
@@ -579,7 +579,7 @@ void Controller::parseFlow(Flow f)
 		recvSharedFlag = true;
 		if (!performVerification(false, f)) {
 			// Verification unsuccessful -- remove from openflow table
-			modifyFlowTableWithoutVerification(f);
+			modifyFlowTableWithoutVerification(f, false);
 		}
 		pauseOutput = false;
 		return;
@@ -590,10 +590,8 @@ void Controller::parseFlow(Flow f)
 	// Action: run inter-topology verification method on flow rule
 	if (f.isMod() && !isBothLocal) {
 		loggy << "[CCPDN]: Running inter-topology verification on flow rule: " << f.flowToStr(false) << std::endl;
-        if (!remapVerify(f)) {
-			// Verification unsuccessful -- remove from openflow table
-			modifyFlowTableWithoutVerification(f);
-		}
+		// remapVerify will handle adding the flow to the tables
+        remapVerify(f);
         pauseOutput = false;
         return;
     }
@@ -820,7 +818,7 @@ bool Controller::undoVerification(Flow f, int topologyIndex)
     return result;
 }
 
-bool Controller::modifyFlowTableWithoutVerification(Flow f)
+bool Controller::modifyFlowTableWithoutVerification(Flow f, bool success)
 {
     // Meant for unsuccessful verification -- first generate tracking XID
 	int genXID = generateXID(referenceTopology->hostIndex);
@@ -836,11 +834,32 @@ bool Controller::modifyFlowTableWithoutVerification(Flow f)
 	}
 	f.setDPID(dpid, outputPort);
 
-	if (f.actionType()) {            
-		loggy << "Removing flow " << f.flowToStr(false) << " from flow table" << std::endl;
+	// If actionType is true, the flow is intended to be added
+	// If actionType is false, the flow is intended to be removed
+	// If success is true, stick with the normal action (add -> add)
+	// If success is false, we need to reverse the action (add -> remove)
+
+	// Add flow unsuccessful verification
+	if (f.actionType() && !success) {            
+		loggy << "[CCPDN]: Removing flow " << f.flowToStr(false) << " from flow table due to failed verification" << std::endl;
 		// Remove flow from table if this was an add (pretty sure all of them will be add)
 		result = sendFlowHandlerMessage("removeflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
-	} else {
+	} 
+	// Remove flow successful verification
+	else if (!f.actionType() && success) {
+		loggy << "[CCPDN]: Removing flow " << f.flowToStr(false) << " from flow table due to successful verification" << std::endl;
+		// Remove flow from table if this was an add (pretty sure all of them will be add)
+		result = sendFlowHandlerMessage("removeflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
+	}
+	// Remove flow unsuccessful verification
+	else if (f.actionType() && !success) {
+		loggy << "[CCPDN]: Adding flow " << f.flowToStr(false) << " to flow table due to failed verification" << std::endl;
+		// Add flow to table if this was a delete
+		result = sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
+	}
+	// Add flow successful verification
+	else if (f.actionType() && success) {
+		loggy << "[CCPDN]: Adding flow " << f.flowToStr(false) << " to flow table due to successful verification" << std::endl;
 		// Re-add the flow if this was a delete
 		result = sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
 	}
@@ -863,21 +882,22 @@ bool Controller::remapVerify(Flow newFlow)
 	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
 	Flow remote = translateFlows({newFlow}, newFlow.getSwitchIP(), domainNodeIP).at(0)[0];
 
+	local.setAction(newFlow.actionType());
+	remote.setAction(newFlow.actionType());
+
 	// Handle duplicates in flow remapping -- meaning this flow involves the domain node itself
 	bool localDuplicate = (local.getSwitchIP() == local.getNextHopIP());
 	bool remoteDuplicate = (remote.getSwitchIP() == remote.getNextHopIP());
 
 	// Verify the local flow -- if good, continue
 	if (!localDuplicate) {
-		loggy << "[CCPDN]: Verifying local flow: " << local.flowToStr(false) << std::endl;
+		loggy << "[CCPDN]: Verifying local flow for inter-topology: " << local.flowToStr(false) << std::endl;
 		if (!performVerification(false, local)) {
 			return false;
 		}
 	}
 
 	int remoteIndex = referenceTopology->getNodeByIP(remote.getSwitchIP()).getTopologyID();
-	loggy << "[CCPDN]: Remote index: " << remoteIndex << std::endl;
-	loggy << "Remote IP: " << remote.getSwitchIP() << std::endl;
 	
 	if (remoteIndex == 0) {
 		loggy << "Index couldn't properly adjust" << std::endl;
@@ -886,7 +906,7 @@ bool Controller::remapVerify(Flow newFlow)
 
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
 	if (!remoteDuplicate) {
-		loggy << "[CCPDN]: Verifying remote flow: " << remote.flowToStr(false) << std::endl;
+		loggy << "[CCPDN]: Verifying remote flow for inter-topology: " << remote.flowToStr(false) << std::endl;
 		if (!requestVerification(remoteIndex, remote)) {
 			if (!localDuplicate) {
 				loggy << "[CCPDN]: Verification failed for remote flow, undoing previous flow: " << local.flowToStr(false) << std::endl;
@@ -895,8 +915,16 @@ bool Controller::remapVerify(Flow newFlow)
 			return false;
 		}
 	}
-	
-	// Verification successful
+
+	// Verification successful at this point -- add/remove both from the flow table
+	loggy << "[CCPDN]: Inter-topology verification successful " << local.flowToStr(false) << std::endl;
+	if (!localDuplicate) {
+		modifyFlowTableWithoutVerification(local, true);
+	}
+	if (!remoteDuplicate) {
+		modifyFlowTableWithoutVerification(remote, true);
+	}
+
     return true;
 }
 
@@ -1389,10 +1417,9 @@ bool Controller::addFlowToTable(Flow f)
 
 	// Ensure the flow we are adding is either within our domain, or inter-domain at the least
 	if (!validateFlow(f)) {
-		loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this request\n");
-		pauseOutput = false;
-		recvSharedFlag = true;
-		return false;
+		// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
+		sharedFlows.push_back(f);
+		return true;
 	}
 
 	// Update XID mapping, use to track the return flow
@@ -1416,12 +1443,10 @@ bool Controller::removeFlowFromTable(Flow f)
 	// Craft an OpenFlow message with our given flow rule, ask for removal and send
     std::string switchIP = f.getSwitchIP();
 
-	// First validate our proposed flow
+	// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 	if (!validateFlow(f)) {
-		loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this request\n");
-		pauseOutput = false;
-		recvSharedFlag = true;
-		return false;
+		sharedFlows.push_back(f);
+		return true;
 	}
 
     std::vector<Flow> flows = retrieveFlows(switchIP, false);
@@ -1446,13 +1471,11 @@ bool Controller::removeFlowFromTable(Flow f)
 				return false;
 			}
 
-			// Ensure the flow we are adding is either within our domain, or inter-domain at the least
-			if (!validateFlow(f)) {
-				loggyErr("[CCPDN-ERROR]: Flow rule is not valid for this topology\n");
-				pauseOutput = false;
-				recvSharedFlag = true;
-				return false;
-			}
+			// This method isn't necessary since we can only retrieve valid flows at this point
+			// if (!validateFlow(existingFlow)) {
+			// 	sharedFlows.push_back(existingFlow);
+			// 	return true;
+			// }
 
 			// Update XID mapping, use to track the return flow
 			int genXID = generateXID(referenceTopology->hostIndex);

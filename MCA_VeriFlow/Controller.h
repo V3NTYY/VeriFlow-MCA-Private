@@ -96,7 +96,7 @@ class Controller {
 		bool requestVerification(int destinationIndex, Flow f);
 		bool performVerification(bool externalRequest, Flow f);
 		bool undoVerification(Flow f, int topologyIndex);
-		bool modifyFlowTableWithoutVerification(Flow f);
+		bool modifyFlowTableWithoutVerification(Flow f, bool success);
 
 		// All funcs related to external verification
 		bool remapVerify(Flow newFlow);
