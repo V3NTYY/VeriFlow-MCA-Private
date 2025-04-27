@@ -39,6 +39,8 @@ class Node {
 		std::string print();
 		std::string filePrint();
 
+		void setTopologyID(int id) { topologyIndex = id; }
+
 	private:
 		int							topologyIndex;	// Which topology this node belongs to
 		int							privateNodeID;

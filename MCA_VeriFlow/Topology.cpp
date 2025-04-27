@@ -165,7 +165,10 @@ Node Topology::getNodeByIP(std::string IP)
 		for (int j = 0; j < topologyList[i].size(); j++) {
 			// If the IP matches, return the node
 			if (topologyList[i][j].getIP() == IP) {
-				return topologyList[i][j];
+				Node returnNode = topologyList[i][j];
+				returnNode.setTopologyID(i); // For some reason, returnNode.getTopologyID() wasnt matching, so this is a temporary solution
+				// (shallow vs reference copy issue, but at this point its too far to find where it is)
+				return returnNode;
 			}
 		}
 	}
