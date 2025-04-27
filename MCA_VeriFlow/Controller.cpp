@@ -87,16 +87,49 @@ void Controller::flowHandlerThread(bool *run)
 			}
 		}
 
+		if (!sharedFlows.empty()) {
+			loggy << "PRE-PARSED SHARED FLOWS:" << std::endl;
+		}
+		for (Flow f : sharedFlows) {
+			loggy << f.flowToStr(false) << std::endl;
+		}
+
 		// Parse packet with scrutiny to XID
 		parsePacket(currPacket, true);
 
+		if (!sharedFlows.empty()) {
+			loggy << "PAST-PARSED SHARED FLOWS:" << std::endl;
+		}
+		for (Flow f : sharedFlows) {
+			loggy << f.flowToStr(false) << std::endl;
+		}
+
 		// Create optimal vector of flows to parse -- remove duplicates
 		std::vector<Flow> operatingFlows = sharedFlows;
+		if (!operatingFlows.empty()) {
+			loggy << "[CCPDN]: PT0 - OPERATING FLOWS:\n";
+		}
+		for (Flow f : operatingFlows) {
+			loggy << f.flowToStr(false) << std::endl;
+		}
 		auto end = std::unique(operatingFlows.begin(), operatingFlows.end());
 		operatingFlows.erase(end, operatingFlows.end());
+		if (!operatingFlows.empty()) {
+			loggy << "[CCPDN]: PT1 - OPERATING FLOWS:\n";
+		}
+		for (Flow f : operatingFlows) {
+			loggy << f.flowToStr(false) << std::endl;
+		}
 		// Erase all "empty" flows
 		Flow empty("", "", "", false);
 		operatingFlows.erase(std::remove(operatingFlows.begin(), operatingFlows.end(), empty), operatingFlows.end());
+
+		if (!operatingFlows.empty()) {
+			loggy << "[CCPDN]: PT2 - OPERATING FLOWS:\n";
+		}
+		for (Flow f : operatingFlows) {
+			loggy << f.flowToStr(false) << std::endl;
+		}
 		
 		// Handle all received flows
 		for (Flow f : operatingFlows) {
