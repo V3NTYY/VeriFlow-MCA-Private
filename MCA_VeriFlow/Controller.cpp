@@ -589,7 +589,7 @@ void Controller::parseFlow(Flow f)
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
 	if (f.isMod() && !isBothLocal) {
-		loggy << "[CCPDN]: Running verification on flow rule: " << f.flowToStr(false) << std::endl;
+		loggy << "[CCPDN]: Running inter-topology verification on flow rule: " << f.flowToStr(false) << std::endl;
         if (!remapVerify(f)) {
 			// Verification unsuccessful -- remove from openflow table
 			modifyFlowTableWithoutVerification(f);
@@ -828,6 +828,7 @@ bool Controller::modifyFlowTableWithoutVerification(Flow f)
 	bool result = true;
 
 	if (f.actionType()) {            
+		loggy << "Removing flow " << f.flowToStr(false) << " from flow table" << std::endl;
 		// Remove flow from table if this was an add (pretty sure all of them will be add)
 		result = sendFlowHandlerMessage("removeflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
 	} else {
@@ -865,12 +866,16 @@ bool Controller::remapVerify(Flow newFlow)
 	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
 	Flow remote = translateFlows({newFlow}, newFlow.getSwitchIP(), domainNodeIP).at(0)[0];
 
+	loggy << "Local remapped flow -> " << local.flowToStr(false) << std::endl;
+	loggy << "Remote remapped flow -> " << remote.flowToStr(false) << std::endl;
+
 	// Handle duplicates in flow remapping -- meaning this flow involves the domain node itself
 	bool localDuplicate = (local.getSwitchIP() == local.getNextHopIP());
 	bool remoteDuplicate = (remote.getSwitchIP() == remote.getNextHopIP());
 
 	// Verify the local flow -- if good, continue
 	if (!localDuplicate) {
+		loggy << "[CCPDN]: Verifying local flow: " << local.flowToStr(false) << std::endl;
 		if (!performVerification(false, local)) {
 			return false;
 		}
@@ -878,8 +883,10 @@ bool Controller::remapVerify(Flow newFlow)
 
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
 	if (!remoteDuplicate) {
+		loggy << "[CCPDN]: Verifying remote flow: " << remote.flowToStr(false) << std::endl;
 		if (!requestVerification(remoteIndex, remote)) {
 			if (!localDuplicate) {
+				loggy << "[CCPDN]: Verification failed for remote flow, undoing previous flow: " << local.flowToStr(false) << std::endl;
 				undoVerification(local, -1);
 			}
 			return false;
