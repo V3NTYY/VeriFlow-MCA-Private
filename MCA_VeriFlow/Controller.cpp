@@ -859,41 +859,6 @@ bool Controller::remapVerify(Flow newFlow)
 	Node domainNode = getBestDomainNode(localNode->getTopologyID(), remoteNode->getTopologyID());
 	std::string domainNodeIP = domainNode.getIP();
 
-	int remoteIndex = remoteNode->getTopologyID();
-	if (remoteNode->isDomainNode()) {
-		// If the domain node is the same as the local node, indexes won't work properly
-		// Instead, we will just use whichever index doesn't match the local node's index
-
-		// Get all topologies that the domain node is connected to
-		std::string connectedTopologies = remoteNode->getConnectingTopologies();
-		if (connectedTopologies.size() == 3) {
-			// Format, 0:1
-			try {
-				std::stringstream ss(connectedTopologies);
-				std::string indexStr;
-				std::getline(ss, indexStr, ':');
-				int index1 = std::stoi(indexStr);
-				std::getline(ss, indexStr, ':');
-				int index2 = std::stoi(indexStr);
-
-				if (index1 == localNode->getTopologyID()) {
-					remoteIndex = index2;
-				} else {
-					remoteIndex = index1;
-				}
-			} catch (std::exception& e) {
-				loggyErr("[CCPDN-ERROR]: Error in retrieving topology ID for verification, incrementing for test\n");
-				remoteIndex++;
-			}
-		}
-	}
-
-	// This only occurs with domain nodes -- if this happens, use the actual node reference
-	if (remoteIndex == localNode->getTopologyID()) {
-		loggyErr("[CCPDN-ERROR]: Error in retrieving topology ID for verification, incrementing for test\n");
-		remoteIndex++;
-	}
-
 	// Remap the flow into two separate flows, one for each topology -- use domain node IP to remap
 	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
 	Flow remote = translateFlows({newFlow}, newFlow.getSwitchIP(), domainNodeIP).at(0)[0];
@@ -908,6 +873,15 @@ bool Controller::remapVerify(Flow newFlow)
 		if (!performVerification(false, local)) {
 			return false;
 		}
+	}
+
+	int remoteIndex = referenceTopology->getNodeByIP(remote.getSwitchIP()).getTopologyID();
+	loggy << "[CCPDN]: Remote index: " << remoteIndex << std::endl;
+	loggy << "Remote IP: " << remote.getSwitchIP() << std::endl;
+	
+	if (remoteIndex == 0) {
+		loggy << "Index couldn't properly adjust" << std::endl;
+		remoteIndex = 1;
 	}
 
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification

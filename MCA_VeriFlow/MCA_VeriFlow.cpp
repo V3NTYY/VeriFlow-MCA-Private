@@ -198,6 +198,8 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
         n.setControllerAdjacency(isControllerAdjacent);
         isControllerAdjacent = false;
         topology.addNode(n);
+        loggy << "Added node: " << n.getIP() << std::endl;
+        loggy << "Node topology ID: " << n.getTopologyID() << std::endl;
     }
     return true;
 }
