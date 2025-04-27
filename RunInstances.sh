@@ -70,7 +70,7 @@ done
 
 if [[ $kill_vf == "y" ]]; then
     echo "Killing existing Main.py processes..."
-    ps aux | grep "Main.py" | grep -v "grep" | awk "$vfPort" | awk '{print $2}' | sudo xargs kill -9
+    ps aux | grep "Main.py" | awk '{print $2}' | sudo xargs kill -9
 fi
 
 echo ""
