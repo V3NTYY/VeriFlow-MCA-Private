@@ -738,8 +738,8 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 {
 	/// WARNING: This method should not be ran concurrently with itself, only one instance of this method should be running at a time
 
-	// Verify destination index exists within current topology
-	if (destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) {
+	// Verify destination index exists within current topology, and is not the host index
+	if ((destinationIndex < 0 || destinationIndex >= referenceTopology->getTopologyCount()) || (destinationIndex == referenceTopology->hostIndex)) {
 		return false;
 	}
 
@@ -849,6 +849,18 @@ bool Controller::remapVerify(Flow newFlow)
 	Node domainNode = getBestDomainNode(localNode.getTopologyID(), remoteNode.getTopologyID());
 	std::string domainNodeIP = domainNode.getIP();
 
+	int remoteIndex = remoteNode.getTopologyID();
+
+	// This only occurs with domain nodes -- if this happens, use the actual node reference
+	if (remoteIndex == localNode.getTopologyID()) {
+		remoteIndex = referenceTopology->getNodeReference(remoteNode)->getTopologyID();
+		// If for some reason we are still the same, just increment +1 i dont care at this point
+		if (remoteIndex == localNode.getTopologyID()) {
+			loggyErr("[CCPDN-ERROR]: Error in retrieving topology ID for verification, incrementing for test\n");
+			remoteIndex++;
+		}
+	}
+
 	// Remap the flow into two separate flows, one for each topology -- use domain node IP to remap
 	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
 	Flow remote = translateFlows({newFlow}, newFlow.getSwitchIP(), domainNodeIP).at(0)[0];
@@ -866,8 +878,8 @@ bool Controller::remapVerify(Flow newFlow)
 
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
 	if (!remoteDuplicate) {
-		if (!requestVerification(remoteNode.getTopologyID(), remote)) {
-			undoVerification(local, localNode.getTopologyID());
+		if (!requestVerification(remoteIndex, remote)) {
+			undoVerification(local, -1);
 			return false;
 		}
 	}
