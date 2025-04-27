@@ -100,8 +100,8 @@ class Controller {
 
 		// All funcs related to external verification
 		bool remapVerify(Flow newFlow);
-		std::vector<Flow> getRelatedFlows(std::string IP);
-		std::vector<Flow> filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex);
+		std::vector<Flow> getRelatedFlows(std::string IP); //Unused
+		std::vector<Flow> filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex); //Unused
 		std::vector<std::vector<Flow>> translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP);
 		Node getBestDomainNode(int firstIndex, int secondIndex);
 

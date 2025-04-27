@@ -33,7 +33,6 @@ void Digest::fromJson(const std::string& json_str) {
     try {
         nlohmann::json j = nlohmann::json::parse(json_str);
         std::string flow_data;
-        Flow appendFlow = Flow::strToFlow(flow_data);
 
         synch_bit = j["synch_bit"].get<int>() == 1;
         update_bit = j["update_bit"].get<int>() == 1;
@@ -42,7 +41,7 @@ void Digest::fromJson(const std::string& json_str) {
         destinationIndex = j["destinationIndex"].get<int>();
         payload = j["payload"].get<std::string>();
         flow_data = j["flow_data"].get<std::string>();
-        appendedFlow = appendFlow;
+        appendedFlow = Flow::strToFlow(flow_data);
 
     } catch (const std::exception& e) {
         loggyErr("JSON parsing error: ");

@@ -866,7 +866,7 @@ bool Controller::remapVerify(Flow newFlow)
 
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
 	if (!remoteDuplicate) {
-		if (!performVerification(false, remote)) {
+		if (!requestVerification(remoteNode.getTopologyID(), remote)) {
 			undoVerification(local, localNode.getTopologyID());
 			return false;
 		}
