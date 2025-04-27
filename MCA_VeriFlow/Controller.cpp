@@ -568,6 +568,7 @@ void Controller::parseFlow(Flow f)
 
 	// Invalid flow verification -- we don't handle other topologies verification, only inter-topology
 	if (!isValid) {
+		loggy << "[CCPDN-ERROR]: Flow rule is invalid due to being another topologies flow, Flow: " << f.flowToStr(false) << std::endl;
 		pauseOutput = false;
 		return;
 	}
@@ -1417,6 +1418,7 @@ bool Controller::addFlowToTable(Flow f)
 
 	// Ensure the flow we are adding is either within our domain, or inter-domain at the least
 	if (!validateFlow(f)) {
+		recvSharedFlag = false;
 		// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 		sharedFlows.push_back(f);
 		return true;
@@ -1445,6 +1447,7 @@ bool Controller::removeFlowFromTable(Flow f)
 
 	// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 	if (!validateFlow(f)) {
+		recvSharedFlag = false;
 		sharedFlows.push_back(f);
 		return true;
 	}
