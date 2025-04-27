@@ -827,6 +827,15 @@ bool Controller::modifyFlowTableWithoutVerification(Flow f)
 	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
 	bool result = true;
 
+	// Make sure DPID and output port are valid
+	std::string dpid = std::to_string(getDPID(f.getSwitchIP()));
+	std::string outputPort = std::to_string(getOutputPort(f.getSwitchIP(), f.getNextHopIP()));
+
+	if (dpid == "-1" || outputPort == "-1") {
+		return false;
+	}
+	f.setDPID(dpid, outputPort);
+
 	if (f.actionType()) {            
 		loggy << "Removing flow " << f.flowToStr(false) << " from flow table" << std::endl;
 		// Remove flow from table if this was an add (pretty sure all of them will be add)
@@ -861,6 +870,8 @@ bool Controller::remapVerify(Flow newFlow)
 			remoteIndex++;
 		}
 	}
+
+	loggy << "Remote index: " << remoteIndex << std::endl;
 
 	// Remap the flow into two separate flows, one for each topology -- use domain node IP to remap
 	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
