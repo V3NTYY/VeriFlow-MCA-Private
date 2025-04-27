@@ -1052,9 +1052,14 @@ int main() {
 
                 // Test requestVerification
                 Flow f("10.0.0.8", "192.168.1.1/24", "10.0.0.6", true);
-                loggy << "Requesting flow verification for flow: " << f.flowToStr(false) << std::endl;
+                loggy << "Requesting flow verification on remote topology" << std::endl;
                 bool result = mca_veriflow->controller.requestVerification(1, f);
                 loggy << "Verification result: " << (result ? "Success" : "Failure") << std::endl;
+
+                // Test undo verification
+                loggy << "Testing undo verification on remote topology" << std::endl;
+                bool undoResult = mca_veriflow->controller.undoVerification(f, 1);
+                loggy << "Undo verification result: " << (undoResult ? "Success" : "Failure") << std::endl;
 
                 loggy << std::endl << std::endl;
 
@@ -1072,11 +1077,13 @@ int main() {
                 Flow f2("10.0.0.6", "10.10.10.10/12", "10.0.0.5", true);
                 Flow f3("10.0.0.5", "10.10.10.10/12", "10.0.0.7", true);
                 Flow f4("10.0.0.7", "10.10.10.10/12", "10.0.0.5", true);
-                Flow f5("10.0.0.7", "10.10.10.10/12", "10.0.0.5", true);
-                Flow f6("10.0.0.8", "10.10.10.10/12", "10.0.0.6", true);
-                Flow f7("10.0.0.6", "10.10.10.10/12", "10.0.0.8", true);
+                Flow f5("10.0.0.8", "10.10.10.10/12", "10.0.0.6", true);
+                Flow f6("10.0.0.6", "10.10.10.10/12", "10.0.0.8", true);
+                Flow f7("10.0.0.7", "0.0.0.0/0", "10.0.0.8", true);
+                Flow f8("10.0.0.8", "0.0.0.0/0", "10.0.0.7", true);
+                Flow f9("10.0.0.9", "0.0.0.0/0", "10.0.0.8", true);
 
-                std::vector<Flow> flows = { f1, f2, f3, f4, f5, f6, f7 };
+                std::vector<Flow> flows = { f1, f2, f3, f4, f5, f6, f7, f8, f9 };
 
                 // Test filter flows
                 std::vector<Flow> localFlows = mca_veriflow->controller.filterFlows(flows,"10.0.0.7",0);
@@ -1093,20 +1100,29 @@ int main() {
 
                 // Test translate flows
                 loggy << "Testing translate_flows..." << std::endl << std::endl;
-                std::vector<Flow> translatedLocalFlows = mca_veriflow->controller.translateFlows(localFlows, "10.0.0.5", "10.0.0.7");
+                std::vector<std::vector<Flow>> translate_flows = mca_veriflow->controller.translateFlows(localFlows, "10.0.0.5", "10.0.0.7");
+                std::vector<Flow> translatedLocalFlows = translate_flows.at(0);
+                std::vector<Flow> localDupes = translate_flows.at(1);
+
                 loggy << "Translated local flows:" << std::endl;
                 for (Flow flow : translatedLocalFlows) {
                     loggy << flow.flowToStr(false) << std::endl;
                 }
-                std::vector<Flow> translatedRemoteFlows = mca_veriflow->controller.translateFlows(remoteFlows, "10.0.0.6", "10.0.0.7");
+                loggy << "Local dupes:" << std::endl;
+                for (Flow flow : localDupes) {
+                    loggy << flow.flowToStr(false) << std::endl;
+                }
+                std::vector<std::vector<Flow>> translated_flows = mca_veriflow->controller.translateFlows(remoteFlows, "10.0.0.6", "10.0.0.7");
+                std::vector<Flow> translatedRemoteFlows = translated_flows.at(0);
+                std::vector<Flow> remoteDupes = translated_flows.at(1);
                 loggy << "Translated remote flows:" << std::endl << std::endl;
                 for (Flow flow : translatedRemoteFlows) {
                     loggy << flow.flowToStr(false) << std::endl;
                 }
-
-                // Test undo verification
-                loggy << "Testing undo verification on remote topoology..." << std::endl << std::endl;
-                bool undoResult = mca_veriflow->controller.undoVerification(f, 1);
+                loggy << "Remote dupes:" << std::endl;
+                for (Flow flow : remoteDupes) {
+                    loggy << flow.flowToStr(false) << std::endl;
+                }
             }
         }
 

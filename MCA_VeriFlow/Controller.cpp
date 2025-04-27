@@ -247,7 +247,8 @@ void Controller::recvProcessCCPDN(int socket)
 
 			case PERFORM_VERIFICATION_REQ: {
 				// Make sure we aren't working with an empty flow
-				if (packetDigest.getFlow() == Flow("", "", "", false)) {
+				if (packetFlow.isEmptyFlow()) {
+					loggy << "[CCPDN]: Received empty flow for verification request" << std::endl;
 					break;
 				}
 
@@ -271,7 +272,8 @@ void Controller::recvProcessCCPDN(int socket)
 
 			case VERIFICATION_SUCCESS: {
 				// Make sure we aren't working with an empty flow
-				if (packetDigest.getFlow() == Flow("", "", "", false)) {
+				if (packetFlow.isEmptyFlow()) {
+					loggy << "[CCPDN]: Received empty flow for successful verification" << std::endl;
 					break;
 				}
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
@@ -286,11 +288,12 @@ void Controller::recvProcessCCPDN(int socket)
 
 			case VERIFICATION_FAIL: {
 				// Make sure we aren't working with an empty flow
-				if (packetDigest.getFlow() == Flow("", "", "", false)) {
+				if (packetFlow.isEmptyFlow()) {
+					loggy << "[CCPDN]: Received empty flow for failed verification" << std::endl;
 					break;
 				}
 				loggy << "[CCPDN]: Verification results for flow:" << std::endl;
-				loggy << "Flow: " << packetDigest.getFlow().flowToStr(false) << " [FAIL]" << std::endl;
+				loggy << "Flow: " << packetFlow.flowToStr(false) << " [FAIL]" << std::endl;
 
 				// Push back to failure vector if we are receiving
 				if (ALLOW_CCPDN_RECV) {
@@ -872,24 +875,31 @@ std::vector<Flow> Controller::filterFlows(std::vector<Flow> flows, std::string d
 		Node src = referenceTopology->getNodeByIP(f.getSwitchIP());
 		Node dst = referenceTopology->getNodeByIP(f.getNextHopIP());
 
-		// Filter flows based on the topology index of the nextHop
-		if (dst.getTopologyID() == topologyIndex) {
+		// If both parameters are foreign, skip it
+		if (src.getTopologyID() == topologyIndex && dst.getTopologyID() != topologyIndex) {
+			continue;
+		}
+
+		// One of the parameters is local, the other could be foreign -- if the other is a domain node, we can accept it
+		if (src.getIP() == domainNodeIP || dst.getIP() == domainNodeIP) {
 			returnList.push_back(f);
-		} else if (dst.getIP() == domainNodeIP) {
+			continue;
+		}
+
+		// If both parameters are local, we can accept it
+		if (src.getTopologyID() == topologyIndex && dst.getTopologyID() == topologyIndex) {
 			returnList.push_back(f);
+			continue;
 		}
 	}
-
-	// Remove any duplicates before returning the list
-	auto end = std::unique(returnList.begin(), returnList.end());
-	returnList.erase(end, returnList.end());
 
     return returnList;
 }
 
-std::vector<Flow> Controller::translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP)
+std::vector<std::vector<Flow>> Controller::translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP)
 {
 	std::vector<Flow> translatedFlows;
+	std::vector<Flow> duplicates;
 	for (Flow f : flows) {
 		if (f.getSwitchIP() == originalIP) {
 			Flow newFlow = Flow(newIP, f.getRulePrefix(), f.getNextHopIP(), f.isMod());
@@ -900,11 +910,20 @@ std::vector<Flow> Controller::translateFlows(std::vector<Flow> flows, std::strin
 		}
 	}
 
-	// Remove any duplicates before returning the list
-	auto end = std::unique(translatedFlows.begin(), translatedFlows.end());
-	translatedFlows.erase(end, translatedFlows.end());
+	// Note: Current flow == operator doesn't care about action
 
-    return translatedFlows;
+	// Check for duplicates in our translated flows -- remove them from translated flows, add to duplicates
+	auto it = std::unique(translatedFlows.begin(), translatedFlows.end(), [&duplicates](const Flow a, const Flow b) {
+		if (a == b) {
+			duplicates.push_back(a);
+			return true;
+		}
+		return false;
+	});
+	translatedFlows.erase(it, translatedFlows.end());
+
+	// Return a vector with our translated flows, and any duplicates found
+    return {translatedFlows, duplicates};
 }
 
 Node Controller::getBestDomainNode(int firstIndex, int secondIndex)

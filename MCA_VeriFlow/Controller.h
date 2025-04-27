@@ -101,7 +101,7 @@ class Controller {
 		bool resubmitVerify(Flow newFlow);
 		std::vector<Flow> getRelatedFlows(std::string IP);
 		std::vector<Flow> filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex);
-		std::vector<Flow> translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP);
+		std::vector<std::vector<Flow>> translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP);
 		Node getBestDomainNode(int firstIndex, int secondIndex);
 
 		// Get link/interface funcs

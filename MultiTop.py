@@ -71,6 +71,7 @@ def myNetwork(port1, port2, offset):
     s2 = net.addSwitch('s2', cls=OVSKernelSwitch, dpid='2')
     s3 = net.addSwitch('s3', cls=OVSKernelSwitch, dpid='3')
     s4 = net.addSwitch('s4', cls=OVSKernelSwitch, dpid='4')
+    s5 = net.addSwitch('s5', cls=OVSKernelSwitch, dpid='5')
 
     info( '*** Add hosts\n')
 
@@ -93,6 +94,8 @@ def myNetwork(port1, port2, offset):
     net.addLink(s1, s2)
     net.addLink(s1, s3)
     net.addLink(s2, s4)
+    net.addLink(s3, s4)
+    net.addLink(s5, s4)
 
 
     info( '*** Starting network\n')
@@ -106,12 +109,14 @@ def myNetwork(port1, port2, offset):
     net.get('s2').start([c0])
     net.get('s3').start([c0, c1]) # Domain node
     net.get('s4').start([c1])
+    net.get('s5').start([c1])
 
     info( '*** Post configure switches and hosts\n')
     s1.cmd('ifconfig s1 10.0.0.5')
     s2.cmd('ifconfig s2 10.0.0.6')
     s3.cmd('ifconfig s3 10.0.0.7')
     s4.cmd('ifconfig s4 10.0.0.8')
+    s5.cmd('ifconfig s5 10.0.0.9')
 
     CLI(net)
     net.stop()

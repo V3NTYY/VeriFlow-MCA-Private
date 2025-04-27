@@ -25,7 +25,6 @@ std::string Digest::toJson() {
     j["hostIndex"] = hostIndex;
     j["destinationIndex"] = destinationIndex;
     j["payload"] = payload;
-    j["destination_ip"] = destination_ip;
     j["flow_data"] = flowString;
     return j.dump();
 }
@@ -34,10 +33,7 @@ void Digest::fromJson(const std::string& json_str) {
     try {
         nlohmann::json j = nlohmann::json::parse(json_str);
         std::string flow_data;
-        Flow* appendFlow = Flow::strToFlow(flow_data);
-        if (appendFlow == nullptr) {
-            appendFlow = new Flow("", "", "", false);
-        }
+        Flow appendFlow = Flow::strToFlow(flow_data);
 
         synch_bit = j["synch_bit"].get<int>() == 1;
         update_bit = j["update_bit"].get<int>() == 1;
@@ -45,9 +41,8 @@ void Digest::fromJson(const std::string& json_str) {
         hostIndex = j["hostIndex"].get<int>();
         destinationIndex = j["destinationIndex"].get<int>();
         payload = j["payload"].get<std::string>();
-        destination_ip = j["destination_ip"].get<std::string>();
         flow_data = j["flow_data"].get<std::string>();
-        appendedFlow = *appendFlow;
+        appendedFlow = appendFlow;
 
     } catch (const std::exception& e) {
         loggyErr("JSON parsing error: ");
@@ -69,19 +64,19 @@ int Digest::readDigest(const std::string& data) {
         bool update = j["update_bit"].get<int>() == 1;
         bool verification = j["verification_bit"].get<int>() == 1;
 
-        if (synch && !update && !verification) { // 100
+        if (synch && !update && !verification) { // 100 -- topology update (new master)
             return 0;
         } 
-        else if (!synch && update && !verification) { // 010
+        else if (!synch && update && !verification) { // 010 -- synchronize topology (applying update from master)
             return 1;
         }
-        else if (!synch  && !update && verification) { // 001
+        else if (!synch  && !update && verification) { // 001 -- perform verification
             return 2;
         }
-        else if (!synch && update && verification) { // 011
+        else if (!synch && update && verification) { // 011 -- verification success
             return 3;
         }
-        else if (synch && update && verification) { // 111
+        else if (synch && update && verification) { // 111 -- verification fail
             return 4;
         }
         else if (!synch && !update && !verification) { // 000 -- requesting flow list from payload
@@ -105,15 +100,7 @@ Flow Digest::getFlow(const std::string &raw_data)
     nlohmann::json j = nlohmann::json::parse(raw_data);
     std::string parsedFlow = j["flow_data"].get<std::string>();
 
-    Flow f = *Flow::strToFlow(parsedFlow);
-    Flow empty;
-
-    // If we couldn't parse anything, return an empty flow object
-    if (f == empty) {
-        return Flow("", "", "", false);
-    }
-
-    return f;
+    return Flow::strToFlow(parsedFlow);
 }
 
 void Digest::appendFlow(Flow f)

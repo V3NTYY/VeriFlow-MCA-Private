@@ -26,32 +26,32 @@ std::string Flow::flowToStr(bool printDPID)
 	return output;
 }
 
-Flow* Flow::strToFlow(std::string payload)
+Flow Flow::strToFlow(std::string payload)
 {
 	// #switchIP-rulePrefix-nextHopIP
-	Flow* f = new Flow("", "", "", false);
+	Flow f = Flow("", "", "", false);
 	
 	// Ensure correct size and format
 	if (payload.size() < 3) {
-		return nullptr;
+		return f;
 	} else if (payload[1] != '#') {
-		return nullptr;
+		return f;
 	}
 	else if (payload[0] != 'A' && payload[0] != 'R') {
-		return nullptr;
+		return f;
 	}
 
 	if (payload[0] == 'A') {
-		f->action = true;
+		f.action = true;
 	}
 	else {
-		f->action = false;
+		f.action = false;
 	}
 
 	// Split flowstring
 	std::vector<std::string> parts = splitFlowString(payload);
 	if (parts.size() != 3) {
-		return nullptr;
+		return f;
 	}
 
 	// Parse the string
@@ -61,13 +61,13 @@ Flow* Flow::strToFlow(std::string payload)
 
 	// Ensure we parsed something
 	if (swIP.empty() || rulePFX.empty() || nextHIP.empty()) {
-		return nullptr;
+		return Flow("", "", "", false);
 	}
 
 	// Set the flow properties
-	f->switchIP = swIP;
-	f->rulePrefix = rulePFX;
-	f->nextHopIP = nextHIP;
+	f.switchIP = swIP;
+	f.rulePrefix = rulePFX;
+	f.nextHopIP = nextHIP;
 
 	return f;
 }

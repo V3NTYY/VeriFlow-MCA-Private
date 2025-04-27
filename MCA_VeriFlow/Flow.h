@@ -21,8 +21,11 @@ class Flow {
 
 		// Marshalling methods
 		std::string flowToStr(bool printDPID);
-		static Flow* strToFlow(std::string payload);
+		static Flow strToFlow(std::string payload);
 		static std::vector<std::string> splitFlowString(std::string flow);
+
+		// Helper methods
+		bool isEmptyFlow() { return (switchIP.empty() && rulePrefix.empty() && nextHopIP.empty()); }
 
 		// Misc methods
 		void print();
