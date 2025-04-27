@@ -1382,8 +1382,8 @@ std::vector<Flow> Controller::retrieveFlows(std::string IP, bool pause)
 	pause_rst = true;
 	fhFlag = false;
 	while (!fhFlag) {
-		// Timeout for 450ms
-		if (localCount > 90) {
+		// Timeout for 900ms
+		if (localCount > 180) {
 			loggyErr("[CCPDN-ERROR]: Timeout waiting for flow list from controller\n");
 			pause_rst = false;
 			if (pause) {
