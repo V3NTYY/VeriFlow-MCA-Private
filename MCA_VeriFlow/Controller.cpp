@@ -854,24 +854,22 @@ bool Controller::modifyFlowTableWithoutVerification(Flow f)
 bool Controller::remapVerify(Flow newFlow)
 {
 	// Get IP to local domain node
-	Node localNode = referenceTopology->getNodeByIP(newFlow.getSwitchIP());
-	Node remoteNode = referenceTopology->getNodeByIP(newFlow.getNextHopIP());
-	Node domainNode = getBestDomainNode(localNode.getTopologyID(), remoteNode.getTopologyID());
+	Node* localNode = referenceTopology->getNodeReference(referenceTopology->getNodeByIP(newFlow.getSwitchIP()));
+	Node* remoteNode = referenceTopology->getNodeReference(referenceTopology->getNodeByIP(newFlow.getNextHopIP()));
+	Node domainNode = getBestDomainNode(localNode->getTopologyID(), remoteNode->getTopologyID());
 	std::string domainNodeIP = domainNode.getIP();
 
-	int remoteIndex = remoteNode.getTopologyID();
+	int remoteIndex = remoteNode->getTopologyID();
+
+	loggy << "Prev remote index: " << remoteIndex << std::endl;
 
 	// This only occurs with domain nodes -- if this happens, use the actual node reference
-	if (remoteIndex == localNode.getTopologyID()) {
-		remoteIndex = referenceTopology->getNodeReference(remoteNode)->getTopologyID();
-		// If for some reason we are still the same, just increment +1 i dont care at this point
-		if (remoteIndex == localNode.getTopologyID()) {
-			loggyErr("[CCPDN-ERROR]: Error in retrieving topology ID for verification, incrementing for test\n");
-			remoteIndex++;
-		}
+	if (remoteIndex == localNode->getTopologyID()) {
+		loggyErr("[CCPDN-ERROR]: Error in retrieving topology ID for verification, incrementing for test\n");
+		remoteIndex++;
 	}
 
-	loggy << "Remote index: " << remoteIndex << std::endl;
+	loggy << "After Remote index: " << remoteIndex << std::endl;
 
 	// Remap the flow into two separate flows, one for each topology -- use domain node IP to remap
 	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
