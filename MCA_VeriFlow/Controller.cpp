@@ -866,6 +866,7 @@ bool Controller::remapVerify(Flow newFlow)
 
 	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
 	if (!remoteDuplicate) {
+		loggy << "Requesting verification for topology " << remoteNode.getTopologyID() << ". FLOW: " << remote.flowToStr(false) << std::endl;
 		if (!requestVerification(remoteNode.getTopologyID(), remote)) {
 			undoVerification(local, localNode.getTopologyID());
 			return false;

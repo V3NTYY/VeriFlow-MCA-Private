@@ -32,7 +32,7 @@ std::string Digest::toJson() {
 void Digest::fromJson(const std::string& json_str) {
     try {
         nlohmann::json j = nlohmann::json::parse(json_str);
-        std::string flow_data;
+        std::string flow_data = "";
 
         synch_bit = j["synch_bit"].get<int>() == 1;
         update_bit = j["update_bit"].get<int>() == 1;
