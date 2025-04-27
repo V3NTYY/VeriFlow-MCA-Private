@@ -348,7 +348,6 @@ Topology MCA_VeriFlow::partitionTopology()
 
             // Iterate through all topology IDs, and check if the domain node IP exists as a node within the topology
             for (std::string topologyID : topologyIDs) {
-                loggy << "Topology ID: " << topologyID << std::endl;
                 int index = 0;
                 try {
                     std::stoi(topologyID);
