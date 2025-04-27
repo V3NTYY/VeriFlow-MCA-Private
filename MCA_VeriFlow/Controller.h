@@ -96,9 +96,10 @@ class Controller {
 		bool requestVerification(int destinationIndex, Flow f);
 		bool performVerification(bool externalRequest, Flow f);
 		bool undoVerification(Flow f, int topologyIndex);
+		bool modifyFlowTableWithoutVerification(Flow f);
 
 		// All funcs related to external verification
-		bool resubmitVerify(Flow newFlow);
+		bool remapVerify(Flow newFlow);
 		std::vector<Flow> getRelatedFlows(std::string IP);
 		std::vector<Flow> filterFlows(std::vector<Flow> flows, std::string domainNodeIP, int topologyIndex);
 		std::vector<std::vector<Flow>> translateFlows(std::vector<Flow> flows, std::string originalIP, std::string newIP);
@@ -150,6 +151,7 @@ class Controller {
 		std::vector<Flow>		  CCPDN_FLOW_FAIL;
 		std::vector<Flow>		  CCPDN_FLOW_SUCCESS;
 		bool					  ALLOW_CCPDN_RECV;
+		std::vector<Flow>		  ignoreFlows;
 
 	private:
 		int						  sockfd;

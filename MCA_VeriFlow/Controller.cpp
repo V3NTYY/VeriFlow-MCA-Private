@@ -264,8 +264,6 @@ void Controller::recvProcessCCPDN(int socket)
 					fail.appendFlow(packetFlow);
 					sendCCPDNMessage(returnSocket, fail.toJson());			
 				}
-				// Invert the flow to undo the effect on the local topology
-				performVerification(false, inverseFlow);
 				break;
 			}
 
@@ -556,6 +554,12 @@ void Controller::parseFlow(Flow f)
 		return;
 	}
 
+	// Make sure our flow isn't in the ignoreFlow list -- if it is, remove it and leave this method
+	if (std::find(ignoreFlows.begin(), ignoreFlows.end(), f) != ignoreFlows.end()) {
+		ignoreFlows.erase(std::remove(ignoreFlows.begin(), ignoreFlows.end(), f), ignoreFlows.end());
+		return;
+	}
+
 	// Ensure we have a valid flow by checking if at least one of them are within the local topology
 	bool isSrcLocal = referenceTopology->isLocal(f.getSwitchIP(), f.isMod());
 	bool isHopLocal = referenceTopology->isLocal(f.getNextHopIP(), f.isMod());
@@ -572,7 +576,10 @@ void Controller::parseFlow(Flow f)
 	if (f.isMod() && isBothLocal) {
 		// Run verification on the flow rule
 		recvSharedFlag = true;
-		performVerification(false, f);
+		if (!performVerification(false, f)) {
+			// Verification unsuccessful -- remove from openflow table
+			modifyFlowTableWithoutVerification(f);
+		}
 		pauseOutput = false;
 		return;
 	}
@@ -581,7 +588,10 @@ void Controller::parseFlow(Flow f)
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
 	if (f.isMod() && !isBothLocal) {
-        resubmitVerify(f);
+        if (!remapVerify(f)) {
+			// Verification unsuccessful -- remove from openflow table
+			modifyFlowTableWithoutVerification(f);
+		}
         pauseOutput = false;
         return;
     }
@@ -742,11 +752,11 @@ bool Controller::requestVerification(int destinationIndex, Flow f)
 
 	sendCCPDNMessage(*getSocketFromIndex(destinationIndex), verificationMessage.toJson());
 
-	// Wait for response from destination topology, or timeout of 1.5 seconds
+	// Wait for response from destination topology, or timeout of 0.9 seconds
 	auto start = std::chrono::steady_clock::now();
 	while (CCPDN_FLOW_SUCCESS.size() == 0 || CCPDN_FLOW_FAIL.size() == 0) {
 		auto now = std::chrono::steady_clock::now();
-		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 1500) {
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 900) {
 			break;
 		}
 	}
@@ -810,9 +820,60 @@ bool Controller::undoVerification(Flow f, int topologyIndex)
     return result;
 }
 
-bool Controller::resubmitVerify(Flow newFlow)
+bool Controller::modifyFlowTableWithoutVerification(Flow f)
 {
-    return false;
+    // Meant for unsuccessful verification -- first generate tracking XID
+	int genXID = generateXID(referenceTopology->hostIndex);
+	updateXIDMapping(genXID, f.getSwitchIP(), f.getNextHopIP());
+	bool result = true;
+
+	if (f.actionType()) {            
+		// Remove flow from table if this was an add (pretty sure all of them will be add)
+		result = sendFlowHandlerMessage("removeflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
+	} else {
+		// Re-add the flow if this was a delete
+		result = sendFlowHandlerMessage("addflow-" + f.flowToStr(true) + "-" + std::to_string(genXID));
+	}
+
+	// Add flow to ignore table, so the flow handler doesn't try to verify it again
+	ignoreFlows.push_back(f);
+
+	return result;
+}
+
+bool Controller::remapVerify(Flow newFlow)
+{
+	// Get IP to local domain node
+	Node localNode = referenceTopology->getNodeByIP(newFlow.getSwitchIP());
+	Node remoteNode = referenceTopology->getNodeByIP(newFlow.getNextHopIP());
+	Node domainNode = getBestDomainNode(localNode.getTopologyID(), remoteNode.getTopologyID());
+	std::string domainNodeIP = domainNode.getIP();
+
+	// Remap the flow into two separate flows, one for each topology -- use domain node IP to remap
+	Flow local = translateFlows({newFlow}, newFlow.getNextHopIP(), domainNodeIP).at(0)[0];
+	Flow remote = translateFlows({newFlow}, newFlow.getSwitchIP(), domainNodeIP).at(0)[0];
+
+	// Handle duplicates in flow remapping -- meaning this flow involves the domain node itself
+	bool localDuplicate = (local.getSwitchIP() == local.getNextHopIP());
+	bool remoteDuplicate = (remote.getSwitchIP() == remote.getNextHopIP());
+
+	// Verify the local flow -- if good, continue
+	if (!localDuplicate) {
+		if (!performVerification(false, local)) {
+			return false;
+		}
+	}
+
+	// Verify the remote flow -- if good, the verification is successful, otherwise undo the local verification
+	if (!remoteDuplicate) {
+		if (!performVerification(false, remote)) {
+			undoVerification(local, localNode.getTopologyID());
+			return false;
+		}
+	}
+	
+	// Verification successful
+    return true;
 }
 
 std::vector<Flow> Controller::getRelatedFlows(std::string IP)
@@ -876,7 +937,7 @@ std::vector<Flow> Controller::filterFlows(std::vector<Flow> flows, std::string d
 		Node dst = referenceTopology->getNodeByIP(f.getNextHopIP());
 
 		// If both parameters are foreign, skip it
-		if (src.getTopologyID() == topologyIndex && dst.getTopologyID() != topologyIndex) {
+		if (src.getTopologyID() != topologyIndex && dst.getTopologyID() != topologyIndex) {
 			continue;
 		}
 
@@ -1060,6 +1121,7 @@ Controller::Controller()
 	gotFlowMod = false;
 	ALLOW_CCPDN_RECV = false;
 
+	ignoreFlows.clear();
 	CCPDN_FLOW_RESPONSE.clear();
 	CCPDN_FLOW_SUCCESS.clear();
 	CCPDN_FLOW_FAIL.clear();
@@ -1093,6 +1155,7 @@ Controller::Controller(Topology* t) {
 	gotFlowMod = false;
 	ALLOW_CCPDN_RECV = false;
 
+	ignoreFlows.clear();
 	CCPDN_FLOW_RESPONSE.clear();
 	CCPDN_FLOW_SUCCESS.clear();
 	CCPDN_FLOW_FAIL.clear();

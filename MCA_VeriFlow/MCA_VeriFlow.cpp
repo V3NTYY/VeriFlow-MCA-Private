@@ -1063,16 +1063,6 @@ int main() {
 
                 loggy << std::endl << std::endl;
 
-                // Test getRelatedFlows
-                loggy << "Testing relatedFlows for 10.0.0.6" << std::endl;
-                std::vector<Flow> relatedFlows = mca_veriflow->controller.getRelatedFlows("10.0.0.6");
-                loggy << "Related flows:" << std::endl;
-                for (Flow flow : relatedFlows) {
-                    loggy << flow.flowToStr(false) << std::endl;
-                }
-
-                loggy << std::endl << std::endl;
-
                 Flow f1("10.0.0.5", "10.10.10.10/12", "10.0.0.6", true);
                 Flow f2("10.0.0.6", "10.10.10.10/12", "10.0.0.5", true);
                 Flow f3("10.0.0.5", "10.10.10.10/12", "10.0.0.7", true);
