@@ -94,8 +94,8 @@ void MCA_VeriFlow::run()
     std::thread ccpdnMessageThread(&Controller::CCPDNThread, &controller, &runService);
     ccpdnMessageThread.detach();
 
-    // Initiate CCPDN connections
-    controller.initCCPDN();
+    // Don't initiate CCPDN connections until the operator is ready
+    // controller.initCCPDN();
 
     // Start TCPDump thread to listen for controller messages
     TCPAnalyzer tcp;
@@ -103,7 +103,7 @@ void MCA_VeriFlow::run()
     tcpDumpThread.detach();
 
     loggy << "[CCPDN]: CCPDN Service started" << std::endl;
-    loggy << "Please use 'retry-ccpdn' once all other CCPDN instances are started if connections are not established" << std::endl;
+    loggy << "Please use 'retry-ccpdn' once all other CCPDN instances are started" << std::endl;
     loggy << "Use 'status' to check the status of all expected connections" << std::endl;
 }
 
@@ -705,7 +705,11 @@ int main() {
                 loggy << "Ensure CCPDN Service is started first." << std::endl;
                 continue;
             }  else {
-                mca_veriflow->controller.initCCPDN();
+                if (mca_veriflow->controller.initCCPDN()) {
+                    loggy << "Established a new connection to the CCPDN." << std::endl;
+                } else {
+                    loggy << "No new CCPDN connection established." << std::endl;
+                }
             }
         }
 
