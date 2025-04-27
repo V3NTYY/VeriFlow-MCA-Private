@@ -1418,8 +1418,10 @@ bool Controller::addFlowToTable(Flow f)
 
 	// Ensure the flow we are adding is either within our domain, or inter-domain at the least
 	if (!validateFlow(f)) {
-		recvSharedFlag = false;
 		// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
+		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
+		recvSharedFlag = false;
+		f.setMod(true);
 		sharedFlows.push_back(f);
 		return true;
 	}
@@ -1447,7 +1449,9 @@ bool Controller::removeFlowFromTable(Flow f)
 
 	// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 	if (!validateFlow(f)) {
+		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
 		recvSharedFlag = false;
+		f.setMod(true);
 		sharedFlows.push_back(f);
 		return true;
 	}
