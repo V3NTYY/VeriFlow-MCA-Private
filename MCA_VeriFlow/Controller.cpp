@@ -549,6 +549,8 @@ void Controller::closeAcceptedSocket(int socket)
 
 void Controller::parseFlow(Flow f)
 {
+	loggy << "[CCPDN]: Parsing flow rule: " << f.flowToStr(false) << std::endl;
+	loggy << "[CCPDN]: Flow rule is " << (f.isMod() ? "MOD" : "LIST") << std::endl;
 	// Error checking:
 	if (f.getSwitchIP() == "" || f.getNextHopIP() == "") {
 		return;
@@ -556,6 +558,7 @@ void Controller::parseFlow(Flow f)
 
 	// Make sure our flow isn't in the ignoreFlow list -- if it is, remove it and leave this method
 	if (std::find(ignoreFlows.begin(), ignoreFlows.end(), f) != ignoreFlows.end()) {
+		loggy << "[CCPDN]: Flow rule is dupe, ignoring verification." << std::endl;
 		ignoreFlows.erase(std::remove(ignoreFlows.begin(), ignoreFlows.end(), f), ignoreFlows.end());
 		return;
 	}
