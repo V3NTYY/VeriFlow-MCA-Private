@@ -1469,9 +1469,10 @@ bool Controller::addFlowToTable(Flow f)
 		// If our flow is inter-topology (invalid), instead add it directly to sharedFlows for immediate verification/remapping
 		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
 
+		recvSharedFlag = false;
+
 		// Lock the sharedFlows mutex to prevent early clearing of the vector
 		std::lock_guard<std::mutex> lock(sharedFlowsMutex);
-		recvSharedFlag = false;
 		f.setMod(true);
 		sharedFlows.push_back(f);
 		return true;
@@ -1502,9 +1503,10 @@ bool Controller::removeFlowFromTable(Flow f)
 	if (!validateFlow(f)) {
 		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
 
+		recvSharedFlag = false;
+
 		// Lock the sharedFlows mutex to prevent early clearing of the vector
 		std::lock_guard<std::mutex> lock(sharedFlowsMutex);
-		recvSharedFlag = false;
 		f.setMod(true);
 		sharedFlows.push_back(f);
 		return true;
