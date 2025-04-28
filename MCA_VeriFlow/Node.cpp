@@ -213,9 +213,10 @@ bool Node::getPingResult() {
 std::string Node::filePrint()
 {
 	std::string output = "";
-	if (controllerAdjacency) {
-		output += "CA#\n";
-	}
+	// Don't print this because veriflow wont recognize it
+	// if (controllerAdjacency) {
+	// 	output += "CA#\n";
+	// }
 	
 	output += IP + ":";
 	for (int i = 0; i < linkList.size(); i++) {
