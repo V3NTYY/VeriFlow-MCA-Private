@@ -568,8 +568,12 @@ void Controller::parseFlow(Flow f)
 	bool isBothLocal = isSrcLocal && isHopLocal;
 
 	// Invalid flow verification -- we don't handle other topologies verification, only inter-topology
-	if (!isValid) {
+	if (!isValid && f.isMod()) {
+		// Only print something out if its a flow mod we're expecting
 		loggy << "[CCPDN-ERROR]: Flow rule is invalid due to being another topologies flow, Flow: " << f.flowToStr(false) << std::endl;
+		pauseOutput = false;
+		return;
+	} else if (!isValid) {
 		pauseOutput = false;
 		return;
 	}
