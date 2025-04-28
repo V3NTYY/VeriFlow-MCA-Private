@@ -171,6 +171,7 @@ class Controller {
 		bool					  ofFlag;
 		bool					  pause_rst;
 		bool					  noRst;
+		bool					  forceStopShared;
 
 		// Private Functions
 		bool linkVeriFlow();

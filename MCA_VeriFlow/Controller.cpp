@@ -105,7 +105,7 @@ void Controller::flowHandlerThread(bool *run)
 		}
 
 		// Reset flags
-		if (!fhFlag) {
+		if (!fhFlag && !forceStopShared) {
 			recvSharedFlag = true;
 		}
 		pauseOutput = false;
@@ -595,6 +595,7 @@ void Controller::parseFlow(Flow f)
 	// Flow rule (target IP and forward hops) are NOT ALL within host topology
 	// Action: run inter-topology verification method on flow rule
 	if (f.isMod() && !isBothLocal) {
+		forceStopShared = false;
 		loggy << "[CCPDN]: Running inter-topology verification on flow rule: " << f.flowToStr(false) << std::endl;
 		// remapVerify will handle adding the flow to the tables
         remapVerify(f);
@@ -1218,6 +1219,7 @@ Controller::Controller()
 	fhXID = -1;
 	expFlowXID = -1;
 	recvSharedFlag = true;
+	forceStopShared = false;
 	basePort = -1;
 	gotFlowMod = false;
 	ALLOW_CCPDN_RECV = false;
@@ -1252,6 +1254,7 @@ Controller::Controller(Topology* t) {
 	fhXID = -1;
 	expFlowXID = -1;
 	recvSharedFlag = true;
+	forceStopShared = false;
 	basePort = -1;
 	gotFlowMod = false;
 	ALLOW_CCPDN_RECV = false;
@@ -1470,6 +1473,7 @@ bool Controller::addFlowToTable(Flow f)
 		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
 
 		recvSharedFlag = false;
+		forceStopShared = true;
 		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Temp fix to allow sharedFlows to clear/get ready
 
 		// Lock the sharedFlows mutex to prevent early clearing of the vector
@@ -1507,6 +1511,7 @@ bool Controller::removeFlowFromTable(Flow f)
 		loggy << "[CCPDN]: Flow is inter-topology, adding to shared flows for verification/remapping" << std::endl;
 
 		recvSharedFlag = false;
+		forceStopShared = true;
 		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Temp fix to allow sharedFlows to clear/get ready
 
 		// Lock the sharedFlows mutex to prevent early clearing of the vector
