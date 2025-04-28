@@ -590,7 +590,7 @@ int main() {
                 "   Exit the CCPDN App.\n" << std::endl <<
                 " - start [veriflow-ip-address] [veriflow-port]:" << std::endl <<
                 "   Start the CCPDN Service by linking to VeriFlow (default port = 6657).\n" << std::endl <<
-                " - stop:" << std::endl <<
+                " * stop:" << std::endl <<
                 "   Stop the CCPDN Service.\n" << std::endl <<
                 " - status" << std::endl <<
                 "   Display the status of the CCPDN instance.\n" << std::endl <<
@@ -605,15 +605,15 @@ int main() {
                 " - ccpdn-ports [base-port]:" << std::endl <<
                 "   Assigns the port range that all CCPDN instances will use (range: [Base Port] -> [Base Port + Amount of Topologies])." << std::endl <<
                 " - Please ensure that the value you enter is the same across all CCPDN instances. Use this command again if you need to reset it before running start.\n" << std::endl <<
-                " - retry-ccpdn" << std::endl <<
+                " * retry-ccpdn" << std::endl <<
                 "   Retry the connection to all CCPDN instances.\n" << std::endl <<
                 " - link-controller [ip-address] [port]:" << std::endl <<
                 "   Link a currently running Pox Controller to this app (default port = 6653).\n" << std::endl <<
-                " - reset-controller:" << std::endl <<
+                " * reset-controller:" << std::endl <<
                 "   Free the Pox Controller from this app.\n" << std::endl <<
                 " - link-flowhandler [ip-address] [port]:" << std::endl <<
                 "   Link this app to the flow handler, allowing for dynamic flow access (default port = 6655).\n" << std::endl <<
-                " - reset-fh" << std::endl <<
+                " * reset-fh" << std::endl <<
                 "   Free the flowhandler connection from this app.\n" << std::endl <<
                 " - list-flows [switch-ip-address]:" << std::endl <<
                 "   List all the flows associated with a switch based on its IP.\n" << std::endl <<
@@ -621,9 +621,9 @@ int main() {
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - run-tcp-test" << std::endl <<
+                " - run-tcp-test [target-ip] [port (default=8080)]" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
-                " * test-verification-time [num-flows]" << std::endl <<
+                " - test-verification-time [num-flows] [inter-topology (y/n)]" << std::endl <<
                 "   Test verification time for a given number of flows.\n" <<
                 "";
         }
