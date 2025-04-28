@@ -67,6 +67,8 @@ MCA_VeriFlow::MCA_VeriFlow()
     topology_initialized = false;
     runService = false;
     flowhandler_linked = false;
+    runningTCPTest = false;
+    activeTCPThread = false;
 }
 
 MCA_VeriFlow::~MCA_VeriFlow()
@@ -449,46 +451,81 @@ void MCA_VeriFlow::printStatus()
 }
 
 #ifdef __unix__
-    std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string& host, int port, int num_pings) {
-        std::vector<double> rtts;
-    
-        for (int i = 0; i < num_pings; i++) {
-            int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-            if (sockfd < 0) {
-                std::cerr << "Socket creation failed.\n";
-                continue;
-            }
+void MCA_VeriFlow::tcpTestThread(std::string IP, int port, int amount)
+{
+    runningTCPTest = true;
+    std::vector<double> times = mca_veriflow->measure_tcp_connection(IP, port, amount);
+    runningTCPTest = false;
+    activeTCPThread = false;
+
+    // Sleep for 5 seconds to allow any extra output to finish
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    // Calculate statistics
+    if (!times.empty()) {
+        std::sort(times.begin(), times.end());
         
-            struct sockaddr_in server_addr{};
-            struct hostent* server = gethostbyname(host.c_str());
-            if (server == nullptr) {
-                std::cerr << "No such host.\n";
-                close(sockfd);
-                continue;
-            }
-        
-            memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-            server_addr.sin_family = AF_INET;
-            server_addr.sin_port = htons(port);
-        
-            auto start_time = std::chrono::high_resolution_clock::now();
-        
-            if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-                std::cerr << "Connection failed.\n";
-                close(sockfd);
-                continue;
-            }
-        
-            auto end_time = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> rtt = end_time - start_time;
-            rtts.push_back(rtt.count());
-        
-            const char* msg = "VERIFY\n";
-            send(sockfd, msg, strlen(msg), 0);
-        
-            close(sockfd);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        double sum = std::accumulate(times.begin(), times.end(), 0.0);
+        double average = sum / times.size();
+        double median = times[times.size()/2];
+        double lowest = times.front();
+        double highest = times.back();
+
+        loggy << "\nTCP-Connection Setup Latency Time Statistics:" << std::endl;
+        loggy << "Average: " << average * 1000 << " ms" << std::endl;
+        loggy << "Median: " << median * 1000 << " ms" << std::endl;
+        loggy << "Lowest: " << lowest * 1000 << " ms" << std::endl;
+        loggy << "Highest: " << highest * 1000 << " ms" << std::endl;
+    } else {
+        loggy << "No data returned from TCP test.\n";
+    }
+}
+
+std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string &host, int port, int num_pings)
+{
+    std::vector<double> rtts;
+
+    for (int i = 0; i < num_pings; i++)
+    {
+        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd < 0)
+        {
+            std::cerr << "Socket creation failed.\n";
+            continue;
         }
+
+        struct sockaddr_in server_addr{};
+        struct hostent *server = gethostbyname(host.c_str());
+        if (server == nullptr)
+        {
+            std::cerr << "No such host.\n";
+            close(sockfd);
+            continue;
+        }
+
+        memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_port = htons(port);
+
+        auto start_time = std::chrono::high_resolution_clock::now();
+
+        if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+        {
+            std::cerr << "Connection failed.\n";
+            close(sockfd);
+            continue;
+        }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> rtt = end_time - start_time;
+        rtts.push_back(rtt.count());
+
+        const char *msg = "VERIFY\n";
+        send(sockfd, msg, strlen(msg), 0);
+
+        close(sockfd);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
     
     return rtts;
 }
@@ -621,7 +658,7 @@ int main() {
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - run-tcp-test [target-ip] [port (default=8080)]" << std::endl <<
+                " - run-tcp-test [target-ip] [port (default=8080)] [inter-topology (y/n)]" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
                 " - test-verification-time [num-flows] [inter-topology (y/n)]" << std::endl <<
                 "   Test verification time for a given number of flows.\n" <<
@@ -1017,35 +1054,47 @@ int main() {
     
 
         else if (args.at(0) == "run-tcp-test") {
-            if (args.size() < 3) {
-                loggy << "Usage: run-tcp-test [target-ip] [port]" << std::endl;
-                continue;
-            } else if (!mca_veriflow->controller_linked || !mca_veriflow->topology_initialized) {
-                loggy << "Ensure topology is initialized and controller is linked first." << std::endl;
+            if (args.size() < 5) {
+                loggy << "Usage: run-tcp-test [target-ip] [port] [amount of pings] [inter-topology (y/n)]" << std::endl;
                 continue;
             } else {
-                loggy << "Running TCP test..." << std::endl;
+                int numPings = 0;
+                int port = 8080; // Default port
+                bool interTopology = false;
+                if (args.at(4) == "y") {
+                    interTopology = true;
+                }
+
+                // Stoi to clean integer input
+                try {
+                    numPings = std::stoi(args.at(3));
+                    port = std::stoi(args.at(2));
+                } catch (const std::exception& e) {
+                    loggy << "Invalid integer input. Usage: run-tcp-test [target-ip] [port] [amount of pings]" << std::endl;
+                    continue;
+                }
+
+                loggy << "Running tcp test..." << std::endl;
                 #ifdef __unix__
-                    std::vector<double> times = mca_veriflow->measure_tcp_connection(args.at(1), std::stoi(args.at(2)), 10);
                     
-                    loggy << "Verification latency measurements:\n";
-                    for (size_t i = 0; i < times.size(); i++) {
-                        loggy << "Test " << i+1 << ": " << times[i] * 1000 << " ms\n";
+                    // Set our activeTCPThread
+                    activeTCPThread = true;
+
+                    // Create tcp thread to run the test
+                    std::thread tcpThread([&]() {
+                        mca_veriflow->measure_tcp_connection(args.at(1), port, numPings);
+                    });
+                    tcpThread.join();
+
+                    // Once the test
+                    while (activeTCPThread) {
+                        if (runningTCPTest) {
+                            // Test 3 flows at a time while we are recording TCP data
+                            mca_veriflow->controller.testVerificationTime(3, interTopology);
+                        }
                     }
-                    
-                    // Calculate statistics
-                    if (!times.empty()) {
-                        double sum = std::accumulate(times.begin(), times.end(), 0.0);
-                        double mean = sum / times.size();
-                        double max = *std::max_element(times.begin(), times.end());
-                        double min = *std::min_element(times.begin(), times.end());
-                    
-                        loggy << "\nAverage: " << mean * 1000 << " ms\n";
-                        loggy << "Max: " << max * 1000 << " ms\n";
-                        loggy << "Min: " << min * 1000 << " ms\n";
-                    } else {
-                        loggy << "No data returned from TCP test.\n";
-                    }
+
+                    loggy << std::endl << std::endl;
                     
                 #endif
                 continue;

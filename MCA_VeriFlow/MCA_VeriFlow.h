@@ -36,6 +36,7 @@ class MCA_VeriFlow {
 		void printPorts(int VeriFlowPort);
 		void printStatus();
 
+		void tcpTestThread(std::string IP, int port, int amount);
 		std::vector<double> measure_tcp_connection(const std::string& host, int port, int num_pings);
 		double test_tcp_connection_time(const std::string& host, int port, int timeout);
 
@@ -46,6 +47,9 @@ class MCA_VeriFlow {
 		bool controller_linked;
 		bool flowhandler_linked;
 		bool topology_initialized;
+
+		bool runningTCPTest;
+		bool activeTCPThread;
 
 	private:
 };
