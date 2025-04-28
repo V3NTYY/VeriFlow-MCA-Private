@@ -1080,14 +1080,14 @@ int main() {
                     tcpThread.join();
 
                     // Calculate statistics
-                    if (!tcpTimes.empty()) {
-                        std::sort(tcpTimes.begin(), tcpTimes.end());
+                    if (!mca_veriflow->tcpTimes.empty()) {
+                        std::sort(mca_veriflow->tcpTimes.begin(), mca_veriflow->tcpTimes.end());
                         
-                        double sum = std::accumulate(tcpTimes.begin(), tcpTimes.end(), 0.0);
-                        double average = sum / tcpTimes.size();
-                        double median = tcpTimes[tcpTimes.size()/2];
-                        double lowest = tcpTimes.front();
-                        double highest = tcpTimes.back();
+                        double sum = std::accumulate(mca_veriflow->tcpTimes.begin(), mca_veriflow->tcpTimes.end(), 0.0);
+                        double average = sum / mca_veriflow->tcpTimes.size();
+                        double median = mca_veriflow->tcpTimes[mca_veriflow->tcpTimes.size()/2];
+                        double lowest = mca_veriflow->tcpTimes.front();
+                        double highest = mca_veriflow->tcpTimes.back();
 
                         loggy << "\nTCP-Connection Setup Latency Time Statistics:" << std::endl;
                         loggy << "Average: " << average * 1000 << " ms" << std::endl;
@@ -1098,7 +1098,7 @@ int main() {
                         loggy << "No data returned from TCP test.\n";
                     }
 
-                    tcpTimes.clear();
+                    mca_veriflow->tcpTimes.clear();
                     
                 #endif
                 continue;
