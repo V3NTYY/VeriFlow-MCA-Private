@@ -49,7 +49,6 @@ class MCA_VeriFlow {
 		bool topology_initialized;
 
 		bool runningTCPTest;
-		bool activeTCPThread;
 
 	private:
 };

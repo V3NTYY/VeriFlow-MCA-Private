@@ -68,7 +68,6 @@ MCA_VeriFlow::MCA_VeriFlow()
     runService = false;
     flowhandler_linked = false;
     runningTCPTest = false;
-    activeTCPThread = false;
 }
 
 MCA_VeriFlow::~MCA_VeriFlow()
@@ -456,10 +455,11 @@ void MCA_VeriFlow::tcpTestThread(std::string IP, int port, int amount)
     runningTCPTest = true;
     std::vector<double> times = measure_tcp_connection(IP, port, amount);
     runningTCPTest = false;
-    activeTCPThread = false;
 
-    // Sleep for 5 seconds to allow any extra output to finish
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    loggy << "Sleeping tcp thread to wait for output to finish..." << std::endl;
+    // Sleep for 3 seconds to allow any extra output to finish
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    loggy << "TCP thread finished sleeping..." << std::endl;
 
     // Calculate statistics
     if (!times.empty()) {
@@ -1076,24 +1076,25 @@ int main() {
 
                 loggy << "Running tcp test..." << std::endl;
                 #ifdef __unix__
-                    
-                    // Set our activeTCPThread
-                    mca_veriflow->activeTCPThread = true;
 
                     // Create tcp thread to run the test
                     std::thread tcpThread(&MCA_VeriFlow::measure_tcp_connection, mca_veriflow, args.at(1), port, numPings);
-                    tcpThread.detach();
 
-                    // Once the test
-                    while (mca_veriflow->activeTCPThread) {
-                        if (mca_veriflow->runningTCPTest) {
-                            // Test 3 flows at a time while we are recording TCP data
+                    // Create verification thread to run verification during the tcp test, until it concludes
+                    std::thread verificationThread([&]() {
+                        while (mca_veriflow->runningTCPTest) {
                             mca_veriflow->controller.testVerificationTime(3, interTopology);
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
                         }
-                    }
+                    });
 
+                    // Wait for verification thread to finish, wait for console output to finish then join tcpThread
+                    verificationThread.join();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                     // Stats will auto-print out after the thread dies
                     loggy << std::endl << std::endl;
+                    // End tcp thread
+                    tcpThread.join();
                     
                 #endif
                 continue;
