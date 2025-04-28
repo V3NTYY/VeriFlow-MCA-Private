@@ -641,7 +641,7 @@ int main() {
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - run-tcp-test [target-ip] [port (default=8080)] [amount of pings] [inter-topology (y/n)]" << std::endl <<
+                " - run-tcp-test [target-ip] [port (default=8080)] [amount of pings] [inter-topology (y/n)] [run-verification (y/n)]" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
                 " - test-verification-time [num-flows] [inter-topology (y/n)]" << std::endl <<
                 "   Test verification time for a given number of flows.\n" <<
@@ -1037,15 +1037,19 @@ int main() {
     
 
         else if (args.at(0) == "run-tcp-test") {
-            if (args.size() < 5) {
-                loggy << "Usage: run-tcp-test [target-ip] [port] [amount of pings] [inter-topology (y/n)]" << std::endl;
+            if (args.size() < 6) {
+                loggy << "Usage: run-tcp-test [target-ip] [port] [amount of pings] [inter-topology (y/n)] [run-verification (y/n)]" << std::endl;
                 continue;
             } else {
                 int numPings = 0;
                 int port = 8080; // Default port
                 bool interTopology = false;
+                bool runVerification = false;
                 if (args.at(4) == "y") {
                     interTopology = true;
+                }
+                if (args.at(5) == "y") {
+                    runVerification = true;
                 }
 
                 // Stoi to clean integer input
@@ -1053,7 +1057,7 @@ int main() {
                     numPings = std::stoi(args.at(3));
                     port = std::stoi(args.at(2));
                 } catch (const std::exception& e) {
-                    loggy << "Invalid integer input. Usage: run-tcp-test [target-ip] [port] [amount of pings] [inter-topology (y/n)]" << std::endl;
+                    loggy << "Invalid integer input. Usage: run-tcp-test [target-ip] [port] [amount of pings] [inter-topology (y/n)] [run-verification (y/n)]" << std::endl;
                     continue;
                 }
 
@@ -1065,7 +1069,7 @@ int main() {
 
                     // Create verification thread to run verification during the tcp test, until it concludes
                     std::thread verificationThread([&]() {
-                        while (mca_veriflow->runningTCPTest) {
+                        while (mca_veriflow->runningTCPTest && runVerification) {
                             mca_veriflow->controller.testVerificationTime(3, interTopology);
                             std::this_thread::sleep_for(std::chrono::milliseconds(10));
                         }
