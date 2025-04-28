@@ -658,7 +658,7 @@ int main() {
                 "   Add a flow to the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
                 " - del-flow: [switch-ip-address] [rule-prefix] [next-hop-ip-address]" << std::endl <<
                 "   Delete a flow from the flow table of the specified switch based off the contents of a file.\n" << std::endl <<
-                " - run-tcp-test [target-ip] [port (default=8080)] [inter-topology (y/n)]" << std::endl <<
+                " - run-tcp-test [target-ip] [port (default=8080)] [amount of pings] [inter-topology (y/n)]" << std::endl <<
                 "   Run's the TCP connection setup latency test.\n" << std::endl <<
                 " - test-verification-time [num-flows] [inter-topology (y/n)]" << std::endl <<
                 "   Test verification time for a given number of flows.\n" <<
@@ -1070,7 +1070,7 @@ int main() {
                     numPings = std::stoi(args.at(3));
                     port = std::stoi(args.at(2));
                 } catch (const std::exception& e) {
-                    loggy << "Invalid integer input. Usage: run-tcp-test [target-ip] [port] [amount of pings]" << std::endl;
+                    loggy << "Invalid integer input. Usage: run-tcp-test [target-ip] [port] [amount of pings] [inter-topology (y/n)]" << std::endl;
                     continue;
                 }
 
