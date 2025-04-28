@@ -1081,7 +1081,7 @@ int main() {
                     mca_veriflow->activeTCPThread = true;
 
                     // Create tcp thread to run the test
-                    std::thread tcpThread(&MCA_VeriFlow::measure_tcp_connection, args.at(1), port, numPings);
+                    std::thread tcpThread(&MCA_VeriFlow::measure_tcp_connection, mca_veriflow, args.at(1), port, numPings);
                     tcpThread.detach();
 
                     // Once the test
