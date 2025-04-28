@@ -49,6 +49,7 @@ class MCA_VeriFlow {
 		bool topology_initialized;
 
 		bool runningTCPTest;
+		std::vector<double> tcpTimes;
 
 	private:
 };

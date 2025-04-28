@@ -461,24 +461,7 @@ void MCA_VeriFlow::tcpTestThread(std::string IP, int port, int amount)
     std::this_thread::sleep_for(std::chrono::seconds(3));
     loggy << "TCP thread finished sleeping..." << std::endl;
 
-    // Calculate statistics
-    if (!times.empty()) {
-        std::sort(times.begin(), times.end());
-        
-        double sum = std::accumulate(times.begin(), times.end(), 0.0);
-        double average = sum / times.size();
-        double median = times[times.size()/2];
-        double lowest = times.front();
-        double highest = times.back();
-
-        loggy << "\nTCP-Connection Setup Latency Time Statistics:" << std::endl;
-        loggy << "Average: " << average * 1000 << " ms" << std::endl;
-        loggy << "Median: " << median * 1000 << " ms" << std::endl;
-        loggy << "Lowest: " << lowest * 1000 << " ms" << std::endl;
-        loggy << "Highest: " << highest * 1000 << " ms" << std::endl;
-    } else {
-        loggy << "No data returned from TCP test.\n";
-    }
+    tcpTimes = times;
 }
 
 std::vector<double> MCA_VeriFlow::measure_tcp_connection(const std::string &host, int port, int num_pings)
@@ -1078,7 +1061,7 @@ int main() {
                 #ifdef __unix__
 
                     // Create tcp thread to run the test
-                    std::thread tcpThread(&MCA_VeriFlow::measure_tcp_connection, mca_veriflow, args.at(1), port, numPings);
+                    std::thread tcpThread(&MCA_VeriFlow::tcpTestThread, mca_veriflow, args.at(1), port, numPings);
 
                     // Create verification thread to run verification during the tcp test, until it concludes
                     std::thread verificationThread([&]() {
@@ -1095,6 +1078,27 @@ int main() {
                     loggy << std::endl << std::endl;
                     // End tcp thread
                     tcpThread.join();
+
+                    // Calculate statistics
+                    if (!tcpTimes.empty()) {
+                        std::sort(tcpTimes.begin(), tcpTimes.end());
+                        
+                        double sum = std::accumulate(tcpTimes.begin(), tcpTimes.end(), 0.0);
+                        double average = sum / tcpTimes.size();
+                        double median = tcpTimes[tcpTimes.size()/2];
+                        double lowest = tcpTimes.front();
+                        double highest = tcpTimes.back();
+
+                        loggy << "\nTCP-Connection Setup Latency Time Statistics:" << std::endl;
+                        loggy << "Average: " << average * 1000 << " ms" << std::endl;
+                        loggy << "Median: " << median * 1000 << " ms" << std::endl;
+                        loggy << "Lowest: " << lowest * 1000 << " ms" << std::endl;
+                        loggy << "Highest: " << highest * 1000 << " ms" << std::endl;
+                    } else {
+                        loggy << "No data returned from TCP test.\n";
+                    }
+
+                    tcpTimes.clear();
                     
                 #endif
                 continue;
