@@ -888,20 +888,20 @@ bool Controller::remapVerify(Flow newFlow)
 	local.setAction(newFlow.actionType());
 	remote.setAction(newFlow.actionType());
 
-	// Make sure the local flow can link to the given domainNodeIP
-	if (!referenceTopology->getNodeByIP(local.getSwitchIP()).isLinkedTo(domainNodeIP)) {
+	// Make sure we aren't linking local->remote when we already have remote->local, or vice versa
+
+	// Handle duplicates in flow remapping -- meaning this flow involves the domain node itself
+	bool localDuplicate = (local.getSwitchIP() == local.getNextHopIP());
+	bool remoteDuplicate = (remote.getSwitchIP() == remote.getNextHopIP());
+
+	// Make sure the local flow can link to the given domainNodeIP (and isn't a domain node at the same time)
+	if (!referenceTopology->getNodeByIP(local.getSwitchIP()).isLinkedTo(domainNodeIP) && !referenceTopology->getNodeByIP(local.getSwitchIP()).isDomainNode()) {
 		// If our current flow cannot remap to domain node, first find a path to a node connected to the domain node
 		// For the final project, we won't do this -- leave this problem for future work
 		// Ideally we could use BFS or something similar to find the best path -- make sure we mention this in presentation
 		loggy << "[CCPDN-ERROR]: Local flow has no link to domain node, verification unsuccessful: " << local.flowToStr(false) << std::endl;
 		return false;
 	}
-
-	// Make sure we aren't linking local->remote when we already have remote->local, or vice versa
-
-	// Handle duplicates in flow remapping -- meaning this flow involves the domain node itself
-	bool localDuplicate = (local.getSwitchIP() == local.getNextHopIP());
-	bool remoteDuplicate = (remote.getSwitchIP() == remote.getNextHopIP());
 
 	// Verify the local flow -- if good, continue
 	if (!localDuplicate) {

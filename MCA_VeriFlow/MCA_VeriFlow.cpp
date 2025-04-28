@@ -151,6 +151,7 @@ bool MCA_VeriFlow::registerTopologyFile(std::string file) {
             continue;
         } else if (args.at(0) == "CA#") {
             isControllerAdjacent = true;
+            continue;
         } else if (args.at(0) == "S#") {
             isHost = false;
 			continue;
