@@ -454,7 +454,7 @@ void MCA_VeriFlow::printStatus()
 void MCA_VeriFlow::tcpTestThread(std::string IP, int port, int amount)
 {
     runningTCPTest = true;
-    std::vector<double> times = mca_veriflow->measure_tcp_connection(IP, port, amount);
+    std::vector<double> times = measure_tcp_connection(IP, port, amount);
     runningTCPTest = false;
     activeTCPThread = false;
 
@@ -1078,7 +1078,7 @@ int main() {
                 #ifdef __unix__
                     
                     // Set our activeTCPThread
-                    activeTCPThread = true;
+                    mca_veriflow->activeTCPThread = true;
 
                     // Create tcp thread to run the test
                     std::thread tcpThread([&]() {
@@ -1087,13 +1087,14 @@ int main() {
                     tcpThread.join();
 
                     // Once the test
-                    while (activeTCPThread) {
-                        if (runningTCPTest) {
+                    while (mca_veriflow->activeTCPThread) {
+                        if (mca_veriflow->runningTCPTest) {
                             // Test 3 flows at a time while we are recording TCP data
                             mca_veriflow->controller.testVerificationTime(3, interTopology);
                         }
                     }
 
+                    // Stats will auto-print out after the thread dies
                     loggy << std::endl << std::endl;
                     
                 #endif
