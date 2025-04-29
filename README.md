@@ -3,17 +3,21 @@
 ## Please run this app in a mininet environment (VM). To build the app, clone the repository, run the command "chmod +rwx RunInstances.sh" and use the ./RunInstances.sh shell script to set all relevant ports and launch the necessary modules.
 
 ## Once the CCPDN is launched, use "help" to view all the commands, the following commands need to be completed in order to set up all connections:
+```
 reg-top [topology_file]
 link-controller [controller-ip-address] [controller-port]
 link-flowhandler [controller-ip-address] [controller-port+1]
 ccpdn-ports [base-port-for-ccpdn]
 start [veriflow-ip-address] [veriflow-port]
 retry-ccpdn (Once all CCPDN instances have been launching using "start")
+```
 
 ## To add, remove, or list flows use the commands:
+```
 add-flow [switch-ip-address] [rule-prefix] [destination-switch-ip]
 del-flow [switch-ip-address] [rule-prefix] [destination-switch-ip]
 list-flows [switch-ip-address]
+```
 
 **To build this project using CMake, first ensure you have version 3.8 or higher. If you don't have this, refer to the INSTALLING CMAKE section.**
 
